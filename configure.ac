@@ -1,0 +1,195 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+#
+# ############### Structure of this file ###############
+#   Autoconf requirements
+#   AC_INIT(package, version, bug-report-address)
+#   information on the package
+#   checks for programs
+#   checks for libraries
+#   checks for header files
+#   checks for types
+#   checks for structures
+#   checks for compiler characteristics
+#   checks for library functions
+#   checks for system services
+#   AC_CONFIG_FILES([file...])
+#   AC_OUTPUT
+# ######################################################
+
+AC_PREREQ([2.68])
+AC_INIT([smalt],[0.7.4.2],[hp3@sanger.ac.uk],[smalt],[http:/www.sanger.ac.uk/resources/software/smalt])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AC_CONFIG_SRCDIR([src/elib.c])
+AC_CONFIG_HEADERS([config.h:config.hin])
+
+# Checks for programs.
+#AC_PROG_CC([icc gcc cc])
+AC_PROG_CC
+
+# C++ compiler used for linking with c++ library bambam
+AC_PROG_CXX
+
+# find pkg-config tests
+PKG_PROG_PKG_CONFIG
+
+# set CFLAGS defaults explicitly
+#AC_SUBST([AM_CFLAGS],['-O0 -g -Wall'])
+#AC_SUBST([CFLAGS],['-O0 -g -Wall'])
+
+# set LDFLAGS defaults explicitly
+#AC_SUBST([LDFLAGS],[-static])
+
+##AM_PROG_CC_C_O
+AC_PROG_RANLIB
+AM_PATH_PYTHON([2.3],,[:])
+
+# Checks for programs
+
+# samtools executable is required for some tests
+AC_CHECK_PROG([samtoolsexec], [samtools], [yes])
+
+# Checks for libraries.
+
+# optional: samtools built as library libbam
+AC_ARG_WITH([samtools-dir],
+            [AS_HELP_STRING([--with-samtools-dir@<:@=DIR@:>@],
+		[search for samtools in DIR])], 
+            [],
+            [with_samtools=check])
+AS_IF([test "x$with_samtools" != xno],
+      [AS_IF([test "x$with_samtools" == xcheck],
+             [AC_CHECK_LIB([bam],[sam_open],
+			   [samtools=yes;],
+			   [samtools=no;], -lz)
+	     ],
+             [ldflg="$LDFLAGS";
+	     samtools_ldflg="$withval";
+	     samtools_incl="$withval";
+	     AC_SUBST([LDFLAGS], ["$LDFLAGS -L$samtools_ldflg"])     
+       	     AC_CHECK_LIB([bam],[sam_open],
+			  [samtools=yes;
+			  AC_SUBST([SAMTOOLS_DEPS], ["-lbam -lz"])
+	  		  AC_SUBST([SAMTOOLS_CFLAGS], ["-I$samtools_incl"])
+	  		  AC_SUBST([SAMTOOLS_LDFLAGS], ["-L$samtools_ldflg"])
+			  ],
+      			  [samtools=no;
+            		  AC_MSG_FAILURE(
+			  [--with-samtools-prefix was specified, but test for samtools library failed])
+       	        	  ], -lz)
+             AC_SUBST([LDFLAGS], ["$ldflg"])
+       	     ]);
+        if test "$xsamtool"s == xyes; then
+	     AC_DEFINE([HAVE_SAMTOOLS_API], [1],
+                       [Define if you have samtools installed as a library])
+       	fi])	    
+ 	    
+# optional: German Tischler's bambam library
+AC_ARG_WITH([bambamc],
+            [AS_HELP_STRING([--with-bambamc],
+	      [support BAM format @<:@default=check@:>@])],
+            [],
+            [with_bambamc=check])
+AS_IF([test "x$with_bambamc" != xno],
+      [PKG_CHECK_MODULES([BAMBAMC], [bambamc >= 0.0.42], 
+         [ bambamc=yes;
+	   AC_DEFINE([HAVE_BAMBAMC], [1],
+                     [Define if you have the package bambamc installed as a library])
+         ],
+	 [bambamc=no;
+	  if test "x$with_bambamc" != xcheck; then
+             AC_MSG_FAILURE(
+                [--with-bambamc was specified, but test for bambamc failed])
+          else 
+             AC_MSG_WARN(
+	        [will not be able to handle SAM or BAM files!])
+          fi
+         ])
+	 bbincludes=
+	 bblibdirs=
+	 bblibdeps=
+	 for elem in $BAMBAMC_CFLAGS
+	 do
+    	   if test ${elem::2} = "-I" || test ${elem::2} = "-f"; then 
+	     bbincludes="$bbincludes $elem"
+           fi
+         done
+	 for elem in $BAMBAMC_LIBS
+	 do
+	   if test ${elem::2} = "-L" || test ${elem::2} = "-f"; then 
+	     bblibdirs="$bblibdirs $elem"
+           elif test ${elem::2} = "-l"; then
+	     bblibdeps="$bblibdeps $elem"
+	   fi
+	 done
+      ])
+AC_SUBST([BAMBAMC_INCL], ["$bbincludes"])
+AC_SUBST([BAMBAMC_LDFLG], ["$bblibdirs"])
+AC_SUBST([BAMBAMC_DEPS],  ["$bblibdeps"])
+
+# check for zlib
+AC_CHECK_LIB([z], gzread,
+             [withzlib=true;
+              AC_DEFINE([HAVE_ZLIB], [1], [Define to 1 if you have zlib])],
+	      [withzlib=false],)
+
+# Checks for header files.
+AC_HEADER_STDC
+# AC_CHECK_HEADERS([limits.h stdio.h stdlib.h string.h math.h])
+AC_CHECK_HEADERS([math.h pthread.h float.h stddef.h limits.h])
+
+# some versions of icc on 64-bit can't compile limits.h 
+AC_CHECK_HEADER([limits.h], [withlimith=true], [withlimith=false], [])
+
+# exchange the follwing two lines if there are problems with 
+# recogising the emmintrin.h header (some gcc versions require '-msse2' set)
+AC_CHECK_HEADER([emmintrin.h], 
+	        [withsse2=true;
+		 AC_DEFINE([HAVE_EMMINTRIN_H], [1], [Define to 1 if you have <emmintrin.h>.])
+		], 
+		[withsse2=false], [])
+
+#establish 32-bit vs 64-bit -> $host_cpu
+AC_CANONICAL_HOST
+#AS_ECHO($host_cpu)
+
+# flag icc on 32 bit platform
+#AS_IF([test $CC = "icc"], [AS_ECHO("checking for intel compiler ... $CC")])
+#AS_IF([test $host_cpu = "i686"], [AS_ECHO("checking 32-bit system ... $host_cpu")])
+#AS_IF([test $CC = "icc" -a $host_cpu = "i686"], [AS_ECHO("established: icc on 32-bit system")])
+#AS_IF([test $CC = "icc"], [withicc=true], [withicc=false])
+AS_IF([test $CC = "icc" -a $host_cpu = "i686"], 
+	    AC_DEFINE([SMALT_AUTOCONF_ICC_OPT], [1], 
+	    [ICC on 32bit: avoid undefined references to __svml_exp2]))
+
+AM_CONDITIONAL([SSE2], [test x$withsse2 = xtrue])
+AM_CONDITIONAL([ICC_NOLIMITH], [test $CC = "icc" -a x$withlimith = xfalse])
+AM_CONDITIONAL([ICC_COMPILER], [test $CC = "icc"])
+AM_CONDITIONAL([WITH_BAMBAMC], [test x$bambamc = xyes])
+AM_CONDITIONAL([WITH_SAMTOOLS], [test x$samtools = xyes])
+AM_CONDITIONAL([WITH_SAMTOOLS_EXEC], [test x$samtoolsexec = xyes])
+AM_CONDITIONAL([WITH_ZLIB], [test x$withzlib = xtrue])
+AM_CONDITIONAL([WITH_TESTALL], [test -e ./test/seqSetIO_test.c])
+#AM_CONDITIONAL([WITH_SAMTOOLS], [test -n "$LIBSAMTOOLS"])
+#AM_COND_IF([ICC_NOLIMITH], [AC_SUBST([AM_CFLAGS], [-D_GCC_LIMITS_H_])])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+AC_TYPE_SIZE_T
+AC_TYPE_INT16_T 
+AC_TYPE_INT32_T
+AC_TYPE_INT64_T 
+AC_TYPE_UINT8_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T 
+AC_TYPE_UINT64_T
+ 
+# Checks for library functions.
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_CHECK_FUNCS([memmove memset sqrt pow strtoul])
+
+AC_CONFIG_FILES([Makefile src/Makefile test/Makefile test/data/Makefile misc/Makefile])
+
+AC_OUTPUT

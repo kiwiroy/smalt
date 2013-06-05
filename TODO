@@ -1,0 +1,33 @@
+o Where there are too many possible alignments, use mate info to reduce
+  number of alignments.
+
+o sample insert distribution differentiated by relative read orientation.
+
+o SW-score neutral (i.e. sw-scor == 0) extension of alignment at edges
+
+o for very long reads, segment and stitch. Alternatively, use variable alignment band width.
+
+o implement vectorised Smith-Waterman for (variable) alignment band.
+
+o implement vectorised Needleman-Wunsch.
+
+o on SAM/BAM input copy header to output along with command line (@CL) and
+  SMALT software version used.
+
+o support gzipped output (zlib)
+
+o Adjust -s automatically when k-mer positions don't fit in 32-bit unsigned
+  integer (indexing a large reference). 
+
+o Possibly change the maximum number of reference sequences allowed (currently 
+  has to fit a 32 bit signed int).
+
+o Use of the '-d' option currently breaks recommendation in SAM/BAM spec that only 
+  one record per segment should have the secondary alignment flag bit (0x100) unset.
+
+o comma separates list in the argument of command line options '-S' and '-f'
+  are truncated when they are reported.
+
+o Flags of SAM/BAM input lines are currently ignored/overwritten. For
+  example, an orphaned read of a mate pair (SAM input) will be output
+  as a single read.

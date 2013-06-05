@@ -1,0 +1,121 @@
+Directory with test data for smalt
+==================================
+
+== Data for sequence_test.py ==
+
+sequence_test_1.fa: bacterial sequence (C. suis)
+sequence_test_2.fa: dummy sequence with 1 residue
+sequence_test_3.fq: 2 FASTQ sequences with 1 residue each
+sequence_test_4.fq: 3 short solexa reads with Ns in them
+
+== Data for alignment_test.py ==
+FullSwatHSxAbi.dat:  Alignment data generated from Sanger sequencing reads of the human X chromosome
+		     using ssaha2 -Ddebug_ali. The output was filtered for cases where the full 
+		     Smith-Waterman routine of crossmatch was used.
+QuickSwatHSxAbi.dat: Like FullSwatHSxAbi.dat but cases where only the Quick Smith-Waterman routine
+		     of crossmatch was used.
+FullSwatSolexa75.dat Like ullSwatHSxAbi.dat but for Solexa/Illumina reads (entire human genome).
+
+== Test output of degenerate hits (output as 'unmapped' with -d 0 as of version 0.3.1 ==
+smalt index -k 11 -s 3 testidx genome_1.fa
+smalt map testidx output_test_1.fa
+-(output)-
+cigar:N:00 output_test_1_seq_multi 0 0 * * 0 0 + 0 *
+cigar:S:22 output_test_1_seq_unique 1 120 + MAL3 661 780 + 120 M 120
+-(end of output)-
+smalt map -d 1 testidx output_test_1.fa
+-(output)-
+cigar:S:00 output_test_1_seq_multi 1 120 + MAL1 643261 643380 + 120 M 120
+cigar:S:00 output_test_1_seq_multi 1 120 + MAL12 34561 34680 + 120 M 120
+cigar:S:60 output_test_1_seq_unique 1 120 + MAL3 661 780 + 120 M 120
+-(end of output)-
+
+== Checking reads that span adjacent reference sequences  ==
+== when the sequence index is determined last (fragmented ==
+== reference)                                             ==
+smalt index -k 11 -s 1 test contig.fq 
+smalt map test contig.fq
+
+
+== Simple test for long kmer words (version 0.4) ==
+smalt index -k 16 -s 7 test ref1.fa
+smalt map test query1.fq
+-(output)-
+cigar:S:60 QUERY1_F 1 150 + REF1 1 150 + 150 M 150
+cigar:S:60 QUERY1_R 150 1 - REF1 1 150 + 150 M 150
+-(end of output)-
+
+
+== Simple test for split reads ==
+split_1.fq, split_2.fq 
+derrived by hand from 
+split_orig_1.fq, split_orig_2.fq (simulated data from genome_1.fa)
+
+smalt map -p ~/tmp/genome_1 split_1.fq split_2.fq
+cigar:A:59 SPLIT_000000000_000000001_1/1 100 61 - MAL14 1060107 1060146 + 40 M 40 
+cigar:S:53 SPLIT_000000000_000000001_1/1 1 58 + MAL14 2573035 2573092 + 58 M 58 
+cigar:A:59 SPLIT_000000000_000000002_1/2 28 100 + MAL14 1059974 1060045 + 65 M 60 I 1 M 12 
+cigar:S:23 SPLIT_000000000_000000002_1/2 25 1 - MAL9 1418385 1418409 + 25 M 25 
+
+cigar:C:57 SPLIT_000000000_000000001_1/1 1 58 + MAL14 2573035 2573092 + 58 M 58 
+cigar:S:10 SPLIT_000000000_000000001_1/1 98 68 - MAL14 2340341 2340371 + 28 M 31 
+cigar:C:59 SPLIT_000000000_000000002_1/2 28 100 + MAL14 1059974 1060045 + 65 M 60 I 1 M 12 
+cigar:S:23 SPLIT_000000000_000000002_1/2 25 1 - MAL9 1418385 1418409 + 25 M 25 
+
+
+== Test ouput of degenerate pairs (human genome) ==
+multipair_1.fq, multipair2.fq
+
+SIM_000000202_6_161772005_5_F_100m/1	99	6	161771969	1	100M	6	161772244	375	AAATATATTTTATATATTTATATTTAAAATATATATAAATATATTTTATATATTTATATTTAAAATATATATAAATATATTTTATATATTTATATTTAAA	GGGGGGGGGDGGGGGGGGGGGGGGGD=DGGGGFGGGGGEEGDB?FBCCGGABCA;?@960(7608FDEGEFFE=FC>=D?>ABD=C?ADDEFEB;2-6:-	AS:i:100
+SIM_000000202_6_161772244_5_R_100m/2	147	6	161772244	60	100M	6	161771969	-375	TATAATAATTTAAATATATTTTGATTTATTTTTGCTCTTTCTATAGTGCCACTTACTTGGCTTGGCCAAATTCATAAAACAGGAACTGGGATAGCATATT	,8,/8?DFGFEEA?C?EDD=?EAAEG?FGGFGEEGC557),79=:6==:9C@3.0@<ADGEEGGGGGEFGGGB5AFGGGGGGGGGGGGGGBGGGGGFFFF	AS:i:100
+farm2-head4:benchmark/sm063_l100e05q> grep SIM_000000202_ sm064_hs37k20s13_l100i300e05q_combi.sam
+SIM_000000202_6_161772005_5_F_100m/1	99	6	161772005	5	100M	6	161772244	339	AAATATATTTTATATATTTATATTTAAAATATATATAAATATATTTTATATATTTATATTTAAAATATATATAAATATATTTTATATATTTATATTTAAA	GGGGGGGGGDGGGGGGGGGGGGGGGD=DGGGGFGGGGGEEGDB?FBCCGGABCA;?@960(7608FDEGEFFE=FC>=D?>ABD=C?ADDEFEB;2-6:-	AS:i:100
+SIM_000000202_6_161772244_5_R_100m/2	147	6	161772244	54	100M	6	161772005	-339	TATAATAATTTAAATATATTTTGATTTATTTTTGCTCTTTCTATAGTGCCACTTACTTGGCTTGGCCAAATTCATAAAACAGGAACTGGGATAGCATATT	,8,/8?DFGFEEA?C?EDD=?EAAEG?FGGFGEEGC557),79=:6==:9C@3.0@<ADGEEGGGGGEFGGGB5AFGGGGGGGGGGGGGGBGGGGGFFFF	AS:i:100
+
+== Test ouput of degenerate pairs (P. falciparum) ==
+
+
+
+== Regression tests (../test/regression_test.py) ==
+== mapping against contigs of an assembly ==
+contigs.fa
+	Contigs (data from assemblathon)
+contigs_i3k_1.fq, contigs_i3k_2.fq
+        Mate-pair data - these are from Zemin (who reverse-complemented and
+	swapped 1 and 2 in order to get paired-end mapping orientation. I 
+	reversed this process to get the original mate-pair data).	
+
+from Zemin's email:
+/popper/scratch01/assembly/zn1/spain/assemblathon/test_scarpa
+ref: phusion-fermi-rename.fasta.scarpa.fa
+single ends: split_0000
+paired ends (really: mate-pair?): speciesA_3000i_mates_1.fastq, speciesA_3000i_mates_2.fastq
+
+
+
+== test consistency of alignment strings for forward/reverse complement ==
+(this is hard coded into consistentRC_test.py)
+consistentRC.fa
+	600 bp cut out from genome_1.fa (P. falciparum)
+consistentRC.fq
+	contrived read generated from consistentRC.fa with extra bases padded
+	two indels and a mismatch
+consistentRC.txt
+	expected explicit alignment and CIGAR string that can be parsed easily
+
+== test splitting of alignments spanning multiple reads ==
+conigs_multisplit.fq single read		
+reference: contigs.fa
+
+
+== test I/O formats ==
+hs37chrX.fa
+	Genomic reference sequence of human chromosome X
+hs37chrXtrunk.fa
+	first half (approx.) of hs37chrX.fa
+hs37l100i300e05q_1.fq, hs37l100i300e05q_2.fq, 
+hs37l100i300e05q.sam, hs37l100i300e05q.bam
+	2x100 bp paired-end reads (~5000 pairs) simulated from the human genome
+	including base qualities from an early HiSeq run, mapped by BWA.
+
+hs37chrXtrunk.fa.gz

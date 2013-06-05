@@ -1,0 +1,40 @@
+SMALT aligns DNA sequencing reads with a reference genome.  
+
+
+Supported Sequencing Platforms
+==============================
+Reads from a wide range of sequencing platforms can be processed, for
+example Illumina, Roche-454, Ion Torrent, PacBio or ABI-Sanger. Paired
+reads are supported. There is no support for SOLiD reads.
+
+
+Strategy
+========
+The software employs a hash index of short words of up to 20
+nucleotides sampled at equidistant steps along the reference genome.
+For each sequencing read, potentially matching segments in the
+reference genome are identified from seed matches in the index and
+subsequently aligned with the read using dynamic programming.
+
+
+Documentation
+=============
+http://www.sanger.ac.uk/resources/software/smalt/
+
+
+Installation
+============
+./configure
+make
+make install
+
+
+Optional Prerequisites
+======================
+
+If you would like to use SAM/BAM as input or BAM as ouput file format,
+download and install German Tischler's BAMBAM library from
+ftp://ftp.sanger.ac.uk/pub/users/gt1/
+
+Without this library, SMALT expects (possibly gzipped) FASTA/FASTQ
+files as input.
