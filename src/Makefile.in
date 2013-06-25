@@ -37,7 +37,10 @@ build_triplet = @build@
 host_triplet = @host@
 @SSE2_TRUE@am__append_1 = swsimd.c swsimd.h	
 bin_PROGRAMS = smalt$(EXEEXT)
-@WITH_ZLIB_TRUE@am__append_2 = -lz	
+@ICC_NOLIMITH_TRUE@@SSE2_TRUE@am__append_2 = -xO -D_GCC_LIMITS_H_
+@ICC_COMPILER_TRUE@@ICC_NOLIMITH_FALSE@@SSE2_TRUE@am__append_3 = -xO
+@ICC_COMPILER_FALSE@@ICC_NOLIMITH_FALSE@@SSE2_TRUE@am__append_4 = -msse2 
+@WITH_ZLIB_TRUE@am__append_5 = -lz	
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -53,8 +56,8 @@ AR = ar
 ARFLAGS = cru
 libseq_a_AR = $(AR) $(ARFLAGS)
 libseq_a_LIBADD =
-am_libseq_a_OBJECTS = elib.$(OBJEXT) filio.$(OBJEXT) \
-	sequence.$(OBJEXT)
+am_libseq_a_OBJECTS = libseq_a-elib.$(OBJEXT) libseq_a-filio.$(OBJEXT) \
+	libseq_a-sequence.$(OBJEXT)
 libseq_a_OBJECTS = $(am_libseq_a_OBJECTS)
 libsgm_a_AR = $(AR) $(ARFLAGS)
 libsgm_a_DEPENDENCIES = libseq.a
@@ -115,9 +118,6 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
-CXX = @CXX@
-CXXDEPMODE = @CXXDEPMODE@
-CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -168,7 +168,6 @@ abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
 ac_ct_CC = @ac_ct_CC@
-ac_ct_CXX = @ac_ct_CXX@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -220,6 +219,8 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @ICC_NOLIMITH_TRUE@AM_CFLAGS = -D_GCC_LIMITS_H_
+@APPLE_64BIT_TRUE@APPLECFLAGS = -m64 -D_FILE_OFFSET_BITS=64
+@APPLE_64BIT_TRUE@APPLELDFLAGS = -pthread 
 ALI_SRC = score.c score.h diffstr.c diffstr.h alibuffer.c alibuffer.h \
 	alibuffer_struct.h alignment.c alignment.h $(am__append_1)
 SGM_SRC = sort.c sort.h array.c array.h vdef.h interval.c interval.h \
@@ -233,16 +234,16 @@ MAP_SRC = results.c results.h randef.h \
 
 noinst_LIBRARIES = libseq.a libsgm.a
 libseq_a_SOURCES = elib.c elib.h filio.c filio.h sequence.c sequence.h
+libseq_a_CFLAGS = ${APPLECFLAGS}
 libsgm_a_SOURCES = ${ALI_SRC} ${SGM_SRC}
-@ICC_COMPILER_FALSE@@ICC_NOLIMITH_FALSE@@SSE2_TRUE@libsgm_a_CFLAGS = -msse2
-@ICC_COMPILER_TRUE@@ICC_NOLIMITH_FALSE@@SSE2_TRUE@libsgm_a_CFLAGS = -xO
-@ICC_NOLIMITH_TRUE@@SSE2_TRUE@libsgm_a_CFLAGS = -xO -D_GCC_LIMITS_H_
+libsgm_a_CFLAGS = ${APPLECFLAGS} $(am__append_2) $(am__append_3) \
+	$(am__append_4)
 libsgm_a_LIBADD = libseq.a
 smalt_SOURCES = smalt.c menu.h menu.c threads.h threads.c infmt.c infmt.h ${MAP_SRC}
-smalt_CFLAGS = $(BAMBAMC_INCL)
-smalt_LDFLAGS = $(BAMBAMC_LDFLG) -static 
+smalt_CFLAGS = $(BAMBAMC_INCL) ${APPLECFLAGS}
+smalt_LDFLAGS = $(BAMBAMC_LDFLG) ${APPLELDFLAGS} #-static 
 smalt_LDADD = libsgm.a libseq.a $(BAMBAMC_DEPS) -lm -lpthread \
-	$(am__append_2)
+	$(am__append_5)
 all: all-am
 
 .SUFFIXES:
@@ -335,8 +336,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elib.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filio.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libseq_a-elib.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libseq_a-filio.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libseq_a-sequence.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsgm_a-alibuffer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsgm_a-alignment.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsgm_a-array.Po@am__quote@
@@ -348,7 +350,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsgm_a-segment.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsgm_a-sort.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsgm_a-swsimd.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sequence.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smalt-infmt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smalt-insert.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smalt-menu.Po@am__quote@
@@ -372,6 +373,48 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+
+libseq_a-elib.o: elib.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libseq_a_CFLAGS) $(CFLAGS) -MT libseq_a-elib.o -MD -MP -MF $(DEPDIR)/libseq_a-elib.Tpo -c -o libseq_a-elib.o `test -f 'elib.c' || echo '$(srcdir)/'`elib.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libseq_a-elib.Tpo $(DEPDIR)/libseq_a-elib.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='elib.c' object='libseq_a-elib.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libseq_a_CFLAGS) $(CFLAGS) -c -o libseq_a-elib.o `test -f 'elib.c' || echo '$(srcdir)/'`elib.c
+
+libseq_a-elib.obj: elib.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libseq_a_CFLAGS) $(CFLAGS) -MT libseq_a-elib.obj -MD -MP -MF $(DEPDIR)/libseq_a-elib.Tpo -c -o libseq_a-elib.obj `if test -f 'elib.c'; then $(CYGPATH_W) 'elib.c'; else $(CYGPATH_W) '$(srcdir)/elib.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libseq_a-elib.Tpo $(DEPDIR)/libseq_a-elib.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='elib.c' object='libseq_a-elib.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libseq_a_CFLAGS) $(CFLAGS) -c -o libseq_a-elib.obj `if test -f 'elib.c'; then $(CYGPATH_W) 'elib.c'; else $(CYGPATH_W) '$(srcdir)/elib.c'; fi`
+
+libseq_a-filio.o: filio.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libseq_a_CFLAGS) $(CFLAGS) -MT libseq_a-filio.o -MD -MP -MF $(DEPDIR)/libseq_a-filio.Tpo -c -o libseq_a-filio.o `test -f 'filio.c' || echo '$(srcdir)/'`filio.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libseq_a-filio.Tpo $(DEPDIR)/libseq_a-filio.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='filio.c' object='libseq_a-filio.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libseq_a_CFLAGS) $(CFLAGS) -c -o libseq_a-filio.o `test -f 'filio.c' || echo '$(srcdir)/'`filio.c
+
+libseq_a-filio.obj: filio.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libseq_a_CFLAGS) $(CFLAGS) -MT libseq_a-filio.obj -MD -MP -MF $(DEPDIR)/libseq_a-filio.Tpo -c -o libseq_a-filio.obj `if test -f 'filio.c'; then $(CYGPATH_W) 'filio.c'; else $(CYGPATH_W) '$(srcdir)/filio.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libseq_a-filio.Tpo $(DEPDIR)/libseq_a-filio.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='filio.c' object='libseq_a-filio.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libseq_a_CFLAGS) $(CFLAGS) -c -o libseq_a-filio.obj `if test -f 'filio.c'; then $(CYGPATH_W) 'filio.c'; else $(CYGPATH_W) '$(srcdir)/filio.c'; fi`
+
+libseq_a-sequence.o: sequence.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libseq_a_CFLAGS) $(CFLAGS) -MT libseq_a-sequence.o -MD -MP -MF $(DEPDIR)/libseq_a-sequence.Tpo -c -o libseq_a-sequence.o `test -f 'sequence.c' || echo '$(srcdir)/'`sequence.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libseq_a-sequence.Tpo $(DEPDIR)/libseq_a-sequence.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sequence.c' object='libseq_a-sequence.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libseq_a_CFLAGS) $(CFLAGS) -c -o libseq_a-sequence.o `test -f 'sequence.c' || echo '$(srcdir)/'`sequence.c
+
+libseq_a-sequence.obj: sequence.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libseq_a_CFLAGS) $(CFLAGS) -MT libseq_a-sequence.obj -MD -MP -MF $(DEPDIR)/libseq_a-sequence.Tpo -c -o libseq_a-sequence.obj `if test -f 'sequence.c'; then $(CYGPATH_W) 'sequence.c'; else $(CYGPATH_W) '$(srcdir)/sequence.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libseq_a-sequence.Tpo $(DEPDIR)/libseq_a-sequence.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sequence.c' object='libseq_a-sequence.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libseq_a_CFLAGS) $(CFLAGS) -c -o libseq_a-sequence.obj `if test -f 'sequence.c'; then $(CYGPATH_W) 'sequence.c'; else $(CYGPATH_W) '$(srcdir)/sequence.c'; fi`
 
 libsgm_a-score.o: score.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsgm_a_CFLAGS) $(CFLAGS) -MT libsgm_a-score.o -MD -MP -MF $(DEPDIR)/libsgm_a-score.Tpo -c -o libsgm_a-score.o `test -f 'score.c' || echo '$(srcdir)/'`score.c

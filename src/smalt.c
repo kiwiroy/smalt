@@ -1142,8 +1142,10 @@ static int mapReads(ErrMsg *errmsgp,
   THREAD_CHECKF *checkf = NULL;
   THREAD_CMPF *cmpf = NULL;
   int arg_fac = SMALT_THREAD_ARGFAC_NOSRT;
-  threadsInit();
-
+  if ((errcode = threadsInit())) {
+    ERRMSGNO(errmsgp, errcode);
+    return errcode;
+  }
   if (nthreads < 0) 
     ERRMSGNO(errmsgp, ERRCODE_ASSERT);
 

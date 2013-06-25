@@ -2,6 +2,18 @@
 = SMALT release history =
 =========================
 
+Version 0.7.4.4 (25 June 2013)
+==============================
+
+- Fixed broken multi-threaded execution (option -n) on MacOSX (broken
+  since version 0.6.2). Program execution stopped prematurely and no
+  mappings were output. This was caused by the use of unnamed POSIX
+  semaphores (<semaphore.h>) that are not implemented on MacOSX.
+
+- Modified configure script to generate 64-bit binaries on MacOSX Darwin
+  on x86_64 architecture.
+
+
 Version 0.7.4.3 (20 June 2013)
 ==============================
 

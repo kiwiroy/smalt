@@ -7,6 +7,11 @@ if ICC_NOLIMITH
 AM_CFLAGS = -D_GCC_LIMITS_H_
 endif
 
+if APPLE_64BIT
+APPLECFLAGS = -m64 -D_FILE_OFFSET_BITS=64
+APPLELDFLAGS = -pthread 
+endif
+
 ALI_SRC = score.c score.h diffstr.c diffstr.h \
 	  alibuffer.c alibuffer.h alibuffer_struct.h \
 	  alignment.c alignment.h
@@ -28,23 +33,26 @@ bin_PROGRAMS = smalt
 noinst_LIBRARIES = libseq.a libsgm.a
 
 libseq_a_SOURCES = elib.c elib.h filio.c filio.h sequence.c sequence.h
+libseq_a_CFLAGS = ${APPLECFLAGS}
+
 libsgm_a_SOURCES = ${ALI_SRC} ${SGM_SRC}
+libsgm_a_CFLAGS = ${APPLECFLAGS}
 if SSE2
 if ICC_NOLIMITH
-libsgm_a_CFLAGS = -xO -D_GCC_LIMITS_H_
+libsgm_a_CFLAGS += -xO -D_GCC_LIMITS_H_
 else
 if ICC_COMPILER
-libsgm_a_CFLAGS = -xO
+libsgm_a_CFLAGS += -xO
 else
-libsgm_a_CFLAGS = -msse2
+libsgm_a_CFLAGS += -msse2 
 endif
 endif
 endif
 libsgm_a_LIBADD = libseq.a
 
 smalt_SOURCES = smalt.c menu.h menu.c threads.h threads.c infmt.c infmt.h ${MAP_SRC}
-smalt_CFLAGS = $(BAMBAMC_INCL)
-smalt_LDFLAGS = $(BAMBAMC_LDFLG) -static 
+smalt_CFLAGS = $(BAMBAMC_INCL) ${APPLECFLAGS}
+smalt_LDFLAGS = $(BAMBAMC_LDFLG) ${APPLELDFLAGS} #-static 
 smalt_LDADD = libsgm.a libseq.a $(BAMBAMC_DEPS) -lm -lpthread #-lrt
 if WITH_ZLIB
 smalt_LDADD += -lz	

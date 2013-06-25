@@ -141,6 +141,7 @@ extern "C"
     ERRCODE_SEQNTSMBL = 85,    /* Nucleotide symbol is not a letter */
     ERRCODE_SEQNUMSET = 86,    /* Number of sequences exceeds limit */
     ERRCODE_BAMBAM = 87,       /* bambamc library returns error */
+    ERRCODE_SEMOPEN = 88,      /* named semaphore could not be opened */
   };
 
   typedef struct _ErrMsg ErrMsg;

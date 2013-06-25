@@ -4,7 +4,7 @@ sequence_test_data = sequence_test_1.fa.gz \
 		sequence_test_3.fq.gz \
 		sequence_test_4.fq.gz
 
-iofrom_test_data = hs37chrXtrunc.fa.gz \
+ioform_test_data = hs37chrXtrunc.fa.gz \
 		hs37l100i300e05q_trunc_nonam_1.fq.gz \
 		hs37l100i300e05q_trunc_nonam_2.fq.gz \
 		hs37l100i300e05q_trunc.bam \
@@ -20,7 +20,7 @@ reference_genomes = contigs.fa.gz genome_1.fa.gz
 
 dist_data_DATA = ${sequence_test_data} \
 		${reference_genomes} \
-		${iofrom_test_data} \
+		${ioform_test_data} \
 		${ouform_cigar_test_data} \
 		${sample_test_data} \
 		${cigar_test_data}

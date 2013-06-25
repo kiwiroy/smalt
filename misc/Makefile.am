@@ -5,6 +5,11 @@ else
 AM_CFLAGS = -I../src/
 endif
 
+if APPLE_64BIT
+APPLECFLAGS = -m64 -D_FILE_OFFSET_BITS=64
+AM_CFLAGS += ${APPLECFLAGS}
+endif
+
 if WITH_ZLIB
 ZLIB_LDFLAG= -lz
 else
@@ -41,7 +46,7 @@ basqcol_SOURCES = basqcol.c basqual.c basqual.h
 if ICC_NOLIMITH
 basqcol_CFLAGS = -D_GCC_LIMITS_H_ -I../src
 else
-basqcol_CFLAGS = -I../src
+basqcol_CFLAGS = -I../src ${APPLECFLAGS}
 endif
 basqcol_LDADD = ../src/libseq.a $(ZLIB_LDFLAG)
 
@@ -50,7 +55,7 @@ simqual_SOURCES = simqual.c basqual.c basqual.h ../src/diffstr.c ../src/diffstr.
 if ICC_NOLIMITH
 simqual_CFLAGS = -D_GCC_LIMITS_H_ -I../src
 else
-simqual_CFLAGS = -I../src
+simqual_CFLAGS = -I../src ${APPLECFLAGS}
 endif
 simqual_LDADD = ../src/libseq.a -lm $(ZLIB_LDFLAG)
 

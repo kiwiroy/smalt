@@ -34,6 +34,7 @@ extern "C"
 #define THREADS_H
 
   //#define threads_debug
+
 #include <stdint.h>
 #include "elib.h"
 
@@ -78,7 +79,7 @@ extern "C"
    ********************** Methods of Type ThreadStore *************************
    ****************************************************************************/
 
-  void threadsInit(void);
+  int threadsInit(void);
   /**< Initializer. Has to be called before anything else.
    */
   

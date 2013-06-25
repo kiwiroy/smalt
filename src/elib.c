@@ -256,6 +256,8 @@ const char *errMsgString(int errcode)
     return "Number of sequences exceeds limit";
   case ERRCODE_BAMBAM:
     return "bambamc library returns error";
+  case ERRCODE_SEMOPEN:
+    return "named semaphore could not be opened";
   default:
     return "unknown error code";
   }

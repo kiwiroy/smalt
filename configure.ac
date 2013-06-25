@@ -17,8 +17,8 @@
 #   AC_OUTPUT
 # ######################################################
 
-AC_PREREQ([2.68])
-AC_INIT([smalt],[0.7.4.3],[hp3@sanger.ac.uk],[smalt],[http:/www.sanger.ac.uk/resources/software/smalt])
+AC_PREREQ([2.65])
+AC_INIT([smalt],[0.7.4.4],[hp3@sanger.ac.uk],[smalt],[http://smalt.sourceforge.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([src/elib.c])
 AC_CONFIG_HEADERS([config.h:config.hin])
@@ -28,7 +28,14 @@ AC_CONFIG_HEADERS([config.h:config.hin])
 AC_PROG_CC
 
 # C++ compiler used for linking with c++ library bambam
-AC_PROG_CXX
+#AC_PROG_CXX
+
+# check wether compiler supports '-c -o' together
+# this macro is obsolete with autoconf 1.14 
+# AM_PROG_CC_C_O
+
+# we use a archiver, so add support for unusual archivers
+# AM_PROG_AR
 
 # find pkg-config tests
 PKG_PROG_PKG_CONFIG
@@ -40,9 +47,8 @@ PKG_PROG_PKG_CONFIG
 # set LDFLAGS defaults explicitly
 #AC_SUBST([LDFLAGS],[-static])
 
-##AM_PROG_CC_C_O
 AC_PROG_RANLIB
-AM_PATH_PYTHON([2.3],,[:])
+AM_PATH_PYTHON([2.7],,[:])
 
 # Checks for programs
 
@@ -128,15 +134,25 @@ AC_SUBST([BAMBAMC_LDFLG], ["$bblibdirs"])
 AC_SUBST([BAMBAMC_DEPS],  ["$bblibdeps"])
 
 # check for zlib
-AC_CHECK_LIB([z], gzread,
+AC_CHECK_LIB([z], [gzread],
              [withzlib=true;
               AC_DEFINE([HAVE_ZLIB], [1], [Define to 1 if you have zlib])],
 	      [withzlib=false],)
 
+# POSIX threads API with only named but not unnamed semaphores (MacOSX)
+#AC_CHECK_LIB
+#	(
+#	[pthread],
+#	[sem_getvalue],
+#	[],
+#	[AC_DEFINE([HAVE_POSIX_SEAPHOR_NAMEDONLY], [1], [Define to 1 if unnamed semaphores are not supported])
+#	)
+
 # Checks for header files.
 AC_HEADER_STDC
+
 # AC_CHECK_HEADERS([limits.h stdio.h stdlib.h string.h math.h])
-AC_CHECK_HEADERS([math.h pthread.h float.h stddef.h limits.h])
+AC_CHECK_HEADERS([math.h pthread.h semaphore.h float.h stddef.h stdint.h])
 
 # some versions of icc on 64-bit can't compile limits.h 
 AC_CHECK_HEADER([limits.h], [withlimith=true], [withlimith=false], [])
@@ -151,7 +167,18 @@ AC_CHECK_HEADER([emmintrin.h],
 
 #establish 32-bit vs 64-bit -> $host_cpu
 AC_CANONICAL_HOST
+#AS_ECHO($host)
 #AS_ECHO($host_cpu)
+#AS_ECHO($host_vendor)
+#AS_ECHO($host_os)
+
+AC_CANONICAL_BUILD
+#AS_ECHO($build)
+#AS_ECHO($build_cpu)
+
+# flag MacOSX Darwin which seems to build 32-bit binaries by default
+AS_CASE([$build_os], [*darwin*], [build_macosx_darwin=true], [build_macosx_darwin=false])
+AS_IF([test x$build_macosx_darwin = xtrue -a $host_cpu = x86_64], [AS_ECHO("compiling on darwin for x86_64 ...")])
 
 # flag icc on 32 bit platform
 #AS_IF([test $CC = "icc"], [AS_ECHO("checking for intel compiler ... $CC")])
@@ -172,23 +199,19 @@ AM_CONDITIONAL([WITH_ZLIB], [test x$withzlib = xtrue])
 AM_CONDITIONAL([WITH_TESTALL], [test -e ./test/seqSetIO_test.c])
 #AM_CONDITIONAL([WITH_SAMTOOLS], [test -n "$LIBSAMTOOLS"])
 #AM_COND_IF([ICC_NOLIMITH], [AC_SUBST([AM_CFLAGS], [-D_GCC_LIMITS_H_])])
+AM_CONDITIONAL([APPLE_64BIT], [test x$build_macosx_darwin = xtrue -a $host_cpu = x86_64])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
-AC_TYPE_INT16_T 
-AC_TYPE_INT32_T
-AC_TYPE_INT64_T 
-AC_TYPE_UINT8_T
-AC_TYPE_UINT16_T
-AC_TYPE_UINT32_T 
-AC_TYPE_UINT64_T
- 
-# Checks for library functions.
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
-AC_CHECK_FUNCS([memmove memset sqrt pow strtoul])
+#AC_TYPE_INT8_T
+
+
+# Checks for functions.
+#AC_FUNC_MALLOC
+#AC_FUNC_REALLOC
+#AC_CHECK_FUNCS([memmove memset strtoul]) 
 
 AC_CONFIG_FILES([Makefile src/Makefile test/Makefile test/data/Makefile misc/Makefile])
 

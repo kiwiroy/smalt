@@ -4,7 +4,7 @@
  *****************************************************************************
  *                                                                           *
  *  Copyright (C) 2012 Genome Research Ltd.                                  *
- *                                                                           *        
+ *                                                                           *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                              *
  *                                                                           *
  *  This file is part of SMALT.                                              *
@@ -30,6 +30,13 @@
 
 #include "threads.h"
 
+#ifdef __APPLE__
+#define macosx_semaphores
+/* use named semaphores for MacOSX Posix threads API 
+* unnamed semaphores are not supported */
+#endif
+
+
 enum TRHEAD_CONST {
   THREAD_NUM_MAX = 64,  /**< Maximum number of threads to be spawned */
   BUFFARG_NUM_FAC_DEFAULT  = 8, /**< Number of buffered thread arguments/results
@@ -38,6 +45,9 @@ enum TRHEAD_CONST {
   THREAD_BUFF_NUM = 3,  /**< Number of buffers for arguments that are passed between
 			 * threads. */
   THREAD_TASK_NUM = 4,   /**< Number of tasks available */
+#ifdef macosx_semaphores
+  NAMED_SEMA_PERM = 0644, /**< user: read + write, others/group: read */
+#endif
 };
 
 enum THREADS_STATUS_FLAGS {
@@ -56,15 +66,17 @@ enum THREAD_ARGUMENT_FLAGS {
 };
 
 enum THREAD_BUFFER_TYPES {
-  THRBUFTYP_EMPTY,
-  THRBUFTYP_LOADED,
-  THRBUFTYP_PROCESSED,
-  THRBUFTYP_UNKNOWN
+  THRBUFTYP_EMPTY = 0,
+  THRBUFTYP_LOADED = 1,
+  THRBUFTYP_PROCESSED = 2,
+  THRBUFTYP_UNKNOWN = 3,
+  THRBUFTYP_NUM = 4
 };
 
 typedef uint8_t BOOL_t;
 typedef uint8_t THRSTATUSFLG_t;
 typedef uint8_t THRARGFLG_t;
+typedef uint8_t THRBUFTYP_t; /* one of THREAD_BUFFER_TYPES */
 typedef void *(PTHREAD_WRAPPER_FUNC)(void *);
 
 typedef struct _BUFFARG { /**< Arguments passed between threads */
@@ -82,11 +94,14 @@ typedef struct _ARGBUFF { /**< Buffer for arguments to be passed between threads
 			 * 0 signals termination */
   BUFFARG *firstp;
   BUFFARG *lastp;
-  sem_t sema;            /* semaphore, keeps track of how many arguments are in buffer */
-  pthread_mutex_t mutex; /* lock access to shared data */
-#ifdef threads_debug
-  uint8_t buftyp;
+#ifdef macosx_semaphores
+  sem_t *sema;
+#else
+  sem_t sema; 
+  /* semaphore, keeps track of how many arguments are in buffer */
 #endif
+  pthread_mutex_t mutex; /* lock access to shared data */
+  THRBUFTYP_t buftyp;    /* one of THREAD_BUFFER_TYPES */
 } ARGBUFF;
 
 typedef struct _THREADTASK {
@@ -141,6 +156,22 @@ static int getBufArgNum(const ARGBUFF *fifop)
   return n;
 }
 
+static const char *getTaskTyp(const THREADARG *p)
+{
+  switch(p->task) {
+  case THRTASK_ARGBUF:
+    return "argument";
+  case THRTASK_INPUT:
+    return "input";
+  case THRTASK_PROC:
+    return "processing";
+  case THRTASK_OUTPUT:
+    return "output";
+  default:
+    return "unknown";
+  }
+}
+
 static const char *getBufTyp(const ARGBUFF *fifop)
 {
   switch (fifop->buftyp) {
@@ -155,20 +186,21 @@ static const char *getBufTyp(const ARGBUFF *fifop)
     return "unknown";
   }
 }
+#endif
 
-static const char *getTaskTyp(const THREADARG *p)
+#ifdef macosx_semaphores
+static const char *getBufSemaphorNam(THRBUFTYP_t buftyp)
 {
-  switch(p->task) {
-  case THRTASK_ARGBUF:
-    return "argument";
-  case THRTASK_INPUT:
-    return "input";
-  case THRTASK_PROC:
-    return "processing";
-  case THRTASK_OUTPUT:
-    return "output";
+  switch (buftyp) {
+  case THRBUFTYP_EMPTY:
+    return "/sem_empty";
+  case THRBUFTYP_LOADED:
+    return "/sem_load";
+  case THRBUFTYP_PROCESSED:
+    return "/sem_proc";
+  case THRBUFTYP_UNKNOWN:
   default:
-    return "unknown";
+    return "/sem_unknown";
   }
 }
 #endif
@@ -215,9 +247,15 @@ static int pushARGBUFF(ARGBUFF *fifop, BUFFARG *argp)
     na = getBufArgNum(fifop);
 #endif
     pthread_mutex_unlock(&fifop->mutex);
+#ifdef macosx_semaphores 
+    sem_post(fifop->sema);
+#else
     sem_post(&fifop->sema);
-#ifdef threads_debug
+#endif
+#ifdef threads_debug 
+#ifndef macosx_semaphores 
   sem_getvalue(&fifop->sema, &ns);
+#endif
   pthread_mutex_lock(&mutex_stdout);
   printf("THREAD_DEBUG:thread[%hi]: pushed to '%s' buffer: sema = %i, nThreadsPushing = %i , n_args = %i, errcode = %i ...\n", 
 	 argp->threadno, getBufTyp(fifop), ns, fifop->nThreadsPushing, na, errcode);
@@ -240,18 +278,25 @@ static int pullARGBUFF(BUFFARG **argp,
   int ns = 0;
   int na = 0;
 #endif
-#ifdef threads_debug
+
+#ifdef threads_debug 
+#ifndef macosx_semaphores
   sem_getvalue(&fifop->sema, &ns);
+#endif
   pthread_mutex_lock(&mutex_stdout);
   printf("THREAD_DEBUG:pull from '%s' buffer: waiting (sema = %i, nThreadsPushing = %i) ...\n", 
 	 getBufTyp(fifop), ns, fifop->nThreadsPushing);
   pthread_mutex_unlock(&mutex_stdout);
 #endif
-
+#ifdef macosx_semaphores
+  sem_wait(fifop->sema);
+#else
   sem_wait(&fifop->sema);
-
+#endif
 #ifdef threads_debug
+#ifndef macosx_semaphores
   sem_getvalue(&fifop->sema, &ns);
+#endif
   pthread_mutex_lock(&mutex_stdout);
   printf("THREAD_DEBUG:pull from '%s' buffer: finished waiting (sema = %i, nThreadsPushing = %i) ...\n", 
 	 getBufTyp(fifop), ns, fifop->nThreadsPushing);
@@ -280,10 +325,16 @@ static int pullARGBUFF(BUFFARG **argp,
 #endif
   pthread_mutex_unlock(&fifop->mutex);
   if (errcode == ERRCODE_PTHRTERMSIG)
+#ifdef macosx_semaphores
+    sem_post(fifop->sema);
+#else
     sem_post(&fifop->sema); /* release other threads waiting to pull */
+#endif
 
-#ifdef threads_debug
+#ifdef threads_debug 
+#ifndef macosx_semaphores
   sem_getvalue(&fifop->sema, &ns);
+#endif
   pthread_mutex_lock(&mutex_stdout);
   printf("THREAD_DEBUG:finished pulling from '%s' buffer: sema = %i, nThreadsPushing = %i, n_args = %i, errcode = %i ...\n", 
 	 getBufTyp(fifop), ns, fifop->nThreadsPushing, na, errcode);
@@ -293,14 +344,29 @@ static int pullARGBUFF(BUFFARG **argp,
   return errcode;
 }
 
-static int initARGBUFF(ARGBUFF *fifop)
+static int initARGBUFF(ARGBUFF *fifop, THRBUFTYP_t buftyp)
 /**< Initialise buffer */
 {
   int errcode;
+  fifop->buftyp = buftyp;
+#ifdef macosx_semaphores
+  fifop->sema = sem_open(getBufSemaphorNam(buftyp), O_CREAT, NAMED_SEMA_PERM, 0);
+  if (SEM_FAILED == fifop->sema)
+    return ERRCODE_SEMOPEN;
+#else
   sem_init(&fifop->sema, 0, 0);
+#endif
   pthread_mutex_init(&fifop->mutex, NULL);
   errcode = pushARGBUFF(fifop, NULL);
   return errcode;
+}
+
+static void cleanupARGBUFF(ARGBUFF *fifop)
+{
+  pthread_mutex_destroy(&fifop->mutex);
+#ifdef macosx_semaphores
+  sem_close(fifop->sema);
+#endif
 }
 
 static int signOnARGBUFF(ARGBUFF *fifop)
@@ -330,7 +396,11 @@ static int signOffARGBUFF(ARGBUFF *fifop)
   n = --(fifop->nThreadsPushing);
   pthread_mutex_unlock(&fifop->mutex);
   if (n <= 0) {
-     sem_post(&fifop->sema);
+#ifdef macosx_semaphores
+    sem_post(fifop->sema);
+#else
+    sem_post(&fifop->sema);
+#endif
   }
   
 #ifdef threads_debug
@@ -338,7 +408,7 @@ static int signOffARGBUFF(ARGBUFF *fifop)
   printf("THREAD_DEBUG:signed off buffer '%s' (%i) ...\n", getBufTyp(fifop), n);
   pthread_mutex_unlock(&mutex_stdout);
 #endif
-  
+
   return n;
 }
 
@@ -353,7 +423,11 @@ static void termARGBUFF(ARGBUFF *fifop)
   pthread_mutex_lock(&fifop->mutex);
   fifop->nThreadsPushing = 0;
   pthread_mutex_unlock(&fifop->mutex);
-  sem_post(&fifop->sema);
+#ifdef macosx_semaphores
+    sem_post(fifop->sema);
+#else
+    sem_post(&fifop->sema);
+#endif
 }
 
 /****************************************************************************
@@ -563,27 +637,28 @@ static void *tprocf(void *p)
  ***************************** Public Methods *******************************
  ****************************************************************************/
 
-void threadsInit(void)
+int threadsInit(void)
 {
+  int errcode = ERRCODE_SUCCESS;
   short i;
   Threads.status = 0;
   Threads.threadp = NULL;
   Threads.targp = NULL;
   Threads.buffargp = NULL;
-  for (i=0; i<THREAD_BUFF_NUM; i++) {
-#ifdef threads_debug
+  for (i=0; i<THREAD_BUFF_NUM && ERRCODE_SUCCESS == errcode; i++) {
+    THRBUFTYP_t buftyp = THRBUFTYP_UNKNOWN;
     if (i == 0)
-      Threads.buff[i].buftyp = THRBUFTYP_EMPTY;
+      buftyp = THRBUFTYP_EMPTY;
     else if (i == 1)
-      Threads.buff[i].buftyp = THRBUFTYP_LOADED;
+      buftyp = THRBUFTYP_LOADED;
     else if (i == 2)
-      Threads.buff[i].buftyp = THRBUFTYP_PROCESSED;
+      buftyp = THRBUFTYP_PROCESSED;
     else
-      Threads.buff[i].buftyp = THRBUFTYP_UNKNOWN;     
-#endif
-    initARGBUFF(Threads.buff + i);
+      buftyp = THRBUFTYP_UNKNOWN;     
+    errcode = initARGBUFF(Threads.buff + i, buftyp);
   }
   Threads.status |= THRFLG_INIT;
+  return errcode;
 }
 
 int threadsSetTask(uint8_t task_typ, 
@@ -778,8 +853,15 @@ void threadsCleanup(void)
       (*Threads.tasks[targp->task].cleanf)(targp->errmsgp, targp->p);
       ERRMSG_END(targp->errmsgp)
     }
-    free(Threads.memp);
 
+    for (i=0;i<THREAD_BUFF_NUM; i++) {
+      cleanupARGBUFF(Threads.buff + i);
+    }
+#ifdef maxosx_semaphores
+    for (i = THRBUFTYP_NUM-1; i>=0; i--)
+      sem_unlink(getBufSemaphorNam(i));
+#endif
+    free(Threads.memp);
     free(Threads.buffargp);
     free(Threads.targp);
     free(Threads.threadp);
