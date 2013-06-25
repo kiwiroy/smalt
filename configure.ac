@@ -18,7 +18,7 @@
 # ######################################################
 
 AC_PREREQ([2.68])
-AC_INIT([smalt],[0.7.4.2],[hp3@sanger.ac.uk],[smalt],[http:/www.sanger.ac.uk/resources/software/smalt])
+AC_INIT([smalt],[0.7.4.3],[hp3@sanger.ac.uk],[smalt],[http:/www.sanger.ac.uk/resources/software/smalt])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([src/elib.c])
 AC_CONFIG_HEADERS([config.h:config.hin])

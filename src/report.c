@@ -967,8 +967,6 @@ static int writeREPALIbam(BamBam_BamWriter *bamwriterp,
     }
  
     if ((rmp) && (rmp->status & REPMATEFLG_MAPPED)) {
-      if (rmp->s_start > SEQLEN_MAX)
-	return ERRCODE_OVERFLOW;
       mpos = (SEQLEN_t) rmp->s_start;
       if (rmp->s_idx > INT_MAX)
 	return ERRCODE_OVERFLOW;
@@ -1002,8 +1000,6 @@ static int writeREPALIbam(BamBam_BamWriter *bamwriterp,
 
     qualstr = seqFastqGetConstQualityFactors(sqbufp, NULL, NULL);
 
-    if (rrp->s_start > SEQLEN_MAX)
-      return ERRCODE_OVERFLOW;
     pos = (SEQLEN_t) rrp->s_start;
     if (rrp->q_end > qlen)
       return ERRCODE_ASSERT;
@@ -1045,6 +1041,9 @@ static int writeREPALIbam(BamBam_BamWriter *bamwriterp,
       return errcode;
     qualstr = seqFastqGetConstQualityFactors(sqbufp, NULL, NULL);
   }
+
+  if (pos > ULONG_MAX || mpos > ULONG_MAX)
+    return ERRCODE_OVERFLOW;
 
   if (rrp->status & REPMATEFLG_MAPPED) {
     errcode = diffStrAsView(dvp, diffstr, 
@@ -1240,8 +1239,7 @@ static int writeREPALI(
     int reflen;
     if ((errcode = diffStrCalcSeqLen(NULL, &reflen, target_dfsp->dstrp)))
       return errcode;
-    if ((((SEQLEN_t) target_pos) <= rp->s_start) && 
-	(rp->s_end < ((SEQLEN_t) (target_pos + reflen)))) {
+    if ((target_pos <= rp->s_start) && (rp->s_end < target_pos + reflen)) {
       BOOL_t revflag = (rp->status&REPMATEFLG_REVERSE)? 1:0;
       if (revflag == ((target_flags & TRACKFLG_REVERSE)? 1:0))
 	*isHit = 1;

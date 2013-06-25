@@ -2,6 +2,14 @@
 = SMALT release history =
 =========================
 
+Version 0.7.4.3 (20 June 2013)
+==============================
+
+- Fixed a bug that lead to the program terminating with a "assertion
+  failed" error message when one of the mates of a read pair had a
+  length shorter than the hashed words, but the other could be
+  aligned.
+
 
 Version 0.7.4.2 (05 June 2013)
 ==============================

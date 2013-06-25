@@ -1258,8 +1258,9 @@ static int mapSingleRead(ErrMsg *errmsgp,
    * of coverage */
 
   seqFastqGetConstSequence(readp, &rlen, &cod);
-/*   if (rlen < ktup) /\* consider output of a warning *\/ */
-/*     return ERRCODE_SUCCESS; */
+  if (rlen < ktup) {         /* consider output of a warning */
+    return ERRCODE_SHORTSEQ;
+  }
 
   if (rlen*matchscor > INT_MAX)
     ERRMSGNO(errmsgp, ERRCODE_OVERFLOW);
@@ -1974,59 +1975,65 @@ int rmapPair(ErrMsg *errmsgp,
 	swscor2 > swscor2_restricted ||
 	swscor2 > swscor1) {
       int swscor1_2ndbest = 0;
+#ifdef rmap_finehash_2ndmate
+      SEQLEN_t rlen = 0;
+#endif
       resultSetGetScorStats(rs1p, NULL, NULL, &swscor1_2ndbest, NULL);
 
       if ((errcode = setupInterValFromResultSet(rmp->ivr, d_min, d_max, read2p, read1p,
 						htp, ssp, rs2p)))
-      ERRMSGNO(errmsgp, errcode);
+	ERRMSGNO(errmsgp, errcode);
       interValPrune(rmp->ivr);
 
 #ifdef rmap_finehash_2ndmate
-      errcode = setupFineHashTable(rmp->htflyp, bufp->sqbfp, 
-				   ssp, rmp->ivr, htp, codecp);
-      if ((errcode) && errcode != ERRCODE_MAXKPOS)
-	ERRMSGNO(errmsgp, errcode);
-
-      if (!(errcode)) {
-
-	if ((errcode = initRMAPINFO(rmp->mflyp, min_basqval, 0, 0, 
-				    read1p, rmp->htflyp)) &&
-	    errcode != ERRCODE_SHORTSEQ)
+      seqFastqGetConstSequence(read1p, &rlen, NULL);
+      if (hashTableGetKtupLen(htp, NULL) <= rlen) {
+	errcode = setupFineHashTable(rmp->htflyp, bufp->sqbfp, 
+				     ssp, rmp->ivr, htp, codecp);
+	if ((errcode) && errcode != ERRCODE_MAXKPOS)
 	  ERRMSGNO(errmsgp, errcode);
 
-	mapSingleRead(errmsgp,
-		      bufp, 
-		      rs1p, 
+	if (!(errcode)) {
+
+	  if ((errcode = initRMAPINFO(rmp->mflyp, min_basqval, 0, 0, 
+				    read1p, rmp->htflyp)) &&
+	      errcode != ERRCODE_SHORTSEQ)
+	    ERRMSGNO(errmsgp, errcode);
+
+	  mapSingleRead(errmsgp,
+			bufp, 
+			rs1p, 
 #ifdef RESULTS_TRACKER
-		      trk1p,
+			trk1p,
 #endif
 #ifdef hashhit_dump_sortarray
-		      NULL,
-		      NULL,
+			NULL,
+			NULL,
 #endif
-		      rmp->mflyp, 
-		      rp1p, read1p, ktuple_maxhit, mincov1,
-		      swscor1_2ndbest, MINSCOR_BELOW_MAX_BEST,
-		      target_depth, max_depth, rmapflg, 
-		      rsfp, rmp->htflyp, ssp, codecp, rmp->ivr);
-      } else {
+			rmp->mflyp, 
+			rp1p, read1p, ktuple_maxhit, mincov1,
+			swscor1_2ndbest, MINSCOR_BELOW_MAX_BEST,
+			target_depth, max_depth, rmapflg, 
+			rsfp, rmp->htflyp, ssp, codecp, rmp->ivr);
+	} else {
 #endif //#ifdef rmap_finehash_2ndmate
-	mapSingleRead(errmsgp,
-		      bufp, 
-		      rs1p, 
+	  mapSingleRead(errmsgp,
+			bufp, 
+			rs1p, 
 #ifdef RESULTS_TRACKER
-		      trk1p,
+			trk1p,
 #endif
 #ifdef hashhit_dump_sortarray
-		      NULL,
-		      NULL,
+			NULL,
+			NULL,
 #endif
-		      rr1p,
-		      rp1p, read1p, ktuple_maxhit, mincov1,
-		      swscor1_2ndbest, MINSCOR_BELOW_MAX_BEST,
-		      target_depth, max_depth, rmapflg, 
-		      rsfp, htp, ssp, codecp, rmp->ivr);
+			rr1p,
+			rp1p, read1p, ktuple_maxhit, mincov1,
+			swscor1_2ndbest, MINSCOR_BELOW_MAX_BEST,
+			target_depth, max_depth, rmapflg, 
+			rsfp, htp, ssp, codecp, rmp->ivr);
 #ifdef rmap_finehash_2ndmate
+	}
       }
 #endif 
     }
