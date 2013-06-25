@@ -48,7 +48,9 @@ PKG_PROG_PKG_CONFIG
 #AC_SUBST([LDFLAGS],[-static])
 
 AC_PROG_RANLIB
-AM_PATH_PYTHON([2.7],,[:])
+AM_PATH_PYTHON([2.7],[with_testdriver=true],
+	[with_testdriver=false;
+	AC_MSG_WARN("Could not find python version >= 2.7. Won't run tests.")])
 
 # Checks for programs
 
@@ -178,7 +180,8 @@ AC_CANONICAL_BUILD
 
 # flag MacOSX Darwin which seems to build 32-bit binaries by default
 AS_CASE([$build_os], [*darwin*], [build_macosx_darwin=true], [build_macosx_darwin=false])
-AS_IF([test x$build_macosx_darwin = xtrue -a $host_cpu = x86_64], [AS_ECHO("compiling on darwin for x86_64 ...")])
+AS_IF([test x$build_macosx_darwin = xtrue -a $host_cpu = x86_64], 
+  [AC_MSG_NOTICE("compiling on darwin for x86_64 ...")])
 
 # flag icc on 32 bit platform
 #AS_IF([test $CC = "icc"], [AS_ECHO("checking for intel compiler ... $CC")])
@@ -197,6 +200,7 @@ AM_CONDITIONAL([WITH_SAMTOOLS], [test x$samtools = xyes])
 AM_CONDITIONAL([WITH_SAMTOOLS_EXEC], [test x$samtoolsexec = xyes])
 AM_CONDITIONAL([WITH_ZLIB], [test x$withzlib = xtrue])
 AM_CONDITIONAL([WITH_TESTALL], [test -e ./test/seqSetIO_test.c])
+AM_CONDITIONAL([WITH_TESTDRIVER], [test x$with_testdriver = xtrue])
 #AM_CONDITIONAL([WITH_SAMTOOLS], [test -n "$LIBSAMTOOLS"])
 #AM_COND_IF([ICC_NOLIMITH], [AC_SUBST([AM_CFLAGS], [-D_GCC_LIMITS_H_])])
 AM_CONDITIONAL([APPLE_64BIT], [test x$build_macosx_darwin = xtrue -a $host_cpu = x86_64])

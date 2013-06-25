@@ -47,23 +47,30 @@ SMALT_SRC = ../src/smalt.c ../src/menu.c ../src/menu.h \
 
 SMALT_TEST_SRC = ${SMALT_SRC} ${SGM_SRC} ${ALI_SRC} tracker.c tracker.h
 
+TEST_DRIVERS = sequence_test.py consistentFR_test.py \
+		diffstr_test.py \
+		splitReads_test.py xali_test.py \
+		results_split_test.py \
+		ioform_test.py ouform_cigar_test.py \
+		sample_test.py \
+		cigar_test.py
+                #regression_test.py #alignment_test.py
+
+if WITH_TESTDRIVER
 TESTS_ENVIRONMENT = $(PYTHON)
 
-TESTS = sequence_test.py consistentFR_test.py \
-	diffstr_test.py \
-	splitReads_test.py xali_test.py \
-	results_split_test.py \
-	ioform_test.py ouform_cigar_test.py \
-	sample_test.py \
-	cigar_test.py 
-        #regression_test.py #alignment_test.py
+TESTS = ${TEST_DRIVERS}
 
 if WITH_SAMTOOLS_EXEC
 TESTS += bam_cigar_test.py
 endif
 
+else
+TESTS =
+endif
+
 ## distribute test drivers
-dist_data_DATA = ${TESTS} formats.py testdata.py
+dist_data_DATA = ${TEST_DRIVERS} bam_cigar_test.py formats.py testdata.py
 
 check_PROGRAMS = sequenceReadWrite_test sequenceCompress_test \
 		sequenceDeCompress_test \

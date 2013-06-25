@@ -36,7 +36,8 @@ build_triplet = @build@
 host_triplet = @host@
 @APPLE_64BIT_TRUE@am__append_1 = ${APPLECFLAGS}
 @SSE2_TRUE@am__append_2 = ../src/swsimd.c ../src/swsimd.h
-@WITH_SAMTOOLS_EXEC_TRUE@am__append_3 = bam_cigar_test.py
+@WITH_TESTDRIVER_TRUE@TESTS = $(TEST_DRIVERS) $(am__append_3)
+@WITH_SAMTOOLS_EXEC_TRUE@@WITH_TESTDRIVER_TRUE@am__append_3 = bam_cigar_test.py
 check_PROGRAMS = sequenceReadWrite_test$(EXEEXT) \
 	sequenceCompress_test$(EXEEXT) \
 	sequenceDeCompress_test$(EXEEXT) \
@@ -65,7 +66,7 @@ EXTRA_PROGRAMS = seqSetIO_test$(EXEEXT) seqSetCompress_test$(EXEEXT) \
 @ICC_COMPILER_FALSE@@ICC_NOLIMITH_FALSE@@SSE2_TRUE@am__append_14 = -msse2
 subdir = test
 SUBDIRS =
-DIST_COMMON = $(am__dist_data_DATA_DIST) $(srcdir)/Makefile.am \
+DIST_COMMON = $(dist_data_DATA) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -331,11 +332,6 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	install-pdf-recursive install-ps-recursive install-recursive \
 	installcheck-recursive installdirs-recursive pdf-recursive \
 	ps-recursive uninstall-recursive
-am__dist_data_DATA_DIST = sequence_test.py consistentFR_test.py \
-	diffstr_test.py splitReads_test.py xali_test.py \
-	results_split_test.py ioform_test.py ouform_cigar_test.py \
-	sample_test.py cigar_test.py bam_cigar_test.py formats.py \
-	testdata.py
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -543,12 +539,16 @@ SMALT_SRC = ../src/smalt.c ../src/menu.c ../src/menu.h \
 	${MAP_SRC}
 
 SMALT_TEST_SRC = ${SMALT_SRC} ${SGM_SRC} ${ALI_SRC} tracker.c tracker.h
-TESTS_ENVIRONMENT = $(PYTHON)
-TESTS = sequence_test.py consistentFR_test.py diffstr_test.py \
-	splitReads_test.py xali_test.py results_split_test.py \
-	ioform_test.py ouform_cigar_test.py sample_test.py \
-	cigar_test.py $(am__append_3)
-dist_data_DATA = ${TESTS} formats.py testdata.py
+TEST_DRIVERS = sequence_test.py consistentFR_test.py \
+		diffstr_test.py \
+		splitReads_test.py xali_test.py \
+		results_split_test.py \
+		ioform_test.py ouform_cigar_test.py \
+		sample_test.py \
+		cigar_test.py
+
+@WITH_TESTDRIVER_TRUE@TESTS_ENVIRONMENT = $(PYTHON)
+dist_data_DATA = ${TEST_DRIVERS} bam_cigar_test.py formats.py testdata.py
 @WITH_ZLIB_FALSE@ZLIB_LDFLAG = 
 @WITH_ZLIB_TRUE@ZLIB_LDFLAG = -lz
 nodist_array_test_SOURCES = array_test.c
@@ -2547,7 +2547,7 @@ uninstall-am: uninstall-dist_dataDATA
 	mostlyclean-generic pdf pdf-am ps ps-am tags tags-recursive \
 	uninstall uninstall-am uninstall-dist_dataDATA
 
-        #regression_test.py #alignment_test.py
+                #regression_test.py #alignment_test.py
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

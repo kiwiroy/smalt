@@ -608,6 +608,8 @@ LTLIBOBJS
 LIBOBJS
 APPLE_64BIT_FALSE
 APPLE_64BIT_TRUE
+WITH_TESTDRIVER_FALSE
+WITH_TESTDRIVER_TRUE
 WITH_TESTALL_FALSE
 WITH_TESTALL_TRUE
 WITH_ZLIB_FALSE
@@ -4008,7 +4010,9 @@ fi
 
 
   if test "$PYTHON" = :; then
-      :
+      with_testdriver=false;
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Could not find python version >= 2.7. Won't run tests.\"" >&5
+$as_echo "$as_me: WARNING: \"Could not find python version >= 2.7. Won't run tests.\"" >&2;}
   else
 
 
@@ -4121,7 +4125,7 @@ $as_echo "$am_cv_python_pyexecdir" >&6; }
   pkgpyexecdir=\${pyexecdir}/$PACKAGE
 
 
-
+    with_testdriver=true
   fi
 
 
@@ -5010,7 +5014,8 @@ case $build_os in #(
     build_macosx_darwin=false ;;
 esac
 if test x$build_macosx_darwin = xtrue -a $host_cpu = x86_64; then :
-  $as_echo "compiling on darwin for x86_64 ..."
+  { $as_echo "$as_me:${as_lineno-$LINENO}: \"compiling on darwin for x86_64 ...\"" >&5
+$as_echo "$as_me: \"compiling on darwin for x86_64 ...\"" >&6;}
 fi
 
 # flag icc on 32 bit platform
@@ -5086,6 +5091,14 @@ fi
 else
   WITH_TESTALL_TRUE='#'
   WITH_TESTALL_FALSE=
+fi
+
+ if test x$with_testdriver = xtrue; then
+  WITH_TESTDRIVER_TRUE=
+  WITH_TESTDRIVER_FALSE='#'
+else
+  WITH_TESTDRIVER_TRUE='#'
+  WITH_TESTDRIVER_FALSE=
 fi
 
 #AM_CONDITIONAL([WITH_SAMTOOLS], [test -n "$LIBSAMTOOLS"])
@@ -5399,6 +5412,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${WITH_TESTALL_TRUE}" && test -z "${WITH_TESTALL_FALSE}"; then
   as_fn_error $? "conditional \"WITH_TESTALL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${WITH_TESTDRIVER_TRUE}" && test -z "${WITH_TESTDRIVER_FALSE}"; then
+  as_fn_error $? "conditional \"WITH_TESTDRIVER\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${APPLE_64BIT_TRUE}" && test -z "${APPLE_64BIT_FALSE}"; then
