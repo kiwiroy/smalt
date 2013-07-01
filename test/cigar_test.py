@@ -49,7 +49,7 @@ if __name__ == '__main__':
     smalt_index(df,indexnam, refnam, KMER, NSKIP)
     smalt_map(df,oufilnam, indexnam, readnamA, readnamB, "sam", ["-x"])
     
-    print "Test ok."
+    #print "Test ok."
     
     df.cleanup()
     exit()

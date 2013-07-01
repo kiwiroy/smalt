@@ -29,6 +29,15 @@ make
 make install
 
 
+Installation on MacOSX (Darwin)
+===============================
+You might get 32-bit binaries by default with MacOSX Darwin on a 64-bit machine.
+In this case use (from version smalt 0.7.4.4)
+./configure --build=x86_64-apple-darwin
+or
+./configure --build=x86_64-apple-darwin --with-bambamc=no
+
+
 Optional Prerequisites
 ======================
 

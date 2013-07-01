@@ -49,7 +49,7 @@ enum MENU_OPTION_CONST {
 #endif
 
 #ifndef PACKAGE_VERSION
-#define PACKAGE_VERSION "0.7.4.1"
+#define PACKAGE_VERSION "0.7.5"
 #endif
 
 #ifndef PACKAGE_BUGREPORT
@@ -61,7 +61,7 @@ static const char MENU_PROGNAM[] =\
 static const char MENU_PROGNAM_VERSION_FMT[] = \
   "                             (version: %s)\n";
 static const char MENU_RELEASE_VERSION[] = PACKAGE_VERSION;
-static const char MENU_RELEASE_DATE[] =  "22-04-2013";
+static const char MENU_RELEASE_DATE[] =  "28-06-2013";
 static const char MENU_RELEASE_AUTHORS[] = "Hannes Ponstingl";
 static const char MENU_RELEASE_BUGREPORT[] = PACKAGE_BUGREPORT;
 static const char MENU_COPYRIGHT_NOTICE[] = "Copyright (C) 2010 - 2013 Genome Research Ltd.";
@@ -1293,14 +1293,13 @@ static int parseMapOptions(MenuOpt *menup, OPTFLAGS *optflp, int narg, char **ar
      /**< Parse options concerning the read mapping
       * Return the number of tokens processed. 0 on error */
 {
-  int n, iv, okflg=1;
+  int n, iv, okflg=1, iserr = 0;
   double fv;
   MAPMENU *mp = (MAPMENU *) menup->paramp;
   if (menup->subprog != MENU_MAP)
     return OPTERR_UNKNOWN;
 
   switch (argp[0][1]) {
-    int iserr = 0;
   case 'a':
     n = parseOption(NULL, "-a", OPTYP_FLAG, narg, argp);
     if (n != OPTERR_UNKNOWN) {

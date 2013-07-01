@@ -1,12 +1,15 @@
 ## Process this file with automake to produce Makefile.in
-if ICC_NOLIMITH
-AM_CFLAGS = -D_GCC_LIMITS_H_ -I../src
-else 
 AM_CFLAGS = -I../src/
+if ICC_COMPILER
+if ICC_NOLIMITH
+AM_CFLAGS += -D_GCC_LIMITS_H_
+endif
+else
+AM_CFLAGS += -Wall -Wextra
 endif
 
 if APPLE_64BIT
-APPLECFLAGS = -m64 -D_FILE_OFFSET_BITS=64
+AM_CFLAGS += -m64 -D_FILE_OFFSET_BITS=64
 AM_CFLAGS += ${APPLECFLAGS}
 endif
 
@@ -43,19 +46,9 @@ trunkreads_SOURCES = trunkreads.c
 trunkreads_LDADD = ../src/libseq.a $(ZLIB_LDFLAG)
 
 basqcol_SOURCES = basqcol.c basqual.c basqual.h
-if ICC_NOLIMITH
-basqcol_CFLAGS = -D_GCC_LIMITS_H_ -I../src
-else
-basqcol_CFLAGS = -I../src ${APPLECFLAGS}
-endif
 basqcol_LDADD = ../src/libseq.a $(ZLIB_LDFLAG)
 
 simqual_SOURCES = simqual.c basqual.c basqual.h ../src/diffstr.c ../src/diffstr.h \
 	 	  ../src/randef.h
-if ICC_NOLIMITH
-simqual_CFLAGS = -D_GCC_LIMITS_H_ -I../src
-else
-simqual_CFLAGS = -I../src ${APPLECFLAGS}
-endif
 simqual_LDADD = ../src/libseq.a -lm $(ZLIB_LDFLAG)
 

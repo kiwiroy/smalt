@@ -35,7 +35,10 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@APPLE_64BIT_TRUE@am__append_1 = ${APPLECFLAGS}
+@ICC_COMPILER_TRUE@@ICC_NOLIMITH_TRUE@am__append_1 = -D_GCC_LIMITS_H_
+@ICC_COMPILER_FALSE@am__append_2 = -Wall -Wextra
+@APPLE_64BIT_TRUE@am__append_3 = -m64 -D_FILE_OFFSET_BITS=64 \
+@APPLE_64BIT_TRUE@	${APPLECFLAGS}
 bin_PROGRAMS = simread$(EXEEXT) fetchseq$(EXEEXT) splitreads$(EXEEXT) \
 	mixreads$(EXEEXT) splitmates$(EXEEXT) readstats$(EXEEXT) \
 	trunkreads$(EXEEXT) basqcol$(EXEEXT) simqual$(EXEEXT)
@@ -52,13 +55,10 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(datadir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_basqcol_OBJECTS = basqcol-basqcol.$(OBJEXT) \
-	basqcol-basqual.$(OBJEXT)
+am_basqcol_OBJECTS = basqcol.$(OBJEXT) basqual.$(OBJEXT)
 basqcol_OBJECTS = $(am_basqcol_OBJECTS)
 am__DEPENDENCIES_1 =
 basqcol_DEPENDENCIES = ../src/libseq.a $(am__DEPENDENCIES_1)
-basqcol_LINK = $(CCLD) $(basqcol_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
 am_fetchseq_OBJECTS = fetchseq.$(OBJEXT)
 fetchseq_OBJECTS = $(am_fetchseq_OBJECTS)
 fetchseq_DEPENDENCIES = ../src/libseq.a $(am__DEPENDENCIES_1)
@@ -68,12 +68,10 @@ mixreads_DEPENDENCIES = ../src/libseq.a $(am__DEPENDENCIES_1)
 am_readstats_OBJECTS = readstats.$(OBJEXT)
 readstats_OBJECTS = $(am_readstats_OBJECTS)
 readstats_DEPENDENCIES = ../src/libseq.a $(am__DEPENDENCIES_1)
-am_simqual_OBJECTS = simqual-simqual.$(OBJEXT) \
-	simqual-basqual.$(OBJEXT) simqual-diffstr.$(OBJEXT)
+am_simqual_OBJECTS = simqual.$(OBJEXT) basqual.$(OBJEXT) \
+	diffstr.$(OBJEXT)
 simqual_OBJECTS = $(am_simqual_OBJECTS)
 simqual_DEPENDENCIES = ../src/libseq.a $(am__DEPENDENCIES_1)
-simqual_LINK = $(CCLD) $(simqual_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
 am_simread_OBJECTS = simread.$(OBJEXT) rsample.$(OBJEXT)
 simread_OBJECTS = $(am_simread_OBJECTS)
 simread_DEPENDENCIES = ../src/libsgm.a ../src/libseq.a \
@@ -244,10 +242,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@ICC_NOLIMITH_FALSE@AM_CFLAGS = -I../src/ $(am__append_1)
-@ICC_NOLIMITH_TRUE@AM_CFLAGS = -D_GCC_LIMITS_H_ -I../src \
-@ICC_NOLIMITH_TRUE@	$(am__append_1)
-@APPLE_64BIT_TRUE@APPLECFLAGS = -m64 -D_FILE_OFFSET_BITS=64
+AM_CFLAGS = -I../src/ $(am__append_1) $(am__append_2) $(am__append_3)
 @WITH_ZLIB_FALSE@ZLIB_LDFLAG = 
 @WITH_ZLIB_TRUE@ZLIB_LDFLAG = -lz
 dist_data_DATA = SAM.py
@@ -266,14 +261,10 @@ splitmates_LDADD = ../src/libseq.a $(ZLIB_LDFLAG)
 trunkreads_SOURCES = trunkreads.c
 trunkreads_LDADD = ../src/libseq.a $(ZLIB_LDFLAG)
 basqcol_SOURCES = basqcol.c basqual.c basqual.h
-@ICC_NOLIMITH_FALSE@basqcol_CFLAGS = -I../src ${APPLECFLAGS}
-@ICC_NOLIMITH_TRUE@basqcol_CFLAGS = -D_GCC_LIMITS_H_ -I../src
 basqcol_LDADD = ../src/libseq.a $(ZLIB_LDFLAG)
 simqual_SOURCES = simqual.c basqual.c basqual.h ../src/diffstr.c ../src/diffstr.h \
 	 	  ../src/randef.h
 
-@ICC_NOLIMITH_FALSE@simqual_CFLAGS = -I../src ${APPLECFLAGS}
-@ICC_NOLIMITH_TRUE@simqual_CFLAGS = -D_GCC_LIMITS_H_ -I../src
 simqual_LDADD = ../src/libseq.a -lm $(ZLIB_LDFLAG)
 all: all-am
 
@@ -348,7 +339,7 @@ clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
 basqcol$(EXEEXT): $(basqcol_OBJECTS) $(basqcol_DEPENDENCIES) 
 	@rm -f basqcol$(EXEEXT)
-	$(basqcol_LINK) $(basqcol_OBJECTS) $(basqcol_LDADD) $(LIBS)
+	$(LINK) $(basqcol_OBJECTS) $(basqcol_LDADD) $(LIBS)
 fetchseq$(EXEEXT): $(fetchseq_OBJECTS) $(fetchseq_DEPENDENCIES) 
 	@rm -f fetchseq$(EXEEXT)
 	$(LINK) $(fetchseq_OBJECTS) $(fetchseq_LDADD) $(LIBS)
@@ -360,7 +351,7 @@ readstats$(EXEEXT): $(readstats_OBJECTS) $(readstats_DEPENDENCIES)
 	$(LINK) $(readstats_OBJECTS) $(readstats_LDADD) $(LIBS)
 simqual$(EXEEXT): $(simqual_OBJECTS) $(simqual_DEPENDENCIES) 
 	@rm -f simqual$(EXEEXT)
-	$(simqual_LINK) $(simqual_OBJECTS) $(simqual_LDADD) $(LIBS)
+	$(LINK) $(simqual_OBJECTS) $(simqual_LDADD) $(LIBS)
 simread$(EXEEXT): $(simread_OBJECTS) $(simread_DEPENDENCIES) 
 	@rm -f simread$(EXEEXT)
 	$(LINK) $(simread_OBJECTS) $(simread_LDADD) $(LIBS)
@@ -380,15 +371,14 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/basqcol-basqcol.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/basqcol-basqual.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/basqcol.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/basqual.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diffstr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fetchseq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mixreads.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readstats.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rsample.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simqual-basqual.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simqual-diffstr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simqual-simqual.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simqual.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simread.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splitmates.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splitreads.Po@am__quote@
@@ -408,75 +398,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
-basqcol-basqcol.o: basqcol.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(basqcol_CFLAGS) $(CFLAGS) -MT basqcol-basqcol.o -MD -MP -MF $(DEPDIR)/basqcol-basqcol.Tpo -c -o basqcol-basqcol.o `test -f 'basqcol.c' || echo '$(srcdir)/'`basqcol.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/basqcol-basqcol.Tpo $(DEPDIR)/basqcol-basqcol.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='basqcol.c' object='basqcol-basqcol.o' libtool=no @AMDEPBACKSLASH@
+diffstr.o: ../src/diffstr.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT diffstr.o -MD -MP -MF $(DEPDIR)/diffstr.Tpo -c -o diffstr.o `test -f '../src/diffstr.c' || echo '$(srcdir)/'`../src/diffstr.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/diffstr.Tpo $(DEPDIR)/diffstr.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/diffstr.c' object='diffstr.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(basqcol_CFLAGS) $(CFLAGS) -c -o basqcol-basqcol.o `test -f 'basqcol.c' || echo '$(srcdir)/'`basqcol.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o diffstr.o `test -f '../src/diffstr.c' || echo '$(srcdir)/'`../src/diffstr.c
 
-basqcol-basqcol.obj: basqcol.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(basqcol_CFLAGS) $(CFLAGS) -MT basqcol-basqcol.obj -MD -MP -MF $(DEPDIR)/basqcol-basqcol.Tpo -c -o basqcol-basqcol.obj `if test -f 'basqcol.c'; then $(CYGPATH_W) 'basqcol.c'; else $(CYGPATH_W) '$(srcdir)/basqcol.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/basqcol-basqcol.Tpo $(DEPDIR)/basqcol-basqcol.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='basqcol.c' object='basqcol-basqcol.obj' libtool=no @AMDEPBACKSLASH@
+diffstr.obj: ../src/diffstr.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT diffstr.obj -MD -MP -MF $(DEPDIR)/diffstr.Tpo -c -o diffstr.obj `if test -f '../src/diffstr.c'; then $(CYGPATH_W) '../src/diffstr.c'; else $(CYGPATH_W) '$(srcdir)/../src/diffstr.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/diffstr.Tpo $(DEPDIR)/diffstr.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/diffstr.c' object='diffstr.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(basqcol_CFLAGS) $(CFLAGS) -c -o basqcol-basqcol.obj `if test -f 'basqcol.c'; then $(CYGPATH_W) 'basqcol.c'; else $(CYGPATH_W) '$(srcdir)/basqcol.c'; fi`
-
-basqcol-basqual.o: basqual.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(basqcol_CFLAGS) $(CFLAGS) -MT basqcol-basqual.o -MD -MP -MF $(DEPDIR)/basqcol-basqual.Tpo -c -o basqcol-basqual.o `test -f 'basqual.c' || echo '$(srcdir)/'`basqual.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/basqcol-basqual.Tpo $(DEPDIR)/basqcol-basqual.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='basqual.c' object='basqcol-basqual.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(basqcol_CFLAGS) $(CFLAGS) -c -o basqcol-basqual.o `test -f 'basqual.c' || echo '$(srcdir)/'`basqual.c
-
-basqcol-basqual.obj: basqual.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(basqcol_CFLAGS) $(CFLAGS) -MT basqcol-basqual.obj -MD -MP -MF $(DEPDIR)/basqcol-basqual.Tpo -c -o basqcol-basqual.obj `if test -f 'basqual.c'; then $(CYGPATH_W) 'basqual.c'; else $(CYGPATH_W) '$(srcdir)/basqual.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/basqcol-basqual.Tpo $(DEPDIR)/basqcol-basqual.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='basqual.c' object='basqcol-basqual.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(basqcol_CFLAGS) $(CFLAGS) -c -o basqcol-basqual.obj `if test -f 'basqual.c'; then $(CYGPATH_W) 'basqual.c'; else $(CYGPATH_W) '$(srcdir)/basqual.c'; fi`
-
-simqual-simqual.o: simqual.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simqual_CFLAGS) $(CFLAGS) -MT simqual-simqual.o -MD -MP -MF $(DEPDIR)/simqual-simqual.Tpo -c -o simqual-simqual.o `test -f 'simqual.c' || echo '$(srcdir)/'`simqual.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/simqual-simqual.Tpo $(DEPDIR)/simqual-simqual.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='simqual.c' object='simqual-simqual.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simqual_CFLAGS) $(CFLAGS) -c -o simqual-simqual.o `test -f 'simqual.c' || echo '$(srcdir)/'`simqual.c
-
-simqual-simqual.obj: simqual.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simqual_CFLAGS) $(CFLAGS) -MT simqual-simqual.obj -MD -MP -MF $(DEPDIR)/simqual-simqual.Tpo -c -o simqual-simqual.obj `if test -f 'simqual.c'; then $(CYGPATH_W) 'simqual.c'; else $(CYGPATH_W) '$(srcdir)/simqual.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/simqual-simqual.Tpo $(DEPDIR)/simqual-simqual.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='simqual.c' object='simqual-simqual.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simqual_CFLAGS) $(CFLAGS) -c -o simqual-simqual.obj `if test -f 'simqual.c'; then $(CYGPATH_W) 'simqual.c'; else $(CYGPATH_W) '$(srcdir)/simqual.c'; fi`
-
-simqual-basqual.o: basqual.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simqual_CFLAGS) $(CFLAGS) -MT simqual-basqual.o -MD -MP -MF $(DEPDIR)/simqual-basqual.Tpo -c -o simqual-basqual.o `test -f 'basqual.c' || echo '$(srcdir)/'`basqual.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/simqual-basqual.Tpo $(DEPDIR)/simqual-basqual.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='basqual.c' object='simqual-basqual.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simqual_CFLAGS) $(CFLAGS) -c -o simqual-basqual.o `test -f 'basqual.c' || echo '$(srcdir)/'`basqual.c
-
-simqual-basqual.obj: basqual.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simqual_CFLAGS) $(CFLAGS) -MT simqual-basqual.obj -MD -MP -MF $(DEPDIR)/simqual-basqual.Tpo -c -o simqual-basqual.obj `if test -f 'basqual.c'; then $(CYGPATH_W) 'basqual.c'; else $(CYGPATH_W) '$(srcdir)/basqual.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/simqual-basqual.Tpo $(DEPDIR)/simqual-basqual.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='basqual.c' object='simqual-basqual.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simqual_CFLAGS) $(CFLAGS) -c -o simqual-basqual.obj `if test -f 'basqual.c'; then $(CYGPATH_W) 'basqual.c'; else $(CYGPATH_W) '$(srcdir)/basqual.c'; fi`
-
-simqual-diffstr.o: ../src/diffstr.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simqual_CFLAGS) $(CFLAGS) -MT simqual-diffstr.o -MD -MP -MF $(DEPDIR)/simqual-diffstr.Tpo -c -o simqual-diffstr.o `test -f '../src/diffstr.c' || echo '$(srcdir)/'`../src/diffstr.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/simqual-diffstr.Tpo $(DEPDIR)/simqual-diffstr.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/diffstr.c' object='simqual-diffstr.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simqual_CFLAGS) $(CFLAGS) -c -o simqual-diffstr.o `test -f '../src/diffstr.c' || echo '$(srcdir)/'`../src/diffstr.c
-
-simqual-diffstr.obj: ../src/diffstr.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simqual_CFLAGS) $(CFLAGS) -MT simqual-diffstr.obj -MD -MP -MF $(DEPDIR)/simqual-diffstr.Tpo -c -o simqual-diffstr.obj `if test -f '../src/diffstr.c'; then $(CYGPATH_W) '../src/diffstr.c'; else $(CYGPATH_W) '$(srcdir)/../src/diffstr.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/simqual-diffstr.Tpo $(DEPDIR)/simqual-diffstr.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/diffstr.c' object='simqual-diffstr.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simqual_CFLAGS) $(CFLAGS) -c -o simqual-diffstr.obj `if test -f '../src/diffstr.c'; then $(CYGPATH_W) '../src/diffstr.c'; else $(CYGPATH_W) '$(srcdir)/../src/diffstr.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o diffstr.obj `if test -f '../src/diffstr.c'; then $(CYGPATH_W) '../src/diffstr.c'; else $(CYGPATH_W) '$(srcdir)/../src/diffstr.c'; fi`
 install-dist_dataDATA: $(dist_data_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(datadir)" || $(MKDIR_P) "$(DESTDIR)$(datadir)"

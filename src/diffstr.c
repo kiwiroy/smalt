@@ -304,7 +304,7 @@ static int writeDiffStrCIGAR(void * const top, int *nchar,
   unsigned short typ = DIFFCOD_M, prev_typ = DIFFCOD_M;
   int nc = 0;
   const DIFFSTR_T *ucp;
-  const char clipchar = (cgt & CIGARSTRTYP_SOFTCLIPPED)? 
+  const char clipchar = ((cgt & CIGARSTRTYP_SOFTCLIPPED) != 0)? 
     CIGAR_CLIPPED_SOFT: CIGAR_CLIPPED_HARD;
 
 #define WRITE_CIGAR(chr, ctr) nc += (*writerp)(writeCigarToStr == *writerp? ((char *)top)+nc: top, \
@@ -1405,7 +1405,7 @@ int diffStrSegment(DiffStr *dfsp, const DIFFSTR_T *diffstrp,
   if (idx_start == idx_end) {
     DIFFSTR_GET(diffstrp[idx_start], count, typ);
     if (typ == DIFFCOD_M) count++;
-    nmatch_end += nmatch_start - count;
+    nmatch_end += (int) (nmatch_start - count);
   } else {
     if (typ_start == DIFFCOD_M) {
       nmatch = nmatch_start;

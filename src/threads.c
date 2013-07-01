@@ -27,7 +27,9 @@
 #include <stdlib.h>
 #include <semaphore.h>
 #include <pthread.h>
-
+#ifdef THREADS_DEBUG
+#include <stdarg.h>
+#endif
 #include "threads.h"
 
 #ifdef __APPLE__
@@ -80,7 +82,7 @@ typedef uint8_t THRBUFTYP_t; /* one of THREAD_BUFFER_TYPES */
 typedef void *(PTHREAD_WRAPPER_FUNC)(void *);
 
 typedef struct _BUFFARG { /**< Arguments passed between threads */
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
   short threadno;
   uint64_t readno;
 #endif
@@ -130,7 +132,7 @@ typedef struct _THREADARG {
 
 static struct _Threads {
   uint8_t status;       /**< One of THREADS_STATUS_FLAGS */
-  short n_threads;      /**< Number of threads (0 if run single-threaded) */
+  short n_threads;      /**< Number of threads -1 (0 if run single-threaded) */
   THREADTASK tasks[THREAD_TASK_NUM];
   pthread_t *threadp;   /**< Thread structures, array of size n_threads */
   short n_targ;         /**< Size of array targp */
@@ -143,11 +145,11 @@ static struct _Threads {
   				 * buffp[2]: processed arguments. */
 } Threads;
 
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
 static pthread_mutex_t mutex_stdout = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
 static int getBufArgNum(const ARGBUFF *fifop)
 {
   int n = 0;
@@ -213,7 +215,7 @@ static int pushARGBUFF(ARGBUFF *fifop, BUFFARG *argp)
 /**< Put argument in buffer. argp == NULL initialises. */
 {
   int errcode = ERRCODE_SUCCESS;
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
   int ns = 0;
   int na = 0;
 #endif
@@ -223,11 +225,9 @@ static int pushARGBUFF(ARGBUFF *fifop, BUFFARG *argp)
     fifop->firstp = fifop->lastp = NULL;
     fifop->nThreadsPushing = 0;
     pthread_mutex_unlock(&fifop->mutex);
-#ifdef threads_debug
-  pthread_mutex_lock(&mutex_stdout);
-  fprintf(stderr, "#THREAD_DEBUG:initialised '%s' buffer ...\n", 
-	  getBufTyp(fifop));
-  pthread_mutex_unlock(&mutex_stdout);
+#ifdef THREADS_DEBUG
+    threadsPrintDebugMsg("#initialised '%s' buffer ...\n", 
+			 getBufTyp(fifop));
 #endif
 
   } else {
@@ -243,7 +243,7 @@ static int pushARGBUFF(ARGBUFF *fifop, BUFFARG *argp)
       fifop->lastp = fifop->lastp->nextp = argp;
       argp->nextp = NULL;       
     }
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
     na = getBufArgNum(fifop);
 #endif
     pthread_mutex_unlock(&fifop->mutex);
@@ -252,14 +252,17 @@ static int pushARGBUFF(ARGBUFF *fifop, BUFFARG *argp)
 #else
     sem_post(&fifop->sema);
 #endif
-#ifdef threads_debug 
+#ifdef THREADS_DEBUG 
 #ifndef macosx_semaphores 
   sem_getvalue(&fifop->sema, &ns);
 #endif
-  pthread_mutex_lock(&mutex_stdout);
-  printf("THREAD_DEBUG:thread[%hi]: pushed to '%s' buffer: sema = %i, nThreadsPushing = %i , n_args = %i, errcode = %i ...\n", 
-	 argp->threadno, getBufTyp(fifop), ns, fifop->nThreadsPushing, na, errcode);
-  pthread_mutex_unlock(&mutex_stdout);
+  threadsPrintDebugMsg("thread[%hi]: pushed to '%s' buffer: " \
+		       "arg %i, read %i)\n",
+		       argp->threadno, getBufTyp(fifop), 
+		       argp->argno, argp->readno);
+  threadsPrintDebugMsg("             sema = %i, nThreadsPushing = %i ," \
+		       " n_args = %i, errcode = %i ...\n", 
+		       ns, fifop->nThreadsPushing, na, errcode);
 #endif
 
   }
@@ -270,37 +273,35 @@ static int pushARGBUFF(ARGBUFF *fifop, BUFFARG *argp)
 static int pullARGBUFF(BUFFARG **argp, 
 		       ARGBUFF *fifop)
 /**< Fetch argument from buffer. Returns termination code 
- *  ERRCODE_PTHRTERMSIG if no argument in buffer and fifop->nThreadsPushing == 0.
+ *  ERRCODE_PTHRTERMSIG if no argument in buffer and 
+ * ifop->nThreadsPushing == 0.
  */
 {
   int errcode = ERRCODE_SUCCESS;
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
   int ns = 0;
   int na = 0;
 #endif
 
-#ifdef threads_debug 
+#ifdef THREADS_DEBUG 
 #ifndef macosx_semaphores
   sem_getvalue(&fifop->sema, &ns);
 #endif
-  pthread_mutex_lock(&mutex_stdout);
-  printf("THREAD_DEBUG:pull from '%s' buffer: waiting (sema = %i, nThreadsPushing = %i) ...\n", 
-	 getBufTyp(fifop), ns, fifop->nThreadsPushing);
-  pthread_mutex_unlock(&mutex_stdout);
+  threadsPrintDebugMsg("pull from '%s' buffer: waiting (sema = %i, nThreadsPushing = %i) ...\n", 
+		       getBufTyp(fifop), ns, fifop->nThreadsPushing);
 #endif
 #ifdef macosx_semaphores
   sem_wait(fifop->sema);
 #else
   sem_wait(&fifop->sema);
 #endif
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
 #ifndef macosx_semaphores
   sem_getvalue(&fifop->sema, &ns);
 #endif
-  pthread_mutex_lock(&mutex_stdout);
-  printf("THREAD_DEBUG:pull from '%s' buffer: finished waiting (sema = %i, nThreadsPushing = %i) ...\n", 
-	 getBufTyp(fifop), ns, fifop->nThreadsPushing);
-  pthread_mutex_unlock(&mutex_stdout);
+  threadsPrintDebugMsg("pull from '%s' buffer: finished waiting "
+		       "(sema = %i, nThreadsPushing = %i) ...\n", 
+		       getBufTyp(fifop), ns, fifop->nThreadsPushing);
 #endif
 
   pthread_mutex_lock(&fifop->mutex);
@@ -320,7 +321,7 @@ static int pullARGBUFF(BUFFARG **argp,
       (*argp)->nextp = NULL;
     }
   }
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
   na = getBufArgNum(fifop);
 #endif
   pthread_mutex_unlock(&fifop->mutex);
@@ -331,14 +332,20 @@ static int pullARGBUFF(BUFFARG **argp,
     sem_post(&fifop->sema); /* release other threads waiting to pull */
 #endif
 
-#ifdef threads_debug 
+#ifdef THREADS_DEBUG 
 #ifndef macosx_semaphores
   sem_getvalue(&fifop->sema, &ns);
 #endif
-  pthread_mutex_lock(&mutex_stdout);
-  printf("THREAD_DEBUG:finished pulling from '%s' buffer: sema = %i, nThreadsPushing = %i, n_args = %i, errcode = %i ...\n", 
-	 getBufTyp(fifop), ns, fifop->nThreadsPushing, na, errcode);
-  pthread_mutex_unlock(&mutex_stdout);
+  threadsPrintDebugMsg("finished pulling from '%s' buffer: " \
+		       "sema = %i, nThreadsPushing = %i, "   \
+		       "n_args = %i, errcode = %i ...\n", 
+		       getBufTyp(fifop), ns, fifop->nThreadsPushing, na, 
+		       errcode);
+  if ((*argp) != NULL)
+    threadsPrintDebugMsg("threadno: %i, argno: %i, readno: %i\n",
+			 (*argp)->threadno, (*argp)->argno, (*argp)->readno);
+  if (ERRCODE_PTHRTERMSIG == errcode)
+    threadsPrintDebugMsg("status: terminated.\n");
 #endif
 
   return errcode;
@@ -377,10 +384,8 @@ static int signOnARGBUFF(ARGBUFF *fifop)
   pthread_mutex_lock(&fifop->mutex);
   n = ++(fifop->nThreadsPushing);
   pthread_mutex_unlock(&fifop->mutex);
-#ifdef threads_debug
-  pthread_mutex_lock(&mutex_stdout);
-  printf("THREAD_DEBUG:signed on buffer '%s' (%i) ...\n", getBufTyp(fifop), n);
-  pthread_mutex_unlock(&mutex_stdout);
+#ifdef THREADS_DEBUG
+  threadsPrintDebugMsg("signOnARGBUFF '%s' (%i) ...\n", getBufTyp(fifop), n);
 #endif
   return n;
 }
@@ -403,10 +408,8 @@ static int signOffARGBUFF(ARGBUFF *fifop)
 #endif
   }
   
-#ifdef threads_debug
-  pthread_mutex_lock(&mutex_stdout);
-  printf("THREAD_DEBUG:signed off buffer '%s' (%i) ...\n", getBufTyp(fifop), n);
-  pthread_mutex_unlock(&mutex_stdout);
+#ifdef THREADS_DEBUG
+  threadsPrintDebugMsg("signOffARGBUFF '%s' (%i) ...\n", getBufTyp(fifop), n);
 #endif
 
   return n;
@@ -415,10 +418,8 @@ static int signOffARGBUFF(ARGBUFF *fifop)
 static void termARGBUFF(ARGBUFF *fifop)
 /**< Set termination signal for buffer */
 {
-#ifdef threads_debug
-  pthread_mutex_lock(&mutex_stdout);
-  printf("threads_debug:termARGBUFF() called ...\n");
-  pthread_mutex_unlock(&mutex_stdout);
+#ifdef THREADS_DEBUG
+  threadsPrintDebugMsg("termARGBUFF() called ...\n");
 #endif
   pthread_mutex_lock(&fifop->mutex);
   fifop->nThreadsPushing = 0;
@@ -438,7 +439,7 @@ static void pushTHREADARGInternalBuffer(THREADARG *thargp, BUFFARG *argp,
 				       THREAD_CMPF *cmpf)
 {
   BUFFARG *hp = thargp->buflstp;
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
   BUFFARG *p;
   int i = 0;
   if (NULL != cmpf) {
@@ -463,7 +464,7 @@ static void pushTHREADARGInternalBuffer(THREADARG *thargp, BUFFARG *argp,
     argp->nextp = lp;
     hp->nextp = argp;
   }
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
   if (NULL != cmpf) {
     pthread_mutex_lock(&mutex_stdout);
     printf("THREADS_DEBUG: + pushTHREADARGInternalBuffer: on exit: threadno = %hi +\n", thargp->threadno);
@@ -479,7 +480,7 @@ static void pushTHREADARGInternalBuffer(THREADARG *thargp, BUFFARG *argp,
 static BUFFARG *pullTHREADARGInternalBuffer(THREADARG *thargp, THREAD_CHECKF *checkf, void *tdatap)
 {
   BUFFARG *argp = thargp->buflstp;
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
   int chkrv = 0;
   BUFFARG *p;
   int i = 0;
@@ -496,7 +497,7 @@ static BUFFARG *pullTHREADARGInternalBuffer(THREADARG *thargp, THREAD_CHECKF *ch
   if (argp != NULL) {
 
     if (NULL == checkf ||
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
 	(chkrv = checkf(tdatap, argp->thisp))) {
 #else
       (checkf(tdatap, argp->thisp))) {
@@ -508,7 +509,7 @@ static BUFFARG *pullTHREADARGInternalBuffer(THREADARG *thargp, THREAD_CHECKF *ch
     }
   }
 
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
   if (NULL != checkf) {
     pthread_mutex_lock(&mutex_stdout);
     printf("THREADS_DEBUG: pullTHREADARGInternalBuffer: checkf = %i\n",
@@ -537,20 +538,15 @@ static void *tprocf(void *p)
   ARGBUFF *argbf_fromp = Threads.buff + taskp->fromx;
   ARGBUFF *argbf_top = Threads.buff + taskp->tox;
 
-#ifdef threads_debug
-  pthread_mutex_lock(&mutex_stdout);
-  fprintf(stderr, "# THREADS_DEBUG:thead[%hi]: tprocf(): task '%s' started\n", 
-	 thargp->threadno, getTaskTyp(thargp));
-  pthread_mutex_unlock(&mutex_stdout);
+#ifdef THREADS_DEBUG
+   threadsPrintDebugMsg("thead[%hi]: tprocf(): task '%s' started\n", 
+			thargp->threadno, getTaskTyp(thargp));
 #endif
 
   if ( !(thargp->flags & THRARG_SIGNED)) {
-#ifdef threads_debug
-    pthread_mutex_lock(&mutex_stdout);
-    fprintf(stderr, 
-	    "# THREADS_DEBUG:thead[%hi]:tprocf(): task '%s': sign on buffer typ '%s'\n", 
-	   thargp->threadno, getTaskTyp(thargp), getBufTyp(Threads.buff + taskp->tox));
-    pthread_mutex_unlock(&mutex_stdout);
+#ifdef THREADS_DEBUG
+    threadsPrintDebugMsg("thead[%hi]:tprocf(): task '%s': sign on buffer typ '%s'\n", 
+			 thargp->threadno, getTaskTyp(thargp), getBufTyp(Threads.buff + taskp->tox));
 #endif
     signOnARGBUFF(argbf_top);
     thargp->flags |= THRARG_SIGNED;
@@ -561,27 +557,23 @@ static void *tprocf(void *p)
     if ((errcode = pullARGBUFF(&argp, argbf_fromp)))
       break;
 
-#ifdef threads_debug
-    pthread_mutex_lock(&mutex_stdout);
-    fprintf(stderr, "# THREAD_DEBUG:thead[%hi]:tprocf(): pulled argument %i\n", 
-	   thargp->threadno, argp->argno);
-    pthread_mutex_unlock(&mutex_stdout);
+#ifdef THREADS_DEBUG
+    threadsPrintDebugMsg("thead[%hi]:tprocf(): pulled argument %i\n", 
+			 thargp->threadno, argp->argno);
 #endif
     if (argp == NULL) {
       errcode = ERRCODE_ASSERT;
       break;
     } 
     
-#ifdef threads_debug
-    pthread_mutex_lock(&mutex_stdout);
-    fprintf(stderr, 
-	    "# THREAD_DEBUG:thead[%hi]:tprocf('%s', %hu): push to internal buffer" \
-	   "argument %i, read = %llu, cmpf %c= NULL\n", 
-	   thargp->threadno, getTaskTyp(thargp), 
-	   (unsigned short) thargp->task, 
-	   argp->argno, 
-	   (unsigned long long) argp->readno, (NULL == taskp->cmpf)? '=':'!');
-    pthread_mutex_unlock(&mutex_stdout);
+#ifdef THREADS_DEBUG
+     threadsPrintDebugMsg("thead[%hi]:tprocf('%s', %hu): push to internal buffer " \
+			  "argument %i, read = %llu, cmpf %c= NULL\n", 
+			  thargp->threadno, getTaskTyp(thargp), 
+			  (unsigned short) thargp->task, 
+			  argp->argno, 
+			  (unsigned long long) argp->readno, 
+			  (NULL == taskp->cmpf)? '=':'!');
 #endif
 
     pushTHREADARGInternalBuffer(thargp, argp, taskp->cmpf);
@@ -589,18 +581,15 @@ static void *tprocf(void *p)
     while ((ERRCODE_SUCCESS == errcode) && 
 	   (argp = pullTHREADARGInternalBuffer(thargp, taskp->checkf, thargp->p))) {
       errcode = taskp->procf(thargp->errmsgp, 
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
 			     &argp->readno,
 #endif
 			     thargp->p, argp->thisp);
 
     /* push to loaded arguments */
-#ifdef threads_debug
-      pthread_mutex_lock(&mutex_stdout);
-      fprintf(stderr,
-	      "# THREADS_DEBUG:thead[%hi]:tprocf push read onto buffer %hi\n", 
-	   thargp->threadno, taskp->tox);
-      pthread_mutex_unlock(&mutex_stdout);
+#ifdef THREADS_DEBUG
+      threadsPrintDebugMsg("thread[%hi]:tprocf push read onto buffer %hi\n", 
+			   thargp->threadno, taskp->tox);
 #endif
       if (!(errcode))
 	errcode = pushARGBUFF(argbf_top, argp);
@@ -610,23 +599,17 @@ static void *tprocf(void *p)
 	   && thargp->threadno >= 0);
 
   if ((errcode)) { 
-#ifdef threads_debug
-    pthread_mutex_lock(&mutex_stdout);
-    fprintf(stderr,
-	    "# THREADS_DEBUG:thead[%hi]:sign off from buffer %hi.\n", 
-	   thargp->threadno, taskp->tox);
-    pthread_mutex_unlock(&mutex_stdout);
+#ifdef THREADS_DEBUG
+    threadsPrintDebugMsg("thead[%hi]:sign off from buffer %hi.\n", 
+			 thargp->threadno, taskp->tox);
 #endif
 
     signOffARGBUFF(argbf_top);
     thargp->flags &= ~THRARG_SIGNED;
   }
-#ifdef threads_debug
-  pthread_mutex_lock(&mutex_stdout);
-  fprintf(stderr,
-	  "# THREADS_DEBUG:thead[%hi]:tprocf(): task '%s' finished.\n", 
-	 thargp->threadno, getTaskTyp(thargp));
-  pthread_mutex_unlock(&mutex_stdout);
+#ifdef THREADS_DEBUG
+  threadsPrintDebugMsg("thead[%hi]:tprocf(): task '%s' finished.\n", 
+		       thargp->threadno, getTaskTyp(thargp));
 #endif
   thargp->exit_code = errcode;
 
@@ -636,6 +619,22 @@ static void *tprocf(void *p)
 /****************************************************************************
  ***************************** Public Methods *******************************
  ****************************************************************************/
+#ifdef THREADS_DEBUG
+int threadsPrintDebugMsg(const char *format, ...)
+{
+  int nchar = 0;
+  va_list ap;
+  
+  va_start(ap, format);
+  pthread_mutex_lock(&mutex_stdout);
+  fprintf(stderr, "#THREADS_DEBUG: ");
+  nchar = vfprintf(stderr, format, ap);
+  pthread_mutex_unlock(&mutex_stdout);
+  va_end(ap); 
+
+  return nchar;
+}
+#endif
 
 int threadsInit(void)
 {
@@ -712,7 +711,7 @@ int threadsSetTask(uint8_t task_typ,
     taskp->fromx = THRBUFTYP_PROCESSED;
     taskp->tox = THRBUFTYP_EMPTY;
     Threads.status |= THRFLG_OUTPUT;
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
     fprintf(stderr,
 	    "#THREADS_DEBUG: threadsSetTask [%hu]: cmpf %c= NULL, checkf %c= NULL\n",
 	   (unsigned short) task_typ, 
@@ -734,7 +733,7 @@ int threadsSetUp(int n_buffarg_factor)
   uint8_t testflg = THRFLG_INIT | THRFLG_PROC | THRFLG_INPUT | THRFLG_OUTPUT | THRFLG_ARGBUF;
   short i, nta, nth, ntr, n_threads, n_targ;
   size_t memsz;
-  void *hp;
+  char *hp;
 
   if (n_buffarg_factor <= 0)
     n_buffarg_factor = BUFFARG_NUM_FAC_DEFAULT;
@@ -761,6 +760,12 @@ int threadsSetUp(int n_buffarg_factor)
 
   Threads.n_buffargs = (Threads.n_threads > 0)? Threads.n_threads * n_buffarg_factor: 1;
   memsz += Threads.n_buffargs * Threads.tasks[THRTASK_ARGBUF].argsz;
+
+#ifdef THREADS_DEBUG
+  fprintf(stderr, 
+	  "THREADS_DEBUG::threadsSetup(): initialising %hi threads with %hi arguments and %hi buffers\n",
+	  Threads.n_threads, Threads.n_targ, Threads.n_buffargs);
+#endif
 
   if (Threads.n_threads > 0) {
     ECALLOCP(Threads.n_threads, Threads.threadp);
@@ -822,7 +827,7 @@ int threadsSetUp(int n_buffarg_factor)
     hp += Threads.tasks[THRTASK_ARGBUF].argsz;
     p->argno = i;
     p->nextp = NULL;
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
     p->threadno = 0;
     p->readno = 0;
 #endif
@@ -897,7 +902,7 @@ void threadsStop(void)
   int nth;
     /* wait for threads to finish */
   for (nth=0; nth < Threads.n_threads; nth++) {
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
     pthread_mutex_lock(&mutex_stdout);
     fprintf(stderr,
 	    "# THREAD_DEBUG: main_thread: waiting for thread %hi to finish ...\n", nth);

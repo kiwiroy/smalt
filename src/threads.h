@@ -33,7 +33,7 @@ extern "C"
 #ifndef THREADS_H
 #define THREADS_H
 
-  //#define threads_debug
+  //#define THREADS_DEBUG
 
 #include <stdint.h>
 #include "elib.h"
@@ -66,7 +66,7 @@ extern "C"
    ****************************************************************************/
 
   typedef int (THREAD_PROCF) (ErrMsg *,
-#ifdef threads_debug
+#ifdef THREADS_DEBUG
 			      uint64_t *,
 #endif 
 			      void *, void *);
@@ -74,6 +74,16 @@ extern "C"
   typedef int (THREAD_CLEANF)(ErrMsg *, void *);
   typedef int (THREAD_CHECKF)(const void *, const void *);
   typedef int (THREAD_CMPF)(const void *, const void *);
+
+  /****************************************************************************
+   ************************ Methods Aiding Debugging **************************
+   ****************************************************************************/
+
+#ifdef THREADS_DEBUG
+  int threadsPrintDebugMsg(const char *format, ...);
+  /**< Prints a message to stderr
+   */
+#endif
 
   /****************************************************************************
    ********************** Methods of Type ThreadStore *************************

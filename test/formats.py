@@ -28,7 +28,7 @@ class Cigar:
     def parse(self, lin):
         m = Cigar.CIGARSTR.match(lin)
         if m:
-            self.lin = lin
+            self.lin = lin.strip()
             self.mapcls = m.group(1) # class label (A,B,C,D,N,R,S)
             self.mapq = int(m.group(2)) # mapping quality score
             self.qnam = m.group(3)   # name of query (read)
@@ -78,22 +78,20 @@ class Cigar:
         return cmp(other.sseg[1], self.sseg[1])
                 
 def getNextCigarPair(infil, cigA, cigB, mateno_check = True):
-    isOk = True
-    if cigA.next(infil):
-        return False
-    
-    if cigB.next(infil):
-        print "ERROR EOF when reading 2nd mate ..."
-        return False
-    
-    if not cigA.ok:
-        print "ERROR when parsing 1st mate"
-        exit(1)
-    if not cigB.ok:
-        print "ERROR: when parsing 2nd mate"
-        exit(1)
+    isOk = False
+    isEOF = cigA.next(infil)
 
-    if mateno_check:
+    if not isEOF:
+        if cigB.next(infil):
+            exit("ERROR EOF when reading 2nd mate ...")
+    
+        if not cigA.ok:
+            exit("ERROR when parsing 1st mate")
+            
+        if not cigB.ok:
+            exit("ERROR: when parsing 2nd mate")
+        isOk = True
+    if not isEOF and mateno_check:
         if cigA.qnam[-2] != cigB.qnam[-2]:
             print "ERROR: read names don't match %s, %s" % (cigA.qnam, cigB.qnam)
             isOk = False
@@ -101,7 +99,7 @@ def getNextCigarPair(infil, cigA, cigB, mateno_check = True):
             print "ERROR in mate number %s [1] and %s [2]" % (cigA.qnam, cigB.qnam)
             isOk = False
     
-    return isOk
+    return (isOk, isEOF)
 
 def openFile(filnam, mode = 'r'):
     import gzip

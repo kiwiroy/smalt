@@ -3,12 +3,18 @@
 ## Mac 64bit binaries: compile with 
 ## CFLAGS="-Wall -g -O2 -pthread -m64 -D_FILE_OFFSET_BITS=64"
 ## CXXFLAGS="-m64 -D_FILE_OFFSET_BITS=64"
+if ICC_COMPILER
+AM_CFLAGS = #-Wall -W
 if ICC_NOLIMITH
-AM_CFLAGS = -D_GCC_LIMITS_H_
+AM_CFLAGS += -D_GCC_LIMITS_H_
+endif
+else
+AM_CFLAGS = -Wall -Wextra
 endif
 
+
 if APPLE_64BIT
-APPLECFLAGS = -m64 -D_FILE_OFFSET_BITS=64
+AM_CFLAGS += -m64 -D_FILE_OFFSET_BITS=64
 APPLELDFLAGS = -pthread 
 endif
 
@@ -33,25 +39,20 @@ bin_PROGRAMS = smalt
 noinst_LIBRARIES = libseq.a libsgm.a
 
 libseq_a_SOURCES = elib.c elib.h filio.c filio.h sequence.c sequence.h
-libseq_a_CFLAGS = ${APPLECFLAGS}
 
 libsgm_a_SOURCES = ${ALI_SRC} ${SGM_SRC}
-libsgm_a_CFLAGS = ${APPLECFLAGS}
+libsgm_a_CFLAGS = ${AM_CFLAGS}
 if SSE2
-if ICC_NOLIMITH
-libsgm_a_CFLAGS += -xO -D_GCC_LIMITS_H_
-else
 if ICC_COMPILER
 libsgm_a_CFLAGS += -xO
 else
-libsgm_a_CFLAGS += -msse2 
-endif
+libsgm_a_CFLAGS += -msse2
 endif
 endif
 libsgm_a_LIBADD = libseq.a
 
 smalt_SOURCES = smalt.c menu.h menu.c threads.h threads.c infmt.c infmt.h ${MAP_SRC}
-smalt_CFLAGS = $(BAMBAMC_INCL) ${APPLECFLAGS}
+smalt_CFLAGS = $(BAMBAMC_INCL) ${AM_CFLAGS}
 smalt_LDFLAGS = $(BAMBAMC_LDFLG) ${APPLELDFLAGS} #-static 
 smalt_LDADD = libsgm.a libseq.a $(BAMBAMC_DEPS) -lm -lpthread #-lrt
 if WITH_ZLIB

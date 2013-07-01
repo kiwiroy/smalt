@@ -18,14 +18,14 @@
 # ######################################################
 
 AC_PREREQ([2.65])
-AC_INIT([smalt],[0.7.4.4],[hp3@sanger.ac.uk],[smalt],[http://smalt.sourceforge.net])
+AC_INIT([smalt],[0.7.5-rc1],[hp3@sanger.ac.uk],[smalt],[http://smalt.sourceforge.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([src/elib.c])
 AC_CONFIG_HEADERS([config.h:config.hin])
 
 # Checks for programs.
-#AC_PROG_CC([icc gcc cc])
-AC_PROG_CC
+AC_PROG_CC([icc gcc cc])
+#AC_PROG_CC
 
 # C++ compiler used for linking with c++ library bambam
 #AC_PROG_CXX
@@ -48,9 +48,9 @@ PKG_PROG_PKG_CONFIG
 #AC_SUBST([LDFLAGS],[-static])
 
 AC_PROG_RANLIB
-AM_PATH_PYTHON([2.7],[with_testdriver=true],
+AM_PATH_PYTHON([2.6],[with_testdriver=true],
 	[with_testdriver=false;
-	AC_MSG_WARN("Could not find python version >= 2.7. Won't run tests.")])
+	AC_MSG_WARN("Could not find python version >= 2.6. Won't run tests.")])
 
 # Checks for programs
 

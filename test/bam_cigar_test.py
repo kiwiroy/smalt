@@ -294,6 +294,6 @@ if __name__ == '__main__':
         exit("ERROR: SAM and BAM files differ for paired reads!")
     checkSAMfile(READSEQ_PAIR,sam_paired_oufilnam, xcig=True)
 
-    print "Test ok."  
+    #print "Test ok."  
     df.cleanup()
     exit()

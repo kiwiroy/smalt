@@ -33,6 +33,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <limits.h>
+#include <assert.h>
 #include <time.h>
 
 #include "elib.h"
@@ -61,10 +62,10 @@ enum {
 				*  later. */
 #endif
   SMALT_MAX_THREAD_NUM = 64,  /**< Maximum number of threads to be spawned */
-  SMALT_THREAD_ARGFAC_SRT  = 64,/**< Number of buffered thread arguments/results
+  SMALT_THREAD_ARGFAC_SRT  = 4,/**< Number of buffered thread arguments/results
 				* as a multiplicative factor. I.e. for n>2 threads there are
 				* SMALT_THREAD_ARGCONST + SMALT_THREAD_ARGFAC*n arguments buffered. */
-  SMALT_THREAD_ARGFAC_NOSRT = 16,
+  SMALT_THREAD_ARGFAC_NOSRT = 2,
   SMALT_THREAD_NOARG = -1,    /**< negative thread number signals empty thread stack */
   SMALT_MAXNBITS_PERF = 10,   /**< Maximum number of bits for perfect part of hash key */
   SMALT_MAXNBITS_KEY = 26,    /**< Maximum number of bits for hash key */
@@ -78,6 +79,7 @@ enum {
 #endif
   SMALT_INSSAMPLE_BLKSZ = 2048,     /* Block size for memory allocation of isert size sample */
   SMALT_INSSAMPLE_MINSIZ = 1028,    /* minimum sample size */
+  SMALT_NARGS_PER_THREAD = 8,      /* number of per-read buffers in block per thread */
 };
 
 enum THREADARG_FLAGS {
@@ -129,11 +131,12 @@ typedef struct _SmaltMapConst { /**< Constant Arguments for mapping function (fo
   const char *progversion;   /**< Version of main program */
   int cmdlin_narg;           /**< Number of arguments in original command line */
   char **cmdlin_argv;        /**< Pointer to argument in original command line */
+  short threadblksz;         /**< Number of per-read buffers SmaltIOBuffArg in thread block 
+			      * SmaltArgBlock */
 } SmaltMapConst;
 
 typedef struct _SmaltIOBuffArg { /**< Arguments to be buffered and passed between input,
 				  * worker and output threads */
-  short argno;
   uint64_t readno;
   unsigned char isPaired;
   SeqFastq *readp;
@@ -146,6 +149,14 @@ typedef struct _SmaltIOBuffArg { /**< Arguments to be buffered and passed betwee
   RSLTPAIRFLG_t pairflg;
   Report *rep;
 } SmaltIOBuffArg;
+
+typedef struct SmaltArgBlock_ {
+  short argno;
+  short n_iobf;          /**< number of active element 
+			  * in block iobfp */
+  short n_alloc;         /**< Number of elements allocated in iobfp */        
+  SmaltIOBuffArg *iobfp; /**< pointer to first in block */
+} SmaltArgBlock;
 
 typedef struct _SmaltMapArgs { /**< Arguments for mapping function
 				* (needed a single structure for multiple threads) */
@@ -432,6 +443,7 @@ static int initMapConst(SmaltMapConst *smcp,
   uint8_t menuoutform, informat;
   unsigned char pairtyp = 0;
   int ninfil;
+  short nthreads = 0;
   INFMT_t fmt;
 
   memset(smcp, 0, sizeof(SmaltMapConst));
@@ -439,6 +451,10 @@ static int initMapConst(SmaltMapConst *smcp,
   smcp->subprogtyp = menuGetSubProgTyp(menup);
   smcp->cmdlin_argv = menuGetCommandLine(menup, &smcp->cmdlin_narg);
   smcp->prognam = menuGetProgramName(&smcp->progversion);
+  nthreads = menuGetNumberOfThreads(menup);
+  if (nthreads > SMALT_MAX_THREAD_NUM)
+    nthreads = SMALT_MAX_THREAD_NUM;
+  smcp->threadblksz = (nthreads > 0)? nthreads*SMALT_NARGS_PER_THREAD: 1;
 
   if((errcode = menuGetMapParams(menup, &indexnam, 
 				 &smcp->nhitmax_tuple, &smcp->tupcovmin,
@@ -705,22 +721,14 @@ static void setInSampleIntervalInput(SmaltInput *inargp,
   }
 }
 
-static int isInSampleInput(const SmaltInput *inargp)
-{
-  return inargp->rival == 0 || (inargp->pctr % inargp->rival) == 0;
-}
-
 /*****************************************************************************
  ****************** Methods of Private Type SmaltIOBuffArg *******************
  *****************************************************************************/
 /* THREAD_INITF callback function */
-static int initBuffArg(void *ap, const void *ip, short argno)
+static int initIOBuffArg(SmaltIOBuffArg *argp, 
+			 uint8_t prep_paired)
 {
   int errcode = ERRCODE_SUCCESS;
-  SmaltIOBuffArg *argp = (SmaltIOBuffArg *) ap;
-  const SmaltMapConst *mcp = (const SmaltMapConst *) ip;
-  uint8_t prep_paired = (mcp->rmapflg & RMAPFLG_PAIRED) || 
-    mcp->inform == MENU_INFORM_SAM || mcp->inform == MENU_INFORM_BAM;
 
   argp->readp = seqFastqCreate(0, SEQTYP_UNKNOWN);
   if (NULL == argp->readp) 
@@ -752,18 +760,15 @@ static int initBuffArg(void *ap, const void *ip, short argno)
   argp->readno = 0LL;
   argp->isiz = 0;
   argp->pairflg = 0;
-  argp->argno = argno;
 
   return errcode;
 }
 
-/* THREAD_CLEANF */
-static int cleanupBuffArg(ErrMsg *errmsgp, void *p)
+static int cleanupIOBuffArg(ErrMsg *errmsgp, SmaltIOBuffArg *argp)
 {
-  if (NULL == p) {
+  if (NULL == argp) {
     ERRMSGNO(errmsgp, ERRCODE_NULLPTR);
   } else {
-    SmaltIOBuffArg *argp = (SmaltIOBuffArg *) p;
     seqFastqDelete(argp->readp);
     seqFastqDelete(argp->matep);
     reportDelete(argp->rep);
@@ -776,16 +781,14 @@ static int cleanupBuffArg(ErrMsg *errmsgp, void *p)
   return ERRCODE_SUCCESS;
 }
 
-/* THREAD_PROCF */
-static int loadBuffArg(ErrMsg *errmsgp,
-#ifdef threads_debug
-		       uint64_t *readno,
-#endif 
-		       void *thargp, void *bufargp)
+static int loadIOBuffArg(ErrMsg *errmsgp,
+			 SmaltInput *inp, 
+			 SmaltIOBuffArg *argp)
 {
   int errcode = ERRCODE_SUCCESS;
-  SmaltInput *inp = (SmaltInput *) thargp;
-  SmaltIOBuffArg *argp = (SmaltIOBuffArg *) bufargp;
+
+  assert(inp);
+  assert(argp);
 
   errcode = infmtRead(inp->ifrp, argp->readp, argp->matep, &argp->isPaired);
   
@@ -804,9 +807,6 @@ static int loadBuffArg(ErrMsg *errmsgp,
   }
 
   argp->readno = inp->rctr;
-#ifdef threads_debug
-  *readno = argp->readno;
-#endif
   argp->isiz = 0;
   argp->pairflg = 0;
   reportBlank(argp->rep);
@@ -823,44 +823,18 @@ static int loadBuffArg(ErrMsg *errmsgp,
   return errcode;
 }
 
-/* THREAD_CHECKF */
-static int checkBuffArgReadNo(const void *thargp, const void *buffargp)
-{
-  const SmaltOutput *dop = (SmaltOutput *) thargp;
-  const SmaltIOBuffArg *argp = (SmaltIOBuffArg *) buffargp;
-#ifdef SMALT_debug
-  fprintf(stderr, "#SMALT_DEBUG:checkBuffArgReadNo: %llu (next: %llu)", 
-	 (unsigned long long) argp->readno, 
-	 (unsigned long long) dop->next_readno);
-#endif
-  return (argp->readno <= dop->next_readno);
-}
-
-/* THREAD_CMPF */
-static int cmpBuffArgReadNo(const void *buffargAp, const void *buffargBp)
-{
-  const SmaltIOBuffArg *bfAp = (const SmaltIOBuffArg *) buffargAp;
-  const SmaltIOBuffArg *bfBp = (const SmaltIOBuffArg *) buffargBp;
-  int rv = 0;
-  if (bfAp->readno < bfBp->readno)
-    rv = -1;
-  else if (bfAp->readno > bfBp->readno)
-    rv = 1;
-  return rv;
-}
-
 /* THREAD_PROCF */
-static int outputBuffArg(ErrMsg *errmsgp, 
-#ifdef threads_debug
-			 uint64_t *readno,
-#endif
-			 void *thargp, 
-			 void *buffargp)
+static int outputIOBuffArg(ErrMsg *errmsgp, 
+			   SmaltOutput *dop, 
+			   SmaltIOBuffArg *argp)
 {
   int errcode = ERRCODE_SUCCESS;
-  SmaltOutput *dop = (SmaltOutput *) thargp;
-  const SmaltMapConst *smcp = dop->smcp;
-  SmaltIOBuffArg *argp = (SmaltIOBuffArg *) buffargp;
+  const SmaltMapConst *smcp;
+
+  assert(dop != NULL);
+  assert(argp != NULL);
+  smcp = dop->smcp;
+  assert(dop->smcp != NULL);
 
   if ((argp->pairflg & RSLTPAIRFLG_INSERTSIZ) &&
       MENU_SAMPLE == smcp->subprogtyp &&
@@ -881,18 +855,168 @@ static int outputBuffArg(ErrMsg *errmsgp,
 			argp->rep);
 #ifdef smalt_debug
   fprintf(stderr, "#SMALT_DEBUG:outputBuffArg():wrote read no %llu\n", 
-	 (long long unsigned int) argp->readno);
-#endif
-#ifdef threads_debug
-  fprintf(stderr, "#THREADS_DEBUG:outputBuffArg(): wrote read no %llu (%llu)\n",
-	 (long long unsigned int) argp->readno,
-	 (long long unsigned int) *readno);
+	  (long long unsigned int) argp->readno);
 #endif
   if ((errcode))
     ERRMSGNO(errmsgp, errcode);
 
   return errcode;
 }
+
+/*****************************************************************************
+ ******************** Methods of Private Type SmaltArgBLock ******************
+ *****************************************************************************/
+
+/* THREAD_INITF callback function */
+static int initArgBlock(void *ap, const void *ip, short argno)
+{
+  int errcode = ERRCODE_SUCCESS;
+  short i;
+  SmaltArgBlock *blockp = (SmaltArgBlock *) ap;
+  const SmaltMapConst *mcp = (const SmaltMapConst *) ip;
+  uint8_t prep_paired = (mcp->rmapflg & RMAPFLG_PAIRED) || 
+    mcp->inform == MENU_INFORM_SAM || mcp->inform == MENU_INFORM_BAM;
+  
+  blockp->argno = argno;
+  blockp->n_iobf = 0;
+  if (NULL == ECALLOCP(mcp->threadblksz, blockp->iobfp)) {
+    errcode = ERRCODE_NOMEM;
+    blockp->n_alloc = 0;
+  } else {
+    blockp->n_alloc = mcp->threadblksz;
+  }
+
+  for (i=0; i<blockp->n_alloc && !(errcode); i++)
+    errcode = initIOBuffArg(blockp->iobfp + i, prep_paired);
+  
+  return errcode;
+}
+
+/* THREAD_CLEANF */
+static int cleanupArgBlock(ErrMsg *errmsgp, void *p)
+{
+  int errcode = ERRCODE_SUCCESS;
+  short i;
+  SmaltArgBlock *blockp = (SmaltArgBlock *) p;
+ 
+  assert( p != NULL );
+
+  for (i=0; i<blockp->n_alloc && !(errcode); i++)
+    errcode = cleanupIOBuffArg(errmsgp, blockp->iobfp + i);
+
+  if (!errcode) {
+    free(blockp->iobfp);
+    blockp->iobfp = NULL;
+    blockp->n_iobf = 0;
+    blockp->n_alloc = 0;
+  }
+
+  return errcode;
+}
+
+/* THREAD_PROCF */
+static int loadArgBlock(ErrMsg *errmsgp,
+#ifdef THREADS_DEBUG
+			   uint64_t *readno,
+#endif 
+			   void *thargp, void *bufargp)
+{
+  int errcode = ERRCODE_SUCCESS;
+  short i;
+  SmaltInput *inp = (SmaltInput *) thargp;
+  SmaltArgBlock *blockp = (SmaltArgBlock *) bufargp;
+
+  assert(bufargp != NULL);
+  blockp->n_iobf = 0;
+  for (i=0; i<blockp->n_alloc; i++) {
+    errcode = loadIOBuffArg(errmsgp, 
+			    inp,
+			    blockp->iobfp+i);
+    if (errcode)
+      break;
+  }
+  blockp->n_iobf = i;
+#ifdef THREADS_DEBUG
+  *readno = (i > 1)? blockp->iobfp->readno: 0;
+  threadsPrintDebugMsg("loadArgBlock(): read read no %llu to %llu (%s) (errcode = %i)\n",
+		       (long long unsigned int) *readno,
+		       (long long unsigned int) (*readno) + i, 
+		       (i == blockp->n_alloc)? "complete": "incomplete",
+		       errcode);
+#endif
+
+  return (ERRCODE_EOF == errcode && i > 0)? ERRCODE_SUCCESS: errcode;
+}
+
+/* THREAD_CHECKF */
+static int checkArgBlockReadNo(const void *thargp, const void *buffargp)
+{
+  const SmaltOutput *dop = (SmaltOutput *) thargp;
+  const SmaltArgBlock *blockp = (SmaltArgBlock *) buffargp;
+  uint64_t readno;
+  assert(thargp != NULL);
+  assert(buffargp != NULL);
+  assert(blockp->iobfp != NULL);
+  readno = blockp->iobfp->readno;
+  
+#ifdef SMALT_debug
+  fprintf(stderr, "#SMALT_DEBUG:checkBuffArgBlockReadNo: %llu (next: %llu)", 
+	 (unsigned long long) readno, 
+	 (unsigned long long) dop->next_readno);
+#endif
+  return (blockp->n_iobf > 0 && readno <= dop->next_readno);
+}
+
+/* THREAD_CMPF */
+static int cmpArgBlockReadNo(const void *buffargAp, 
+			     const void *buffargBp)
+{
+  const SmaltArgBlock *bfAp = (const SmaltArgBlock *) buffargAp;
+  const SmaltArgBlock *bfBp = (const SmaltArgBlock *) buffargBp;
+  int rv = 0;
+
+  assert(buffargAp != NULL && bfAp->iobfp != NULL);
+  assert(buffargBp != NULL && bfBp->iobfp != NULL);
+
+  if (bfAp->iobfp->readno < bfBp->iobfp->readno)
+    rv = -1;
+  else if (bfAp->iobfp->readno > bfBp->iobfp->readno)
+    rv = 1;
+  return rv;
+}
+
+/* THREAD_PROCF */
+static int outputArgBlock(ErrMsg *errmsgp, 
+#ifdef THREADS_DEBUG
+			  uint64_t *readno,
+#endif
+			  void *thargp, 
+			  void *buffargp)
+{
+  int errcode = ERRCODE_SUCCESS;
+  short i;
+  SmaltOutput *dop = (SmaltOutput *) thargp;
+  SmaltArgBlock *blockp = (SmaltArgBlock *) buffargp;
+
+  assert(buffargp != NULL);
+
+  for (i=0; i<blockp->n_iobf && !(errcode); i++)
+    errcode = outputIOBuffArg(errmsgp, 
+			      dop,
+			      blockp->iobfp+i);
+
+#ifdef THREADS_DEBUG
+  *readno = (i > 1)? blockp->iobfp->readno: 0;
+  threadsPrintDebugMsg("outputArgBlock(): wrote read no %llu to %llu (%s)\n",
+		       (long long unsigned int) *readno,
+		       (long long unsigned int) (*readno) + i, 
+		       (i == blockp->n_iobf)? "complete": "incomplete");
+#endif 
+
+  return errcode;
+}
+
+
 /*****************************************************************************
  ********************* Methods of Private Type SmaltMapArg *******************
  *****************************************************************************/
@@ -942,21 +1066,25 @@ static int cleanupMapArgs(ErrMsg *errmsgp, void *p)
 
 /* THREAD_PROCF */
 static int processMapArgs(ErrMsg *errmsgp, 
-#ifdef threads_debug
-			  uint64_t *readno,
-#endif
-			  void *targp, void *bufargp)
+			  SmaltMapArgs *map, 
+			  SmaltIOBuffArg *brgp)
      /**< This routine and functions it calls do not fork threads */
 {
   int errcode;
   uint8_t is_frac;
   uint32_t covermin_tuple;
   const ResultSet *rsltp;
-  SmaltMapArgs *map = (SmaltMapArgs *) targp;
-  const SmaltMapConst *macop = map->smconstp;
-  SmaltIOBuffArg *brgp = (SmaltIOBuffArg *) bufargp;
-  SeqFastq *readp = brgp->readp;
-  SeqFastq *matep = brgp->matep;
+  const SmaltMapConst *macop;
+  SeqFastq *readp, *matep;
+
+  assert(map != NULL);
+  assert(brgp != NULL);
+
+  macop = map->smconstp;
+  assert(macop != NULL);
+
+  readp = brgp->readp;
+  matep = brgp->matep;
 
   ERRMSG_READNO(errmsgp, brgp->readno+1);
   ERRMSG_READNAM(errmsgp, seqFastqGetSeqName(readp));
@@ -1075,18 +1203,57 @@ static int processMapArgs(ErrMsg *errmsgp,
   return errcode;
 }
 
+static int processArgBlock(ErrMsg *errmsgp, 
+#ifdef THREADS_DEBUG
+			   uint64_t *readno,
+#endif
+			   void *targp, void *bufargp)
+     /**< This routine and functions it calls do not fork threads */
+{
+  int errcode = ERRCODE_SUCCESS;
+  short i;
+  SmaltMapArgs *map = (SmaltMapArgs *) targp;
+  SmaltArgBlock *blockp = (SmaltArgBlock *) bufargp;
+
+  for (i=0; i<blockp->n_iobf && !(errcode); i++)
+    errcode = processMapArgs(errmsgp, 
+			     map, 
+			     blockp->iobfp+i);
+#ifdef THREADS_DEBUG
+  *readno = (i > 1)? blockp->iobfp->readno: 0;
+  threadsPrintDebugMsg("processArgBlock(): wrote read no %llu to %llu (%s)\n",
+		       (long long unsigned int) *readno,
+		       (long long unsigned int) (*readno) + i, 
+		       (i == blockp->n_iobf)? "complete": "incomplete");
+
+#endif
+  return errcode;
+}
+
 /*****************************************************************************
  ******************* Methods for Histogram of Insert Sizes *******************
  *****************************************************************************/
 
 static int prepSample(const SmaltMapConst *common_args)
 {
+  int errcode = ERRCODE_SUCCESS;
   SEQNUM_t nreads = 0;
   SmaltInput *input_args = (SmaltInput *) threadsGetMem(THRTASK_INPUT);
-  SmaltIOBuffArg *iobfp = (SmaltIOBuffArg *) threadsGetMem(THRTASK_ARGBUF);
+  SmaltArgBlock *blockp = (SmaltArgBlock *) threadsGetMem(THRTASK_ARGBUF);
   SmaltOutput *dop = (SmaltOutput *) threadsGetMem(THRTASK_OUTPUT);
-  int errcode = infmtCheckReads(input_args->ifrp, iobfp->readp, iobfp->matep,
-				&nreads, NULL, NULL);
+  SmaltIOBuffArg *iobfp;
+
+  assert(common_args != NULL);
+  assert(input_args != NULL);
+  assert(blockp != NULL);
+  assert(dop != NULL);
+
+  iobfp = blockp->iobfp;
+  assert(iobfp != NULL);
+	 
+  errcode = infmtCheckReads(input_args->ifrp, iobfp->readp, iobfp->matep,
+			    &nreads, NULL, NULL);
+
   if ((errcode) && errcode != ERRCODE_RNAMPAIR)
     return errcode;
 
@@ -1156,16 +1323,16 @@ static int mapReads(ErrMsg *errmsgp,
     ERRMSGNO(errmsgp, errcode);
 
   errcode = threadsSetTask(THRTASK_ARGBUF, 0, 
-			   initBuffArg, &common_args, 
-			   NULL, cleanupBuffArg, 
+			   initArgBlock, &common_args, 
+			   NULL, cleanupArgBlock, 
 			   NULL, NULL,
-			   sizeof(SmaltIOBuffArg));
+			   sizeof(SmaltArgBlock));
   if (errcode)
     ERRMSGNO(errmsgp, errcode);
 
   errcode = threadsSetTask(THRTASK_INPUT, (nthreads > 0)? 1:0, 
 			   initInput, &common_args, 
-			   loadBuffArg, cleanupInput, 
+			   loadArgBlock, cleanupInput, 
 			   NULL, NULL,
 			   sizeof(SmaltInput));
   if (errcode)
@@ -1173,20 +1340,20 @@ static int mapReads(ErrMsg *errmsgp,
   
   errcode = threadsSetTask(THRTASK_PROC, nthreads, 
 			   initMapArgs, &common_args, 
-			   processMapArgs, cleanupMapArgs,
+			   processArgBlock, cleanupMapArgs,
 			   NULL, NULL,
 			   sizeof(SmaltMapArgs));
   if (errcode)
     ERRMSGNO(errmsgp, errcode);
 
   if (nthreads > 0 && (menuGetFlags(menup) & MENUFLAG_READORDER)) {
-    checkf = checkBuffArgReadNo;
-    cmpf = cmpBuffArgReadNo;
+    checkf = checkArgBlockReadNo;
+    cmpf = cmpArgBlockReadNo;
     arg_fac = SMALT_THREAD_ARGFAC_SRT;
   }
   errcode = threadsSetTask(THRTASK_OUTPUT, 0, 
 			   initSmaltOutput, &common_args, 
-			   outputBuffArg, cleanupSmaltOutput,
+			   outputArgBlock, cleanupSmaltOutput,
 			   checkf, cmpf,
 			   sizeof(SmaltOutput));
   

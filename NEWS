@@ -2,6 +2,15 @@
 = SMALT release history =
 =========================
 
+Release 0.7.5 (01 July 2013)
+============================
+
+- Changed buffering in multi-threaded mode to make code run more
+  efficient with a high number (>8) of threads.
+
+=(smalt 0.7.5 28/06/2013 hp3)=
+
+
 Version 0.7.4.4 (25 June 2013)
 ==============================
 

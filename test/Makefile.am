@@ -4,16 +4,29 @@ DIST_SUBDIRS = data
 INCLUDE_PATTERN = -I%
 LIBNAM_PATTERN = -l%
 
-if ICC_NOLIMITH
-AM_CFLAGS = -D_GCC_LIMITS_H_ -I../src/
-else
 AM_CFLAGS = -I../src/
+
+if ICC_COMPILER
+if ICC_NOLIMITH
+AM_CFLAGS += -D_GCC_LIMITS_H_
+endif
+else
+AM_CFLAGS += -Wall -Wextra
 endif
 
 if APPLE_64BIT
-APPLECFLAGS = -m64 -D_FILE_OFFSET_BITS=64
+AM_CFLAGS += -m64 -D_FILE_OFFSET_BITS=64
 APPLELDFLAGS = -pthread
-AM_CFLAGS += ${APPLECFLAGS}
+endif
+
+if SSE2
+if ICC_COMPILER
+SSE_INTRINS_FLAGS = -xO
+else
+SSE_INTRINS_FLAGS = -msse2
+endif
+else
+SSE_INTRINS_FLAGS =
 endif
 
 SEQ_LIB = ../src/libseq.a
@@ -53,11 +66,13 @@ TEST_DRIVERS = sequence_test.py consistentFR_test.py \
 		results_split_test.py \
 		ioform_test.py ouform_cigar_test.py \
 		sample_test.py \
-		cigar_test.py
+		cigar_test.py \
+		mthread_test.py
                 #regression_test.py #alignment_test.py
 
 if WITH_TESTDRIVER
 TESTS_ENVIRONMENT = $(PYTHON)
+
 
 TESTS = ${TEST_DRIVERS}
 
@@ -126,7 +141,7 @@ nodist_bam_test_SOURCES = bam_test.c ../src/elib.c ../src/elib.h
 if SSE2
 nodist_mergesort_test_SOURCES = mergesort_test.c ../src/elib.c ../src/elib.h ../src/randef.h ../src/sortdef.h \
 	../src/sort.c ../src/sort.h
-mergesort_test_CFLAGS = -msse2 -I../src
+mergesort_test_CFLAGS = $(AM_CLFAGS) $(SSE_INTRINS_FLAGS)
 endif
 
 ## test routines for sequence.c
@@ -158,7 +173,8 @@ hashhit_test_LDADD = $(SGM_LIB) -lm $(ZLIB_LDFLAG)
 nodist_hashhit_track_test_SOURCES = hashhit_track_test.c ${HIT_SRC} \
 	tracker.c tracker.h \
 	../src/diffstr.c ../src/diffstr.h
-hashhit_track_test_CFLAGS= -DRESULTS_TRACKER -I../test -I../src
+hashhit_track_test_CFLAGS= -I../test -I../src
+hashhit_track_test_CPPFLAGS = -DRESULTS_TRACKER
 hashhit_track_test_LDADD = $(SEQ_LIB) -lm $(ZLIB_LDFLAG)
 
 nodist_hashidx_test_SOURCES = hashidx_test.c
@@ -174,24 +190,15 @@ segment_simple_test_LDADD = $(SGM_LIB) -lm $(ZLIB_LDFLAG)
 # tests for candidate segment filters
 nodist_candseg_test_SOURCES = candseg_test.c ../src/candseg.c ../src/candseg.h ${SGM_SRC}\
 	../src/diffstr.c ../src/diffstr.h tracker.c tracker.h
-candseg_test_CFLAGS =  $(APPLECFLAGS) -DCANDSEG_TRACKER -DRESULTS_TRACKER -I../test -I../src
+candseg_test_CFLAGS =  $(AM_CFLAGS) -I../test
+candseg_test_CPPFLAGS = -DCANDSEG_TRACKER -DRESULTS_TRACKER
 candseg_test_LDADD = $(SEQ_LIB) -lm $(ZLIB_LDFLAG)
 
 # tests of alignment routines
 nodist_alignment_test_SOURCES = alignment_test.c ${ALI_SRC}
-alignment_test_CFLAGS = -Dalignment_debug -Dalignment_timing $(APPLECFLAGS)
+alignment_test_CFLAGS = $(AM_CFLAGS) $(SSE_INTRINS_FLAGS)
+alignment_test_CPPFLAGS = -Dalignment_debug -Dalignment_timing
 alignment_test_LDADD = $(SEQ_LIB) -lm $(ZLIB_LDFLAG)
-if SSE2
-if ICC_NOLIMITH
-nodist_alignment_test_CFLAGS = -D_GCC_LIMITS_H_ -xO	
-else
-if ICC_COMPILER
-alignment_test_CFLAGS += -xO
-else
-alignment_test_CFLAGS += -msse2
-endif
-endif
-endif
 
 
 # test of mapping routines
@@ -200,33 +207,21 @@ nodist_rmap_test_SOURCES = rmap_test.c ${MAP_SRC}
 # Dummy C++ source to trigger C++ linking.
 #nodist_EXTRA_rmap_test_SOURCES = dummy.cxx
 #endif
-rmap_test_CFLAGS = $(APPLECFLAGS) -I../src $(BAMBAMC_INCL)
+rmap_test_CFLAGS = $(AM_CFLAGS) $(BAMBAMC_INCL)
 rmap_test_LDADD = $(SGM_LIB) $(BAMBAMC_DEPS) -lm $(ZLIB_LDFLAG)
 rmap_test_LDFLAGS = $(BAMBAMC_LDFLG)
 
 # test splitting of alignments across neighbouring reference sequences
 smalt_Xali_test_SOURCES = ${SMALT_SRC}
-smalt_Xali_test_CFLAGS = $(APPLECFLAGS) -DSMALT_DEBUG_XALI -I../src $(BAMBAMC_INCL)
-if SSE2
-smalt_Xali_test_CFLAGS += -msse2
-endif
+smalt_Xali_test_CFLAGS = $(AM_CFLAGS) $(SSE_INTRINS_FLAGS) $(BAMBAMC_INCL)
+smalt_Xali_test_CPPFLAGS = -DSMALT_DEBUG_XALI
 smalt_Xali_test_LDADD = $(SGM_LIB) $(BAMBAMC_DEPS) -lm -lpthread $(ZLIB_LDFLAG)
 smalt_Xali_test_LDFLAGS =  $(APPLELDFLAGS) $(BAMBAMC_LDFLG)
 
 # testing smalt with simulated reads (not distributed)
 nodist_smalt_test_SOURCES = ${SMALT_TEST_SRC}
-smalt_test_CFLAGS = $(APPLECFLAGS) -DRESULTS_TRACKER -I../test -I../src $(BAMBAMC_INCL)
-if SSE2
-if ICC_NOLIMITH
-smalt_test_CFLAGS += -x0 -D_GCC_LIMITS_H_	
-else
-if ICC_COMPILER
-smalt_test_CFLAGS += -x0	
-else
-smalt_test_CFLAGS += -msse2
-endif
-endif
-endif
+smalt_test_CFLAGS = $(AM_CFLAGS) $(SSE_INTRINS_FLAGS) -I../test $(BAMBAMC_INCL)
+smalt_test_CPPFLAGS = -DRESULTS_TRACKER
 
 smalt_test_LDADD = $(SEQ_LIB) $(BAMBAMC_DEPS) -lm -lpthread $(ZLIB_LDFLAG)
 smalt_test_LDFLAGS = $(APPLELDFLAGS) $(BAMBAMC_LDFLG)
@@ -235,29 +230,30 @@ smalt_test_LDFLAGS = $(APPLELDFLAGS) $(BAMBAMC_LDFLG)
 nodist_smalt_basq_SOURCES = ../src/smalt.c ../src/menu.c ../src/menu.h \
 		../src/infmt.c ../src/infmt.h\
 		../src/threads.c ../src/threads.h ${MAP_SRC}
-smalt_basq_CFLAGS = -DRESULTS_BASQUAL  $(APPLECFLAGS) -I../src $(BAMBAMC_INCL)
+smalt_basq_CFLAGS = $(AM_CFLAGS) $(BAMBAMC_INCL)
+smalt_basq_CPPFLAGS = -DRESULTS_BASQUAL
 smalt_basq_LDADD = $(SGM_LIB) $(BAMBAMC_DEPS) -lm -lpthread $(ZLIB_LDFLAG)
 smalt_basq_LDFLAGS = $(APPLELDFLAGS) $(BAMBAMC_LDFLG) 
 
 # extracting quality values for statistical analysis
 nodist_basqual_test_SOURCES = basqual_test.c ../misc/basqual.c ../misc/basqual.h
-basqual_test_CFLAGS = $(APPLECFLAGS) -I../misc -I../src
+basqual_test_CFLAGS = $(AM_CFLAGS) 
 basqual_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
 
-# generic interface to seqeunce input formats
+# generic interface to sequence input formats
 nodist_infmt_test_SOURCES = infmt_test.c ../src/infmt.c ../src/infmt.h
 # conditional dummy C++ source to cause C++ linking.
 #if WITH_BAMBAMC
 #nodist_EXTRA_infmt_test_SOURCES = dummy.cxx
 #endif
-infmt_test_CFLAGS = -I../src $(APPLECFLAGS) $(BAMBAMC_INCL)
+infmt_test_CFLAGS = $(AM_CFLAGS) $(BAMBAMC_INCL)
 infmt_test_LDFLAGS = $(BAMBAMC_LDFLG)
 infmt_test_LDADD = $(SEQ_LIB) $(BAMBAMC_DEPS) $(ZLIB_LDFLAG)
 
 # optional samtools api
 if WITH_SAMTOOLS
 samtools_api_test_SOURCES = samtools_api_test.c ../src/elib.c ../src/elib.h
-samtools_api_test_CFLAGS = $(APPLECFLAGS) -I../src $(SAMTOOLS_CFLAGS)
+samtools_api_test_CFLAGS = $(AM_CFLAGS) $(SAMTOOLS_CFLAGS)
 samtools_api_test_LDFLAGS = $(SAMTOOLS_LDFLAGS)
 samtools_api_test_LDADD =  $(SAMTOOLS_DEPS)
 endif
@@ -268,7 +264,8 @@ if WITH_BAMBAMC
 bambam_test_SOURCES = bambam_test.c ../src/elib.c ../src/elib.h
 # Dummy C++ source to cause C++ linking.
 #nodist_EXTRA_bambam_test_SOURCES = dummy.cxx
-bambam_test_CFLAGS = $(APPLECFLAGS) -I../src $(BAMBAMC_INCL)
+bambam_test_CFLAGS = $(AM_CFLAGS) $(BAMBAMC_INCL)
+bambam_test_CPPFLAGS = -DRESULTS_BASQUAL
 bambam_test_LDFLAGS = $(BAMBAMC_LDFLG)
 bambam_test_LDADD = $(BAMBAMC_DEPS)
 #
@@ -279,11 +276,9 @@ endif
 # zlib test
 if WITH_ZLIB
 nodist_zlib_test_SOURCES = zlib_test.c ../src/elib.c ../src/elib.h
-zlib_test_CFLAGS = $(APPLECFLAGS) -I../src
 zlib_test_LDADD = -lz
 
 # gzip functions in zlib
 nodist_gzip_test_SOURCES = gzip_test.c ../src/elib.c ../src/elib.h
-gzip_test_CFLAGS = $(APPLECFLAGS) -I../src
 gzip_test_LDADD = -lz
 endif

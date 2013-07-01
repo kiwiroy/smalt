@@ -18,6 +18,8 @@ cigar_test_data = cigar_ref.fa.gz cigar_read1.fq cigar_read2.fq
 
 reference_genomes = contigs.fa.gz genome_1.fa.gz
 
+multithread_data = contigs_i3k_1.fq.gz contigs_i3k_2.fq.gz
+
 dist_data_DATA = ${sequence_test_data} \
 		${reference_genomes} \
 		${ioform_test_data} \

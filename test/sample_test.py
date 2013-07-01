@@ -69,13 +69,14 @@ def assess_mapping(oufilnam):
 
     pair_ctr = 0
     nonproper_ctr = 0
-    while getNextCigarPair(infil, cigA, cigB):
+    (isOK, isEOF) = getNextCigarPair(infil, cigA, cigB)
+    while isOK:
         pair_ctr = pair_ctr + 1
         if cigA.mapcls != 'A':
             nonproper_ctr = nonproper_ctr + 1
         if cigB.mapcls != 'A':
             nonproper_ctr = nonproper_ctr + 1
-
+        (isOK, isEOF) = getNextCigarPair(infil, cigA, cigB)
     infil.close()
     
     if pair_ctr != 10000:

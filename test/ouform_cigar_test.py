@@ -42,7 +42,8 @@ def checkLabels(cigfilnam, label_pairs, mateno_check=True):
     
     infil = openFile(cigfilnam)
     for lb in label_pairs:
-        if not getNextCigarPair(infil, cigA, cigB, mateno_check):
+        (isOK, isEOF) = getNextCigarPair(infil, cigA, cigB, mateno_check)
+        if (not isOK) or isEOF:
             exit("missing lines in cigar file %s" % cigfilnam)
         if (cigA.mapcls != lb[0] and lb[0] != '?') or \
            (cigB.mapcls != lb[1] and lb[1] != '?'):
