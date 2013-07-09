@@ -116,6 +116,8 @@ const char *errMsgString(int errcode)
     return "unexpected NULL pointer";
   case ERRCODE_MAXKTUP:
     return "cannot create a hash table ecoding > 16 bases";
+  case ERRCODE_MAXKPOS:
+    return "maximum number of k-mer positions exceeded";
   case ERRCODE_HASHSEQTYP:
     return "sequence type cannot be hashed";
   case ERRCODE_HASH_NOMORESEQ:

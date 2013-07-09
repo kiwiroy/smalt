@@ -49,7 +49,7 @@ enum MENU_OPTION_CONST {
 #endif
 
 #ifndef PACKAGE_VERSION
-#define PACKAGE_VERSION "0.7.4.1"
+#define PACKAGE_VERSION "0.7.4.4"
 #endif
 
 #ifndef PACKAGE_BUGREPORT
@@ -61,7 +61,7 @@ static const char MENU_PROGNAM[] =\
 static const char MENU_PROGNAM_VERSION_FMT[] = \
   "                             (version: %s)\n";
 static const char MENU_RELEASE_VERSION[] = PACKAGE_VERSION;
-static const char MENU_RELEASE_DATE[] =  "22-04-2013";
+static const char MENU_RELEASE_DATE[] =  "09-07-2013";
 static const char MENU_RELEASE_AUTHORS[] = "Hannes Ponstingl";
 static const char MENU_RELEASE_BUGREPORT[] = PACKAGE_BUGREPORT;
 static const char MENU_COPYRIGHT_NOTICE[] = "Copyright (C) 2010 - 2013 Genome Research Ltd.";
