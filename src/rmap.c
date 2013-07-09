@@ -2016,6 +2016,7 @@ int rmapPair(ErrMsg *errmsgp,
 			target_depth, max_depth, rmapflg, 
 			rsfp, rmp->htflyp, ssp, codecp, rmp->ivr);
 	} else {
+	  errcode = ERRCODE_SUCCESS;
 #endif //#ifdef rmap_finehash_2ndmate
 	  mapSingleRead(errmsgp,
 			bufp, 

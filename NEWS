@@ -2,14 +2,20 @@
 = SMALT release history =
 =========================
 
-Release 0.7.5 (01 July 2013)
+Release 0.7.5 (09 July 2013)
 ============================
 
 - Changed buffering in multi-threaded mode to make code run more
   efficient with a high number (>8) of threads.
 
-=(smalt 0.7.5 28/06/2013 hp3)=
+=(smalt 0.7.5 09/07/2013 hp3)=
 
+
+Version 0.7.4.5 (09 July 2013)
+==============================
+
+- Fixed error message 'rmap.c:2048 ERROR: unknown error code' which
+  could occur with wide insert range boundaries (e.g. -i 80000).
 
 Version 0.7.4.4 (25 June 2013)
 ==============================
