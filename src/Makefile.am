@@ -4,7 +4,7 @@
 ## CFLAGS="-Wall -g -O2 -pthread -m64 -D_FILE_OFFSET_BITS=64"
 ## CXXFLAGS="-m64 -D_FILE_OFFSET_BITS=64"
 if ICC_COMPILER
-AM_CFLAGS = #-Wall -W
+AM_CFLAGS = -Wall -W
 if ICC_NOLIMITH
 AM_CFLAGS += -D_GCC_LIMITS_H_
 endif
@@ -53,7 +53,7 @@ libsgm_a_LIBADD = libseq.a
 
 smalt_SOURCES = smalt.c menu.h menu.c threads.h threads.c infmt.c infmt.h ${MAP_SRC}
 smalt_CFLAGS = $(BAMBAMC_INCL) ${AM_CFLAGS}
-smalt_LDFLAGS = $(BAMBAMC_LDFLG) ${APPLELDFLAGS} -static 
+smalt_LDFLAGS = $(BAMBAMC_LDFLG) ${APPLELDFLAGS} #-static 
 smalt_LDADD = libsgm.a libseq.a $(BAMBAMC_DEPS) -lm -lpthread #-lrt
 if WITH_ZLIB
 smalt_LDADD += -lz	

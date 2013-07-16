@@ -24,8 +24,8 @@ AC_CONFIG_SRCDIR([src/elib.c])
 AC_CONFIG_HEADERS([config.h:config.hin])
 
 # Checks for programs.
-#AC_PROG_CC([icc gcc cc])
-AC_PROG_CC
+AC_PROG_CC([icc gcc cc])
+#AC_PROG_CC
 
 # C++ compiler used for linking with c++ library bambam
 #AC_PROG_CXX
@@ -203,6 +203,7 @@ AM_CONDITIONAL([WITH_TESTALL], [test -e ./test/seqSetIO_test.c])
 AM_CONDITIONAL([WITH_TESTDRIVER], [test x$with_testdriver = xtrue])
 #AM_CONDITIONAL([WITH_SAMTOOLS], [test -n "$LIBSAMTOOLS"])
 #AM_COND_IF([ICC_NOLIMITH], [AC_SUBST([AM_CFLAGS], [-D_GCC_LIMITS_H_])])
+#AM_CONDITIONAL([APPLE_DARWIN], [test x$build_macosx_darwin = xtrue])
 AM_CONDITIONAL([APPLE_64BIT], [test x$build_macosx_darwin = xtrue -a $host_cpu = x86_64])
 
 # Checks for typedefs, structures, and compiler characteristics.
