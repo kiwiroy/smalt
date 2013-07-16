@@ -1445,8 +1445,13 @@ static int mapSecondary(ErrMsg *errmsgp,
 
   ktup = hashTableGetKtupLen(htp, &nskip);
   seqFastqGetConstSequence(readp, &qlen, NULL);
-  if ((errcode = resultSetGetResultInSegment(&rp, 0, 0, rssp)))
-    ERRMSGNO(errmsgp, errcode);
+  errcode = resultSetGetResultInSegment(&rp, 0, 0, rssp);
+  if (ERRCODE_SUCCESS != errcode) {
+    if (ERRCODE_FAILURE == errcode) {
+      return ERRCODE_SUCCESS; /* no alignment found, keep silent */
+    } else 
+      ERRMSGNO(errmsgp, errcode);
+  }
 
   if ((errcode = resultGetData(&qs, &qe, NULL, NULL, NULL, NULL, NULL, rp)))
     ERRMSGNO(errmsgp, errcode);
@@ -1947,7 +1952,7 @@ int rmapPair(ErrMsg *errmsgp,
       !scorIsAboveFractMax(swscor2_restricted, swscor1, MINFRACT_MAXSCOR_2ND, read2p, read1p)) {
     int mapq2;
     int swscor2;
-    /* no proper pairs or not confident of 2st mate -> 
+    /* no proper pairs or not confident of 1st mate -> 
      * unrestricted mapping of 2nd mate */
     if (n_proper < 1)
       resultSetBlank(rs2p);

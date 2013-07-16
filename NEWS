@@ -2,13 +2,23 @@
 = SMALT release history =
 =========================
 
-Release 0.7.5 (09 July 2013)
+Release 0.7.5 (16 July 2013)
 ============================
 
-- Changed buffering in multi-threaded mode to make code run more
-  efficient with a high number (>8) of threads.
+New features:
 
-=(smalt 0.7.5 09/07/2013 hp3)=
+- Changed buffering in multi-threaded mode to make code run more
+  efficient with a high number (>8) of threads. As a consequence,
+  the memory footprint increased compared to earlier versions.
+
+
+Bug fixes:
+
+- Fixed 'assertion failed' error that occurred with -p flag
+  and read pairs if no alignment was found for the mate with	
+  the higher number of k-mer word hits in the hash index.
+
+=(smalt 0.7.5 15/07/2013 hp3)=
 
 
 Version 0.7.4.5 (09 July 2013)
@@ -41,7 +51,7 @@ Version 0.7.4.3 (20 June 2013)
 Version 0.7.4.2 (05 June 2013)
 ==============================
 
-- Removed redundand code, added test data, moved code and repository
+- Removed redundant code, added test data, moved code and repository
   to SoureForge.
 
 

@@ -446,8 +446,9 @@ extern "C"
    */
 
   int resultSetGetResultInSegment(const Result **rpp, int segx, int resx, const ResultSet *rsp);
-  /**< Accessor for result number resx in segment segx.
-   * \param rpp Returns pointer to result.
+  /**< Accessor for result number resx in segment segx. Returns ERRCODE_FAILURE if
+   * there are no alignment results.
+   * \param rpp Returns pointer to result. Returns NULL if there are no results found.
    * \param segx Serial number of the query segment.
    * \param resx Serial number of the result in the segment segx.
    * \param rsp Set of results (after calling resultSetSortAndAssignSequence)

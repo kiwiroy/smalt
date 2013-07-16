@@ -24,8 +24,8 @@ AC_CONFIG_SRCDIR([src/elib.c])
 AC_CONFIG_HEADERS([config.h:config.hin])
 
 # Checks for programs.
-AC_PROG_CC([icc gcc cc])
-#AC_PROG_CC
+#AC_PROG_CC([icc gcc cc])
+AC_PROG_CC
 
 # C++ compiler used for linking with c++ library bambam
 #AC_PROG_CXX

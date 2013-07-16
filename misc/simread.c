@@ -803,7 +803,7 @@ int main(int argc, char *argv[])
   //RANSEED(RANDOM_SEED);
   RANSEED(randseed);
 
-  basnum = readlen*readnum;
+  basnum = ((uint64_t) readlen)*readnum;
   if (insertsiz != 0)
     basnum *= 2;
   printf("Simulate %llu bases ...\n", (LLUINT) basnum);

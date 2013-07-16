@@ -619,10 +619,10 @@ int seqIOstatus(SeqIO *p)
   return p->status;
 }
 
-int seqIOCheckReads(SeqFastq *sqbufp, SeqIO *sfp,
-		    SeqFastq *sqbufBp, SeqIO *sfBp,
-		    SEQNUM_t *seqnum, SEQLEN_t *maxseqlen, 
-		    SEQLEN_t *maxnamlen)
+ int seqIOCheckReads(ErrMsg *errmsgp, SeqFastq *sqbufp, SeqIO *sfp,
+		     SeqFastq *sqbufBp, SeqIO *sfBp,
+		     SEQNUM_t *seqnum, SEQLEN_t *maxseqlen, 
+		     SEQLEN_t *maxnamlen)
 {
   int errcode;
   size_t snum;
@@ -630,13 +630,21 @@ int seqIOCheckReads(SeqFastq *sqbufp, SeqIO *sfp,
   BOOL_t namflg = 1;
   SEQLEN_t mxnaml, mxseql;
 
-  if (sfp->mode != SEQIO_READ) return ERRCODE_FAILURE;
+  if (sfp->mode != SEQIO_READ) 
+    return ERRCODE_FAILURE;
   mxnaml = mxseql = 0;
   for (snum=0;
        !sfp->status && (!isPaired || !sfp->status) && snum < UINT_MAX;
        snum++) {
-    if ((errcode = seqFastqRead(sqbufp, sfp)))
+    errcode = seqFastqRead(sqbufp, sfp);
+    ERRMSG_READNO(errmsgp, snum);
+    ERRMSG_READNAM(errmsgp, seqFastqGetSeqName(sqbufp));
+
+    if ((errcode)) {
+      if (errcode != ERRCODE_EOF)
+	ERRMSGNO(errmsgp, errcode);
       return errcode;
+    }
  
     if (sqbufp->headp->size > mxnaml) mxnaml = sqbufp->headp->size;
     if (sqbufp->datap->size > mxseql) mxseql = sqbufp->datap->size;

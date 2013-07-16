@@ -193,14 +193,15 @@ extern "C"
   int seqIOclose(SeqIO *p);
   int seqIOstatus(SeqIO *p);
 
-  int seqIOCheckReads(SeqFastq *sqbufAp, SeqIO *sfAp,
+  int seqIOCheckReads(ErrMsg *errmsgp,
+		      SeqFastq *sqbufAp, SeqIO *sfAp,
 		      SeqFastq *sqbufBp, SeqIO *sfBp,
 		      SEQNUM_t *seqnum, SEQLEN_t *maxseqlen, 
 		      SEQLEN_t *maxnamlen);
   /**< Check whether the sequences in SeqIO conform to FASTA/FASTQ format for reading.
    *   Return error code or ERRCODE_SUCCESS. On return the file is scrolled back to the
    *   start.
-   *
+   * \param errmsgp Returns error messages.
    * \param sqbufAp Sequence buffer, gets overwritten and reallocated, so that
    *              no memory allocation would be neccessary when subsequently using 
    *              this structure for reading a sequence.

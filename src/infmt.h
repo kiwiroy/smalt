@@ -64,7 +64,9 @@ extern "C"
 
   InFmtReader *infmtCreateReader(int *errcode,
 				 const char *filnamA, const char *filnamB,
+#ifdef HAVE_BAMBAMC
 				 const char *tmpdir,
+#endif
 				 const INFMT_t fmt);
   /**< Constructor.
    * \param errcode Returns the error code, ERRCODE_SUCCESS if successful.
@@ -97,7 +99,8 @@ extern "C"
    */
 
   int infmtCheckReads(InFmtReader *ifrp, SeqFastq *sqbufAp, SeqFastq *sqbufBp,
-		      SEQNUM_t *seqnum, SEQLEN_t *maxseqlen,  SEQLEN_t *maxnamlen);
+		      SEQNUM_t *seqnum, SEQLEN_t *maxseqlen,  SEQLEN_t *maxnamlen,
+		      ErrMsg *errmsgp);
   /**< Check whether the sequences conform to FASTA/FASTQ format for reading.
    *  Return error code or ERRCODE_SUCCESS. Return ERRCODE_SUCCESS if not FASTA/FASTQ.
    *  If FASTA/FASTQ, the file is scrolled back to the start on return.
@@ -110,6 +113,7 @@ extern "C"
    * \param seqnum Returns the number if sequences if FASTA/FASTQ (can be NULL).
    * \param maxseqlen Returns the maximum sequence length if FASTA/FASTQ format (can be NULL).
    * \param maxnamlen Returns the maximum name length if FASTA/FASTQ format (can be NULL).
+   * \param errmsgp Returns error messages.
    */
 
   int infmtReset(InFmtReader *ifrp);

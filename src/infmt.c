@@ -111,7 +111,9 @@ int openINFMTReaderAsSAMBAM(InFmtReader *p, const char *filnam,
 
 InFmtReader *infmtCreateReader(int *errcode,
 			       const char *filnamA, const char *filnamB,
+#ifdef HAVE_BAMBAMC
 			       const char *tmpdir,
+#endif
 			       const INFMT_t fmt)
 {
   InFmtReader *p;
@@ -280,14 +282,14 @@ int infmtRead(InFmtReader *ifrp, SeqFastq *sfqAp, SeqFastq *sfqBp, BOOL_t *isPai
 }
 
 int infmtCheckReads(InFmtReader *ifrp, SeqFastq *sqbufAp, SeqFastq *sqbufBp,
-		    SEQNUM_t *seqnum, SEQLEN_t *maxseqlen,  SEQLEN_t *maxnamlen)
+		    SEQNUM_t *seqnum, SEQLEN_t *maxseqlen,  SEQLEN_t *maxnamlen, ErrMsg *errmsgp)
 {
   int errcode = ERRCODE_SUCCESS;
   if ((seqnum)) *seqnum = 0;
   if ((maxseqlen)) *maxseqlen = 0;
   if ((maxnamlen)) *maxnamlen = 0;
   if (ifrp->fmt == INFMT_FASTQ) {
-    errcode = seqIOCheckReads(sqbufAp, ifrp->sfAp, sqbufBp, ifrp->sfBp, 
+    errcode = seqIOCheckReads(errmsgp, sqbufAp, ifrp->sfAp, sqbufBp, ifrp->sfBp, 
 			      seqnum, maxseqlen, maxnamlen);
   }
 

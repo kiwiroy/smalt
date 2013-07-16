@@ -2117,6 +2117,8 @@ int resultSetGetResultInSegment(const Result **rpp, int segx, int resx, const Re
 
   if (NULL == rsp) {
     errcode = ERRCODE_NULLPTR;
+  } else if (ARRLEN(rsp->resr) < 1) {
+    errcode = ERRCODE_FAILURE;
   } else if (!(rsp->status & RSLTSETFLG_SEGIDX)) {
     errcode = ERRCODE_ASSERT;
   } else if (resx < 0 || segx < 0 || ((size_t) segx+1) >= ARRLEN(rsp->segnor)) {

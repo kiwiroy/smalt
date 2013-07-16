@@ -53,7 +53,7 @@ libsgm_a_LIBADD = libseq.a
 
 smalt_SOURCES = smalt.c menu.h menu.c threads.h threads.c infmt.c infmt.h ${MAP_SRC}
 smalt_CFLAGS = $(BAMBAMC_INCL) ${AM_CFLAGS}
-smalt_LDFLAGS = $(BAMBAMC_LDFLG) ${APPLELDFLAGS} #-static 
+smalt_LDFLAGS = $(BAMBAMC_LDFLG) ${APPLELDFLAGS} -static 
 smalt_LDADD = libsgm.a libseq.a $(BAMBAMC_DEPS) -lm -lpthread #-lrt
 if WITH_ZLIB
 smalt_LDADD += -lz	

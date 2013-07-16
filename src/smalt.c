@@ -36,6 +36,10 @@
 #include <assert.h>
 #include <time.h>
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "elib.h"
 #include "threads.h"
 #include "randef.h"
@@ -574,7 +578,9 @@ static int initMapConst(SmaltMapConst *smcp,
     fprintf(stderr, "# Opening read %s ...\n", (ninfil == 2)? "file":"files");
   smcp->ifrp = infmtCreateReader(&errcode, 
 				 filnamA, filnamB,
-				 tmpdir, 
+#ifdef HAVE_BAMBAMC
+				 tmpdir,
+#endif
 				 fmt);
   if ((errcode))
     return errcode;
@@ -1234,7 +1240,7 @@ static int processArgBlock(ErrMsg *errmsgp,
  ******************* Methods for Histogram of Insert Sizes *******************
  *****************************************************************************/
 
-static int prepSample(const SmaltMapConst *common_args)
+static int prepSample(ErrMsg *errmsgp, const SmaltMapConst *common_args)
 {
   int errcode = ERRCODE_SUCCESS;
   SEQNUM_t nreads = 0;
@@ -1252,7 +1258,7 @@ static int prepSample(const SmaltMapConst *common_args)
   assert(iobfp != NULL);
 	 
   errcode = infmtCheckReads(input_args->ifrp, iobfp->readp, iobfp->matep,
-			    &nreads, NULL, NULL);
+			    &nreads, NULL, NULL, errmsgp);
 
   if ((errcode) && errcode != ERRCODE_RNAMPAIR)
     return errcode;
@@ -1365,7 +1371,7 @@ static int mapReads(ErrMsg *errmsgp,
   is_verbose = (common_args.menuflg & MENUFLAG_VERBOSE);
 
   if ( MENU_SAMPLE == menuGetSubProgTyp(menup) ) {
-    errcode = prepSample(&common_args);
+    errcode = prepSample(errmsgp, &common_args);
     common_args.rmapflg |= (RMAPFLG_BEST | RMAPFLG_ALLPAIR);
     if (is_verbose) 
       fprintf(stderr, "# Sampling insert size distribution ...\n");
@@ -1392,7 +1398,7 @@ static int mapReads(ErrMsg *errmsgp,
  ********************* Main routine for checking reads ***********************
  *****************************************************************************/
 
-static int checkReads(const MenuOpt *menup)
+static int checkReads(ErrMsg *errmsgp, const MenuOpt *menup)
 {
   int errcode = ERRCODE_SUCCESS;
   const char *filnamA, *filnamB;
@@ -1401,22 +1407,24 @@ static int checkReads(const MenuOpt *menup)
   int nfil = menuGetFileNames(menup, &filnamA, &filnamB);
   SEQNUM_t n_reads = 0;
 
-  if (nfil < 1 || nfil > 3) 
-    return ERRCODE_ASSERT;
+  if (nfil < 1 || nfil > 3)
+    ERRMSGNO(errmsgp, ERRCODE_ASSERT);
 
   if (!(readp = seqFastqCreate(0, SEQTYP_UNKNOWN)))
-    return ERRCODE_NOMEM;
+    ERRMSGNO(errmsgp, ERRCODE_NOMEM);
 
   if (filnamB != NULL) {
     if (!(matep = seqFastqCreate(0, SEQTYP_UNKNOWN)))
-      return ERRCODE_NOMEM;
+      ERRMSGNO(errmsgp, ERRCODE_NOMEM);
   }
-  ifrp = infmtCreateReader(&errcode, filnamA, filnamB, 
-			   NULL, 
+  ifrp = infmtCreateReader(&errcode, filnamA, filnamB,
+#ifdef HAVE_BAMBAMC
+			   NULL,
+#endif
 			   INFMT_FASTQ);
   if (NULL != ifrp) {
     //fprintf(stderr, "# counting %s ...\n", (matep == NULL)? "reads": "read pairs");
-    errcode = infmtCheckReads(ifrp, readp, matep, &n_reads, NULL, NULL);
+    errcode = infmtCheckReads(ifrp, readp, matep, &n_reads, NULL, NULL, errmsgp);
     infmtDeleteReader(ifrp);
   }
   seqFastqDelete(matep);
@@ -1465,7 +1473,7 @@ int main(int argc, char *argv[])
       menuPrintWallClockTime(stderr, time_start, time_stop);
       break;
     case MENU_CHECK:
-      errcode = checkReads(menup);
+      errcode = checkReads(errmsg, menup);
       if (errcode == ERRCODE_RNAMPAIR)
 	errcode = ERRCODE_SUCCESS;
       break;
