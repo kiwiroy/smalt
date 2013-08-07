@@ -5,7 +5,7 @@
  ****************************************************************************
  *                                                                          *
  *  Copyright (C) 2010 Genome Research Ltd.                                 * 
- *                                                                          *        
+ *                                                                          *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                             *
  *                                                                          *
  *  This file is part of SMALT                                              *
@@ -368,7 +368,7 @@ static int simulateSingleRead(SeqFastq *readp, SeqFastq *sbufp,
   if ((errcode = seqSetFetchSegmentBySequence(sbufp, sidx, 
 					      so, (uint32_t) fetch_len,
 					      ssp, 
-					      SEQCOD_ASCII, codecp)))
+					      codecp)))
     return errcode;
   sp = seqFastqGetSequence(sbufp, &slen, NULL);
   if (((uint32_t) fetch_len) != slen)

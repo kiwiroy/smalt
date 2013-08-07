@@ -2,14 +2,14 @@
 = SMALT release history =
 =========================
 
-Version 0.7.5.1 (8 August 2013)
+Version 0.7.5.1 (7 August 2013)
 ===============================
 
 - fixed bug in 'smalt map -p' resulting in the "assertion failed"
   error message. This could occur when a read aligned across two
   successive sequences in the reference file for which the index was
   constructed, and none of the matching segments exceeded the
-  threshold in the Smith-Waterman alignment score (set with -m).
+  threshold of the Smith-Waterman alignment score (set with -m).
 
 Release 0.7.5 (16 July 2013)
 ============================
