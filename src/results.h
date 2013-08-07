@@ -405,7 +405,6 @@ extern "C"
   int resultSetSortAndAssignSequence(ResultSet *rsp, 
 				     SeqFastq *sbufp,
 				     unsigned char search_split,
-				     const ResultFilter *rfp,
 				     const SeqFastq *sqp,
 #ifdef results_debug
 				     const SeqFastq *sqRCp,
@@ -419,7 +418,6 @@ extern "C"
    * \param sbufp Sequence buffer.
    * \param search_split Flag if != 0, look for secondary alignments that
    *        complement the primary alignment (split reads).
-   * \param rfp Data, e.g. threshold of SW score, for filtering out unwanted results,
    * \param sqp Query (profiled) sequence providing base qualities for mapping score.
    * \param scpp Score profile (query sequence).
    * \param scpRCp Score profile for reverse complement of query sequence.
