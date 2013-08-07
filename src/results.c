@@ -1462,7 +1462,6 @@ static int splitMultiSpan(RESULTARR *resr, const uint32_t residx,
 			  DiffStr *diffstrbufp, DiffStr *diffstrp, 
 			  SeqFastq *sqbufp, 
 			  SEQNUM_t so, SEQNUM_t eo, 
-			  int swatscor_thresh,
 #ifdef results_debug
 			  const char *profiled_seqp,
 			  const char *profiled_seqRCp,
@@ -1479,7 +1478,6 @@ static int splitMultiSpan(RESULTARR *resr, const uint32_t residx,
  *        of the alignment with the query.
  * \param eo Index (serial no, 0 based) of the first reference sequence after sequence so in ssp
  *        that is not part of the alignment with the query (eo == no sequences in ssp is allowed).
- * \param swatscor_thresh
  * \param scpp Profile of the query sequence used for scoring the segment.
  * \param scpRCp Profie of the reverse complement of the query sequence.
  * \param ssp Set of referenc sequences.
@@ -1631,8 +1629,6 @@ static int splitMultiSpan(RESULTARR *resr, const uint32_t residx,
 				   diffstrp->dstrp + hp->stroffs, hp->strlen,
 				   scprofp)))
       return errcode;
-    if (hp->swatscor < swatscor_thresh)
-      hp->status &= ~RSLTFLAG_SELECT;
   }
 
   return ERRCODE_SUCCESS;
@@ -1687,7 +1683,6 @@ static double getMinProb(const RESULTPTRARR rsr, BOOL is_restricted)
 
 static int assignSequenceIndex(ResultSet *rsp,
 			       SeqFastq *sbufp,
-			       const ResultFilter *rfp,
 #ifdef results_debug
 			       const SeqFastq *sqp,
 			       const SeqFastq *sqRCp,
@@ -1741,8 +1736,7 @@ static int assignSequenceIndex(ResultSet *rsp,
 
 	errcode = splitMultiSpan(&rsp->resr, rsp->sortidxr[i],
 				 rsp->diffstrbufp, rsp->diffstrp, 
-				 sbufp, s, e, 
-				 rfp->min_swscor,
+				 sbufp, s, e,
 #ifdef results_debug
 				 profiled_seqp,
 				 profiled_seqRCp,
@@ -2016,7 +2010,6 @@ void resultSetUpdateFromSegment(ResultSet *rsp, short start_idx, short end_idx,
 int resultSetSortAndAssignSequence(ResultSet *rsp,
 				   SeqFastq *sbufp,
 				   BOOL search_split,
-				   const ResultFilter *rfp,
 				   const SeqFastq *sqp,
 #ifdef results_debug
 				   const SeqFastq *sqRCp,
@@ -2026,7 +2019,7 @@ int resultSetSortAndAssignSequence(ResultSet *rsp,
 				   const SeqSet *ssp,
 				   const SeqCodec *codecp)
 {
-  int errcode = assignSequenceIndex(rsp, sbufp, rfp, 
+  int errcode = assignSequenceIndex(rsp, sbufp, 
 #ifdef results_debug
 				    sqp,
 				    sqRCp,
@@ -2117,7 +2110,7 @@ int resultSetGetResultInSegment(const Result **rpp, int segx, int resx, const Re
 
   if (NULL == rsp) {
     errcode = ERRCODE_NULLPTR;
-  } else if (ARRLEN(rsp->resr) < 1) {
+  } else if (ARRLEN(rsp->sortr) < 1) {
     errcode = ERRCODE_FAILURE;
   } else if (!(rsp->status & RSLTSETFLG_SEGIDX)) {
     errcode = ERRCODE_ASSERT;

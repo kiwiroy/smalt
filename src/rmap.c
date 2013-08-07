@@ -1228,7 +1228,6 @@ static int mapSingleRead(ErrMsg *errmsgp,
 			 uint32_t min_cover, 
 			 int min_swatscor, int min_swatscor_below_max,
 			 short target_depth, short max_depth, RMAPFLG_t rmapflg, 
-			 const ResultFilter *rsfp,
 			 const HashTable *htp, const SeqSet *ssp, const SeqCodec *codecp,
 			 const InterVal *ivr)
 {
@@ -1406,7 +1405,6 @@ static int mapSingleRead(ErrMsg *errmsgp,
   errcode = resultSetSortAndAssignSequence(rssp,
 					   bufp->sqbfp, 
 					   0, 
-					   rsfp,
 					   readp,
 #ifdef results_debug 
 					   rprofp->readRCp,
@@ -1433,7 +1431,6 @@ static int mapSecondary(ErrMsg *errmsgp,
 			int min_swatscor, int min_swatscor_below_max,
 			UCHAR min_basqval,
 			short target_depth, short max_depth, RMAPFLG_t rmapflg, 
-			const ResultFilter *rsfp,
 			const HashTable *htp, 
 			const SeqSet *ssp,
 			const SeqCodec *codecp)
@@ -1488,7 +1485,7 @@ static int mapSecondary(ErrMsg *errmsgp,
 		rmrp, rmprp, readp, ktuple_maxhit, min_cover, 
 		min_swatscor, min_swatscor_below_max,
 		target_depth, max_depth, rmapflg, 
-		rsfp, htp, ssp, codecp, NULL);
+		htp, ssp, codecp, NULL);
 
   return errcode;
 }
@@ -1695,7 +1692,7 @@ int rmapSingle(ErrMsg *errmsgp,
 		  ktuple_maxhit, min_cover, 
 		  min_swatscor, min_swatscor_below_max,
 		  target_depth, max_depth, rmapflg, 
-		  rsfp, htp, ssp, codecp, NULL);
+		  htp, ssp, codecp, NULL);
   }
 
   if (!(errcode) && (rmapflg & RMAPFLG_SPLIT)) {
@@ -1709,7 +1706,7 @@ int rmapSingle(ErrMsg *errmsgp,
 		 ktuple_maxhit, min_cover, 
 		 min_swatscor, min_swatscor_below_max, min_basqval,
 		 target_depth, max_depth, rmapflg, 
-		 rsfp, htp, ssp, codecp);
+		 htp, ssp, codecp);
   }
 
   if ((errcode) && errcode != ERRCODE_SHORTSEQ) 
@@ -1830,7 +1827,7 @@ int rmapPair(ErrMsg *errmsgp,
 		  rmmp, rmp->pmp, matep, ktuple_maxhit, mincov_mate,
 		  min_swatscor, MINSCOR_BELOW_MAX_BEST,
 		  target_depth, max_depth, rmapflg, 
-		  rsfp, htp, ssp, codecp, NULL);
+		  htp, ssp, codecp, NULL);
   }
   
   if ((errcode_mate)) {
@@ -1847,7 +1844,7 @@ int rmapPair(ErrMsg *errmsgp,
 		  rmrp, rmp->prp, readp, ktuple_maxhit, mincov_read,
 		  min_swatscor, MINSCOR_BELOW_MAX_BEST,
 		  target_depth, max_depth, rmapflg, 
-		  rsfp, htp, ssp, codecp, NULL);
+		  htp, ssp, codecp, NULL);
   }
  
   nhit_read = calcTotalNumberOfHits(rmrp, ktuple_maxhit);
@@ -1900,7 +1897,7 @@ int rmapPair(ErrMsg *errmsgp,
 		rr1p, rp1p, read1p, ktuple_maxhit, mincov1,
 		min_swatscor, MINSCOR_BELOW_MAX_BEST,
 		target_depth, max_depth, rmapflg, 
-		rsfp, htp, ssp, codecp, NULL);
+		htp, ssp, codecp, NULL);
   
   n_proper = 0;
   mapq1 = resultSetGetMappingScore(rs1p, &swscor1);
@@ -1934,7 +1931,7 @@ int rmapPair(ErrMsg *errmsgp,
 		read2p, ktuple_maxhit, mincov2,
 		min_swatscor, MINSCOR_BELOW_MAX_BEST,
 		target_depth, max_depth, rmapflg,
-		rsfp, htp, ssp, codecp, rmp->ivr);
+		htp, ssp, codecp, rmp->ivr);
 
   errcode = resultSetFindProperPairs(rmp->pairp, d_min, d_max,
 				     MAXNUM_PAIRS_TOTAL, 
@@ -1969,7 +1966,7 @@ int rmapPair(ErrMsg *errmsgp,
 		  read2p, ktuple_maxhit, mincov2,
 		  min_swatscor, MINSCOR_BELOW_MAX_BEST,
 		  target_depth, max_depth, rmapflg,
-		  rsfp, htp, ssp, codecp, NULL);
+		  htp, ssp, codecp, NULL);
 
     /* if best alignment score > than alignment score of first mate,
      * perform restricted mapping with first mate to see whether anything
@@ -2019,7 +2016,7 @@ int rmapPair(ErrMsg *errmsgp,
 			rp1p, read1p, ktuple_maxhit, mincov1,
 			swscor1_2ndbest, MINSCOR_BELOW_MAX_BEST,
 			target_depth, max_depth, rmapflg, 
-			rsfp, rmp->htflyp, ssp, codecp, rmp->ivr);
+			rmp->htflyp, ssp, codecp, rmp->ivr);
 	} else {
 	  errcode = ERRCODE_SUCCESS;
 #endif //#ifdef rmap_finehash_2ndmate
@@ -2037,7 +2034,7 @@ int rmapPair(ErrMsg *errmsgp,
 			rp1p, read1p, ktuple_maxhit, mincov1,
 			swscor1_2ndbest, MINSCOR_BELOW_MAX_BEST,
 			target_depth, max_depth, rmapflg, 
-			rsfp, htp, ssp, codecp, rmp->ivr);
+			htp, ssp, codecp, rmp->ivr);
 #ifdef rmap_finehash_2ndmate
 	}
       }
@@ -2063,7 +2060,7 @@ int rmapPair(ErrMsg *errmsgp,
 		 rmp->prp, readp, ktuple_maxhit, mincov_read, 
 		 min_swatscor, MINSCOR_BELOW_MAX_BEST, min_basqval,
 		 target_depth, max_depth, rmapflg, 
-		 rsfp, htp, ssp, codecp);
+		 htp, ssp, codecp);
 
     mapSecondary(errmsgp,
 		 bufp, 
@@ -2075,7 +2072,7 @@ int rmapPair(ErrMsg *errmsgp,
 		 rmp->pmp, matep, ktuple_maxhit, mincov_mate, 
 		 min_swatscor, MINSCOR_BELOW_MAX_BEST, min_basqval,
 		 target_depth, max_depth, rmapflg, 
-		 rsfp, htp, ssp, codecp);
+		 htp, ssp, codecp);
   }
   
   errcode = resultSetFindPairs(rmp->pairp, *pairflgp, pairlibcode, 
