@@ -32,7 +32,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
-#ifdef HAVE_ZLIB
+#ifdef HAVE_ZLIB_H
 #include <zlib.h>
 #endif
 #include "filio.h"

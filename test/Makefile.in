@@ -34,18 +34,19 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@ICC_COMPILER_TRUE@@ICC_NOLIMITH_TRUE@am__append_1 = -D_GCC_LIMITS_H_
-@ICC_COMPILER_FALSE@am__append_2 = -Wall -Wextra
-@APPLE_64BIT_TRUE@am__append_3 = -m64 -D_FILE_OFFSET_BITS=64
-@SSE2_TRUE@am__append_4 = ../src/swsimd.c ../src/swsimd.h
-@WITH_TESTDRIVER_TRUE@TESTS = $(TEST_DRIVERS) $(am__append_5)
-@WITH_SAMTOOLS_EXEC_TRUE@@WITH_TESTDRIVER_TRUE@am__append_5 = bam_cigar_test.py
+@ICC_COMPILER_TRUE@@ICC_MMIC_TRUE@am__append_1 = -mmic	
+@ICC_COMPILER_TRUE@@ICC_NOLIMITH_TRUE@am__append_2 = -D_GCC_LIMITS_H_
+@ICC_COMPILER_FALSE@am__append_3 = -Wall -Wextra
+@APPLE_64BIT_TRUE@am__append_4 = -m64 -D_FILE_OFFSET_BITS=64
+@WITH_SIMD_TRUE@am__append_5 = ../src/swsimd.c ../src/swsimd.h
+@WITH_TESTDRIVER_TRUE@TESTS = $(TEST_DRIVERS) $(am__append_6)
+@WITH_SAMTOOLS_EXEC_TRUE@@WITH_TESTDRIVER_TRUE@am__append_6 = bam_cigar_test.py
 check_PROGRAMS = sequenceReadWrite_test$(EXEEXT) \
 	sequenceCompress_test$(EXEEXT) \
 	sequenceDeCompress_test$(EXEEXT) \
 	sequenceReverseComplement_test$(EXEEXT) diffstr_test$(EXEEXT) \
 	smalt_Xali_test$(EXEEXT) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	$(am__EXEEXT_4) $(am__EXEEXT_5)
+	$(am__EXEEXT_4)
 EXTRA_PROGRAMS = seqSetIO_test$(EXEEXT) seqSetCompress_test$(EXEEXT) \
 	seqSetSort_test$(EXEEXT) hashhit_test$(EXEEXT) \
 	hashhit_track_test$(EXEEXT) hashidx_test$(EXEEXT) \
@@ -55,11 +56,10 @@ EXTRA_PROGRAMS = seqSetIO_test$(EXEEXT) seqSetCompress_test$(EXEEXT) \
 	alignment_test$(EXEEXT) rmap_test$(EXEEXT) smalt_test$(EXEEXT) \
 	smalt_basq$(EXEEXT) basqual_test$(EXEEXT) infmt_test$(EXEEXT) \
 	$(am__EXEEXT_1)
-@WITH_SAMTOOLS_TRUE@am__append_6 = samtools_api_test
-@WITH_BAMBAMC_TRUE@am__append_7 = bambam_test
-@WITH_ZLIB_TRUE@am__append_8 = zlib_test gzip_test
-@SSE2_TRUE@@WITH_TESTALL_TRUE@am__append_9 = mergesort_test
-@WITH_TESTALL_TRUE@am__append_10 = ${EXTRA_PROGRAMS}
+@WITH_SAMTOOLS_TRUE@am__append_7 = samtools_api_test
+@WITH_BAMBAMC_TRUE@am__append_8 = bambam_test
+@WITH_ZLIB_TRUE@am__append_9 = zlib_test gzip_test
+@WITH_SIMD_TRUE@@WITH_TESTALL_TRUE@am__append_10 = swsimd_test # mergesort_test
 subdir = test
 SUBDIRS =
 DIST_COMMON = $(dist_data_DATA) $(srcdir)/Makefile.am \
@@ -75,15 +75,15 @@ CONFIG_CLEAN_VPATH_FILES =
 @WITH_ZLIB_TRUE@am__EXEEXT_1 = zlib_test$(EXEEXT) gzip_test$(EXEEXT)
 @WITH_SAMTOOLS_TRUE@am__EXEEXT_2 = samtools_api_test$(EXEEXT)
 @WITH_BAMBAMC_TRUE@am__EXEEXT_3 = bambam_test$(EXEEXT)
-@SSE2_TRUE@@WITH_TESTALL_TRUE@am__EXEEXT_4 = mergesort_test$(EXEEXT)
-@WITH_TESTALL_TRUE@am__EXEEXT_5 = $(EXTRA_PROGRAMS)
-@SSE2_TRUE@am__objects_1 = alignment_test-swsimd.$(OBJEXT)
+@WITH_SIMD_TRUE@@WITH_TESTALL_TRUE@am__EXEEXT_4 =  \
+@WITH_SIMD_TRUE@@WITH_TESTALL_TRUE@	swsimd_test$(EXEEXT)
+@WITH_SIMD_TRUE@am__objects_1 = alignment_test-swsimd.$(OBJEXT)
 am__objects_2 = alignment_test-score.$(OBJEXT) \
-	alignment_test-diffstr.$(OBJEXT) \
-	alignment_test-alibuffer.$(OBJEXT) \
-	alignment_test-alignment.$(OBJEXT) $(am__objects_1)
+	alignment_test-alibuffer.$(OBJEXT) $(am__objects_1)
+am__objects_3 = alignment_test-diffstr.$(OBJEXT) $(am__objects_2) \
+	alignment_test-alignment.$(OBJEXT)
 nodist_alignment_test_OBJECTS =  \
-	alignment_test-alignment_test.$(OBJEXT) $(am__objects_2)
+	alignment_test-alignment_test.$(OBJEXT) $(am__objects_3)
 alignment_test_OBJECTS = $(nodist_alignment_test_OBJECTS)
 am__DEPENDENCIES_1 =
 alignment_test_DEPENDENCIES = $(SEQ_LIB) $(am__DEPENDENCIES_1)
@@ -113,13 +113,13 @@ basqual_test_OBJECTS = $(nodist_basqual_test_OBJECTS)
 basqual_test_DEPENDENCIES = $(SEQ_LIB) $(am__DEPENDENCIES_1)
 basqual_test_LINK = $(CCLD) $(basqual_test_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_3 = candseg_test-sort.$(OBJEXT) \
+am__objects_4 = candseg_test-sort.$(OBJEXT) \
 	candseg_test-interval.$(OBJEXT) candseg_test-hashidx.$(OBJEXT) \
 	candseg_test-hashhit.$(OBJEXT)
-am__objects_4 = $(am__objects_3) candseg_test-array.$(OBJEXT) \
+am__objects_5 = $(am__objects_4) candseg_test-array.$(OBJEXT) \
 	candseg_test-segment.$(OBJEXT)
 nodist_candseg_test_OBJECTS = candseg_test-candseg_test.$(OBJEXT) \
-	candseg_test-candseg.$(OBJEXT) $(am__objects_4) \
+	candseg_test-candseg.$(OBJEXT) $(am__objects_5) \
 	candseg_test-diffstr.$(OBJEXT) candseg_test-tracker.$(OBJEXT)
 candseg_test_OBJECTS = $(nodist_candseg_test_OBJECTS)
 candseg_test_DEPENDENCIES = $(SEQ_LIB) $(am__DEPENDENCIES_1)
@@ -141,13 +141,13 @@ nodist_hashhit_test_OBJECTS = hashhit_test.$(OBJEXT)
 hashhit_test_OBJECTS = $(nodist_hashhit_test_OBJECTS)
 hashhit_test_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_1)
-am__objects_5 = hashhit_track_test-sort.$(OBJEXT) \
+am__objects_6 = hashhit_track_test-sort.$(OBJEXT) \
 	hashhit_track_test-interval.$(OBJEXT) \
 	hashhit_track_test-hashidx.$(OBJEXT) \
 	hashhit_track_test-hashhit.$(OBJEXT)
 nodist_hashhit_track_test_OBJECTS =  \
 	hashhit_track_test-hashhit_track_test.$(OBJEXT) \
-	$(am__objects_5) hashhit_track_test-tracker.$(OBJEXT) \
+	$(am__objects_6) hashhit_track_test-tracker.$(OBJEXT) \
 	hashhit_track_test-diffstr.$(OBJEXT)
 hashhit_track_test_OBJECTS = $(nodist_hashhit_track_test_OBJECTS)
 hashhit_track_test_DEPENDENCIES = $(SEQ_LIB) $(am__DEPENDENCIES_1)
@@ -164,19 +164,11 @@ infmt_test_DEPENDENCIES = $(SEQ_LIB) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 infmt_test_LINK = $(CCLD) $(infmt_test_CFLAGS) $(CFLAGS) \
 	$(infmt_test_LDFLAGS) $(LDFLAGS) -o $@
-@SSE2_TRUE@nodist_mergesort_test_OBJECTS =  \
-@SSE2_TRUE@	mergesort_test-mergesort_test.$(OBJEXT) \
-@SSE2_TRUE@	mergesort_test-elib.$(OBJEXT) \
-@SSE2_TRUE@	mergesort_test-sort.$(OBJEXT)
-mergesort_test_OBJECTS = $(nodist_mergesort_test_OBJECTS)
-mergesort_test_LDADD = $(LDADD)
-mergesort_test_LINK = $(CCLD) $(mergesort_test_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_6 = rmap_test-results.$(OBJEXT) \
+am__objects_7 = rmap_test-results.$(OBJEXT) \
 	rmap_test-resultpairs.$(OBJEXT) rmap_test-insert.$(OBJEXT) \
 	rmap_test-report.$(OBJEXT) rmap_test-rmap.$(OBJEXT)
 nodist_rmap_test_OBJECTS = rmap_test-rmap_test.$(OBJEXT) \
-	$(am__objects_6)
+	$(am__objects_7)
 rmap_test_OBJECTS = $(nodist_rmap_test_OBJECTS)
 rmap_test_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
@@ -226,55 +218,67 @@ sequenceReverseComplement_test_OBJECTS =  \
 	$(am_sequenceReverseComplement_test_OBJECTS)
 sequenceReverseComplement_test_DEPENDENCIES = $(SEQ_LIB) \
 	$(am__DEPENDENCIES_1)
-am__objects_7 = smalt_Xali_test-results.$(OBJEXT) \
+am__objects_8 = smalt_Xali_test-results.$(OBJEXT) \
 	smalt_Xali_test-resultpairs.$(OBJEXT) \
 	smalt_Xali_test-insert.$(OBJEXT) \
 	smalt_Xali_test-report.$(OBJEXT) \
 	smalt_Xali_test-rmap.$(OBJEXT)
-am__objects_8 = smalt_Xali_test-smalt.$(OBJEXT) \
+am__objects_9 = smalt_Xali_test-smalt.$(OBJEXT) \
 	smalt_Xali_test-menu.$(OBJEXT) \
 	smalt_Xali_test-threads.$(OBJEXT) \
-	smalt_Xali_test-infmt.$(OBJEXT) $(am__objects_7)
-am_smalt_Xali_test_OBJECTS = $(am__objects_8)
+	smalt_Xali_test-infmt.$(OBJEXT) $(am__objects_8)
+am_smalt_Xali_test_OBJECTS = $(am__objects_9)
 smalt_Xali_test_OBJECTS = $(am_smalt_Xali_test_OBJECTS)
 smalt_Xali_test_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 smalt_Xali_test_LINK = $(CCLD) $(smalt_Xali_test_CFLAGS) $(CFLAGS) \
 	$(smalt_Xali_test_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_9 = smalt_basq-results.$(OBJEXT) \
+am__objects_10 = smalt_basq-results.$(OBJEXT) \
 	smalt_basq-resultpairs.$(OBJEXT) smalt_basq-insert.$(OBJEXT) \
 	smalt_basq-report.$(OBJEXT) smalt_basq-rmap.$(OBJEXT)
 nodist_smalt_basq_OBJECTS = smalt_basq-smalt.$(OBJEXT) \
 	smalt_basq-menu.$(OBJEXT) smalt_basq-infmt.$(OBJEXT) \
-	smalt_basq-threads.$(OBJEXT) $(am__objects_9)
+	smalt_basq-threads.$(OBJEXT) $(am__objects_10)
 smalt_basq_OBJECTS = $(nodist_smalt_basq_OBJECTS)
 smalt_basq_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 smalt_basq_LINK = $(CCLD) $(smalt_basq_CFLAGS) $(CFLAGS) \
 	$(smalt_basq_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_10 = smalt_test-results.$(OBJEXT) \
+am__objects_11 = smalt_test-results.$(OBJEXT) \
 	smalt_test-resultpairs.$(OBJEXT) smalt_test-insert.$(OBJEXT) \
 	smalt_test-report.$(OBJEXT) smalt_test-rmap.$(OBJEXT)
-am__objects_11 = smalt_test-smalt.$(OBJEXT) smalt_test-menu.$(OBJEXT) \
+am__objects_12 = smalt_test-smalt.$(OBJEXT) smalt_test-menu.$(OBJEXT) \
 	smalt_test-threads.$(OBJEXT) smalt_test-infmt.$(OBJEXT) \
-	$(am__objects_10)
-am__objects_12 = smalt_test-sort.$(OBJEXT) \
+	$(am__objects_11)
+am__objects_13 = smalt_test-sort.$(OBJEXT) \
 	smalt_test-interval.$(OBJEXT) smalt_test-hashidx.$(OBJEXT) \
 	smalt_test-hashhit.$(OBJEXT)
-am__objects_13 = $(am__objects_12) smalt_test-array.$(OBJEXT) \
+am__objects_14 = $(am__objects_13) smalt_test-array.$(OBJEXT) \
 	smalt_test-segment.$(OBJEXT)
-@SSE2_TRUE@am__objects_14 = smalt_test-swsimd.$(OBJEXT)
-am__objects_15 = smalt_test-score.$(OBJEXT) \
-	smalt_test-diffstr.$(OBJEXT) smalt_test-alibuffer.$(OBJEXT) \
-	smalt_test-alignment.$(OBJEXT) $(am__objects_14)
-am__objects_16 = $(am__objects_11) $(am__objects_13) $(am__objects_15) \
+@WITH_SIMD_TRUE@am__objects_15 = smalt_test-swsimd.$(OBJEXT)
+am__objects_16 = smalt_test-score.$(OBJEXT) \
+	smalt_test-alibuffer.$(OBJEXT) $(am__objects_15)
+am__objects_17 = smalt_test-diffstr.$(OBJEXT) $(am__objects_16) \
+	smalt_test-alignment.$(OBJEXT)
+am__objects_18 = $(am__objects_12) $(am__objects_14) $(am__objects_17) \
 	smalt_test-tracker.$(OBJEXT)
-nodist_smalt_test_OBJECTS = $(am__objects_16)
+nodist_smalt_test_OBJECTS = $(am__objects_18)
 smalt_test_OBJECTS = $(nodist_smalt_test_OBJECTS)
 smalt_test_DEPENDENCIES = $(SEQ_LIB) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 smalt_test_LINK = $(CCLD) $(smalt_test_CFLAGS) $(CFLAGS) \
 	$(smalt_test_LDFLAGS) $(LDFLAGS) -o $@
+@WITH_SIMD_TRUE@am__objects_19 = swsimd_test-swsimd.$(OBJEXT)
+am__objects_20 = swsimd_test-score.$(OBJEXT) \
+	swsimd_test-alibuffer.$(OBJEXT) $(am__objects_19)
+@WITH_SIMD_TRUE@nodist_swsimd_test_OBJECTS =  \
+@WITH_SIMD_TRUE@	swsimd_test-swsimd_test.$(OBJEXT) \
+@WITH_SIMD_TRUE@	$(am__objects_20)
+swsimd_test_OBJECTS = $(nodist_swsimd_test_OBJECTS)
+@WITH_SIMD_TRUE@swsimd_test_DEPENDENCIES = $(SEQ_LIB) \
+@WITH_SIMD_TRUE@	$(am__DEPENDENCIES_1)
+swsimd_test_LINK = $(CCLD) $(swsimd_test_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 @WITH_ZLIB_TRUE@nodist_zlib_test_OBJECTS = zlib_test.$(OBJEXT) \
 @WITH_ZLIB_TRUE@	elib.$(OBJEXT)
 zlib_test_OBJECTS = $(nodist_zlib_test_OBJECTS)
@@ -295,8 +299,7 @@ SOURCES = $(nodist_alignment_test_SOURCES) \
 	$(nodist_gzip_test_SOURCES) $(nodist_hashhit_test_SOURCES) \
 	$(nodist_hashhit_track_test_SOURCES) \
 	$(nodist_hashidx_test_SOURCES) $(nodist_infmt_test_SOURCES) \
-	$(nodist_mergesort_test_SOURCES) $(nodist_rmap_test_SOURCES) \
-	$(samtools_api_test_SOURCES) \
+	$(nodist_rmap_test_SOURCES) $(samtools_api_test_SOURCES) \
 	$(nodist_segment_simple_test_SOURCES) \
 	$(nodist_segment_test_SOURCES) \
 	$(nodist_seqSetCompress_test_SOURCES) \
@@ -307,7 +310,8 @@ SOURCES = $(nodist_alignment_test_SOURCES) \
 	$(sequenceReadWrite_test_SOURCES) \
 	$(sequenceReverseComplement_test_SOURCES) \
 	$(smalt_Xali_test_SOURCES) $(nodist_smalt_basq_SOURCES) \
-	$(nodist_smalt_test_SOURCES) $(nodist_zlib_test_SOURCES)
+	$(nodist_smalt_test_SOURCES) $(nodist_swsimd_test_SOURCES) \
+	$(nodist_zlib_test_SOURCES)
 DIST_SOURCES = $(am__bambam_test_SOURCES_DIST) $(diffstr_test_SOURCES) \
 	$(am__samtools_api_test_SOURCES_DIST) \
 	$(sequenceCompress_test_SOURCES) \
@@ -499,17 +503,19 @@ top_srcdir = @top_srcdir@
 DIST_SUBDIRS = data
 INCLUDE_PATTERN = -I%
 LIBNAM_PATTERN = -l%
-AM_CFLAGS = -I../src/ $(am__append_1) $(am__append_2) $(am__append_3)
+AM_CFLAGS = -I../src/ $(am__append_1) $(am__append_2) $(am__append_3) \
+	$(am__append_4)
 @APPLE_64BIT_TRUE@APPLELDFLAGS = -pthread
-@ICC_COMPILER_FALSE@@SSE2_TRUE@SSE_INTRINS_FLAGS = -msse2
-@ICC_COMPILER_TRUE@@SSE2_TRUE@SSE_INTRINS_FLAGS = -xO
-@SSE2_FALSE@SSE_INTRINS_FLAGS = 
+@ICC_COMPILER_FALSE@@WITH_SIMD_TRUE@SIMD_INTRINS_FLAGS = -msse2
+@ICC_COMPILER_TRUE@@WITH_SIMD_TRUE@SIMD_INTRINS_FLAGS = 
+@WITH_SIMD_FALSE@SIMD_INTRINS_FLAGS = 
 SEQ_LIB = ../src/libseq.a
 SGM_LIB = ../src/libsgm.a ${SEQ_LIB}
-ALI_SRC = ../src/score.c ../src/score.h ../src/diffstr.c \
-	../src/diffstr.h ../src/alibuffer.c ../src/alibuffer.h \
-	../src/alibuffer_struct.h ../src/alignment.c \
-	../src/alignment.h $(am__append_4)
+SMIWAT_SRC = ../src/score.c ../src/score.h ../src/alibuffer.c \
+	../src/alibuffer.h ../src/alibuffer_struct.h $(am__append_5)
+ALI_SRC = ../src/diffstr.c ../src/diffstr.h ${SMIWAT_SRC} \
+	  ../src/alignment.c ../src/alignment.h
+
 HIT_SRC = ../src/sort.c ../src/sort.h \
 	../src/interval.c ../src/interval.h \
 	../src/hashidx.c ../src/hashidx.h \
@@ -542,16 +548,20 @@ TEST_DRIVERS = sequence_test.py consistentFR_test.py \
 dist_data_DATA = ${TEST_DRIVERS} bam_cigar_test.py formats.py testdata.py
 @WITH_ZLIB_FALSE@ZLIB_LDFLAG = 
 @WITH_ZLIB_TRUE@ZLIB_LDFLAG = -lz
+#check_PROGRAMS += ${EXTRA_PROGRAMS}
 nodist_array_test_SOURCES = array_test.c
 array_test_LDADD = $(SGM_LIB)
 array_test_LDFLAGS = -lm $(ZLIB_LDFLAG)
 nodist_diffstr_slice_test_SOURCES = diffstr_slice_test.c ../src/diffstr.c ../src/diffstr.h ../src/elib.c ../src/elib.h
 diffstr_test_SOURCES = diffstr_test.c ../src/diffstr.c ../src/diffstr.h ../src/elib.c ../src/elib.h
 nodist_bam_test_SOURCES = bam_test.c ../src/elib.c ../src/elib.h
-@SSE2_TRUE@nodist_mergesort_test_SOURCES = mergesort_test.c ../src/elib.c ../src/elib.h ../src/randef.h ../src/sortdef.h \
-@SSE2_TRUE@	../src/sort.c ../src/sort.h
 
-@SSE2_TRUE@mergesort_test_CFLAGS = $(AM_CLFAGS) $(SSE_INTRINS_FLAGS)
+#if WITH_SIMD
+#nodist_mergesort_test_SOURCES = mergesort_test.c \
+#	../src/elib.c ../src/elib.h ../src/randef.h ../src/sortdef.h \
+#	../src/sort.c ../src/sort.h
+#mergesort_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS)
+#endif
 sequenceReadWrite_test_SOURCES = sequenceReadWrite_test.c
 sequenceReadWrite_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
 sequenceReverseComplement_test_SOURCES = sequenceReverseComplement_test.c
@@ -596,9 +606,15 @@ candseg_test_LDADD = $(SEQ_LIB) -lm $(ZLIB_LDFLAG)
 
 # tests of alignment routines
 nodist_alignment_test_SOURCES = alignment_test.c ${ALI_SRC}
-alignment_test_CFLAGS = $(AM_CFLAGS) $(SSE_INTRINS_FLAGS)
+alignment_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS)
 alignment_test_CPPFLAGS = -Dalignment_debug -Dalignment_timing
 alignment_test_LDADD = $(SEQ_LIB) -lm $(ZLIB_LDFLAG)
+
+# vectorised Smith-Waterman alignment
+@WITH_SIMD_TRUE@nodist_swsimd_test_SOURCES = swsimd_test.c ${SMIWAT_SRC}
+@WITH_SIMD_TRUE@swsimd_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS)
+@WITH_SIMD_TRUE@swsimd_test_CPPFLAGS = -Dalignment_matrix_debug
+@WITH_SIMD_TRUE@swsimd_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
 
 # test of mapping routines
 nodist_rmap_test_SOURCES = rmap_test.c ${MAP_SRC}
@@ -612,14 +628,14 @@ rmap_test_LDFLAGS = $(BAMBAMC_LDFLG)
 
 # test splitting of alignments across neighbouring reference sequences
 smalt_Xali_test_SOURCES = ${SMALT_SRC}
-smalt_Xali_test_CFLAGS = $(AM_CFLAGS) $(SSE_INTRINS_FLAGS) $(BAMBAMC_INCL)
+smalt_Xali_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS) $(BAMBAMC_INCL)
 smalt_Xali_test_CPPFLAGS = -DSMALT_DEBUG_XALI
 smalt_Xali_test_LDADD = $(SGM_LIB) $(BAMBAMC_DEPS) -lm -lpthread $(ZLIB_LDFLAG)
 smalt_Xali_test_LDFLAGS = $(APPLELDFLAGS) $(BAMBAMC_LDFLG)
 
 # testing smalt with simulated reads (not distributed)
 nodist_smalt_test_SOURCES = ${SMALT_TEST_SRC}
-smalt_test_CFLAGS = $(AM_CFLAGS) $(SSE_INTRINS_FLAGS) -I../test $(BAMBAMC_INCL)
+smalt_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS) -I../test $(BAMBAMC_INCL)
 smalt_test_CPPFLAGS = -DRESULTS_TRACKER
 smalt_test_LDADD = $(SEQ_LIB) $(BAMBAMC_DEPS) -lm -lpthread $(ZLIB_LDFLAG)
 smalt_test_LDFLAGS = $(APPLELDFLAGS) $(BAMBAMC_LDFLG)
@@ -751,9 +767,6 @@ hashidx_test$(EXEEXT): $(hashidx_test_OBJECTS) $(hashidx_test_DEPENDENCIES)
 infmt_test$(EXEEXT): $(infmt_test_OBJECTS) $(infmt_test_DEPENDENCIES) 
 	@rm -f infmt_test$(EXEEXT)
 	$(infmt_test_LINK) $(infmt_test_OBJECTS) $(infmt_test_LDADD) $(LIBS)
-mergesort_test$(EXEEXT): $(mergesort_test_OBJECTS) $(mergesort_test_DEPENDENCIES) 
-	@rm -f mergesort_test$(EXEEXT)
-	$(mergesort_test_LINK) $(mergesort_test_OBJECTS) $(mergesort_test_LDADD) $(LIBS)
 rmap_test$(EXEEXT): $(rmap_test_OBJECTS) $(rmap_test_DEPENDENCIES) 
 	@rm -f rmap_test$(EXEEXT)
 	$(rmap_test_LINK) $(rmap_test_OBJECTS) $(rmap_test_LDADD) $(LIBS)
@@ -796,6 +809,9 @@ smalt_basq$(EXEEXT): $(smalt_basq_OBJECTS) $(smalt_basq_DEPENDENCIES)
 smalt_test$(EXEEXT): $(smalt_test_OBJECTS) $(smalt_test_DEPENDENCIES) 
 	@rm -f smalt_test$(EXEEXT)
 	$(smalt_test_LINK) $(smalt_test_OBJECTS) $(smalt_test_LDADD) $(LIBS)
+swsimd_test$(EXEEXT): $(swsimd_test_OBJECTS) $(swsimd_test_DEPENDENCIES) 
+	@rm -f swsimd_test$(EXEEXT)
+	$(swsimd_test_LINK) $(swsimd_test_OBJECTS) $(swsimd_test_LDADD) $(LIBS)
 zlib_test$(EXEEXT): $(zlib_test_OBJECTS) $(zlib_test_DEPENDENCIES) 
 	@rm -f zlib_test$(EXEEXT)
 	$(LINK) $(zlib_test_OBJECTS) $(zlib_test_LDADD) $(LIBS)
@@ -844,9 +860,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hashidx_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/infmt_test-infmt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/infmt_test-infmt_test.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mergesort_test-elib.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mergesort_test-mergesort_test.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mergesort_test-sort.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rmap_test-insert.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rmap_test-report.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rmap_test-resultpairs.Po@am__quote@
@@ -903,6 +916,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smalt_test-swsimd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smalt_test-threads.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smalt_test-tracker.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swsimd_test-alibuffer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swsimd_test-score.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swsimd_test-swsimd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swsimd_test-swsimd_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zlib_test.Po@am__quote@
 
 .c.o:
@@ -933,20 +950,6 @@ alignment_test-alignment_test.obj: alignment_test.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -c -o alignment_test-alignment_test.obj `if test -f 'alignment_test.c'; then $(CYGPATH_W) 'alignment_test.c'; else $(CYGPATH_W) '$(srcdir)/alignment_test.c'; fi`
 
-alignment_test-score.o: ../src/score.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -MT alignment_test-score.o -MD -MP -MF $(DEPDIR)/alignment_test-score.Tpo -c -o alignment_test-score.o `test -f '../src/score.c' || echo '$(srcdir)/'`../src/score.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/alignment_test-score.Tpo $(DEPDIR)/alignment_test-score.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/score.c' object='alignment_test-score.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -c -o alignment_test-score.o `test -f '../src/score.c' || echo '$(srcdir)/'`../src/score.c
-
-alignment_test-score.obj: ../src/score.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -MT alignment_test-score.obj -MD -MP -MF $(DEPDIR)/alignment_test-score.Tpo -c -o alignment_test-score.obj `if test -f '../src/score.c'; then $(CYGPATH_W) '../src/score.c'; else $(CYGPATH_W) '$(srcdir)/../src/score.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/alignment_test-score.Tpo $(DEPDIR)/alignment_test-score.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/score.c' object='alignment_test-score.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -c -o alignment_test-score.obj `if test -f '../src/score.c'; then $(CYGPATH_W) '../src/score.c'; else $(CYGPATH_W) '$(srcdir)/../src/score.c'; fi`
-
 alignment_test-diffstr.o: ../src/diffstr.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -MT alignment_test-diffstr.o -MD -MP -MF $(DEPDIR)/alignment_test-diffstr.Tpo -c -o alignment_test-diffstr.o `test -f '../src/diffstr.c' || echo '$(srcdir)/'`../src/diffstr.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/alignment_test-diffstr.Tpo $(DEPDIR)/alignment_test-diffstr.Po
@@ -960,6 +963,20 @@ alignment_test-diffstr.obj: ../src/diffstr.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/diffstr.c' object='alignment_test-diffstr.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -c -o alignment_test-diffstr.obj `if test -f '../src/diffstr.c'; then $(CYGPATH_W) '../src/diffstr.c'; else $(CYGPATH_W) '$(srcdir)/../src/diffstr.c'; fi`
+
+alignment_test-score.o: ../src/score.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -MT alignment_test-score.o -MD -MP -MF $(DEPDIR)/alignment_test-score.Tpo -c -o alignment_test-score.o `test -f '../src/score.c' || echo '$(srcdir)/'`../src/score.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/alignment_test-score.Tpo $(DEPDIR)/alignment_test-score.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/score.c' object='alignment_test-score.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -c -o alignment_test-score.o `test -f '../src/score.c' || echo '$(srcdir)/'`../src/score.c
+
+alignment_test-score.obj: ../src/score.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -MT alignment_test-score.obj -MD -MP -MF $(DEPDIR)/alignment_test-score.Tpo -c -o alignment_test-score.obj `if test -f '../src/score.c'; then $(CYGPATH_W) '../src/score.c'; else $(CYGPATH_W) '$(srcdir)/../src/score.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/alignment_test-score.Tpo $(DEPDIR)/alignment_test-score.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/score.c' object='alignment_test-score.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -c -o alignment_test-score.obj `if test -f '../src/score.c'; then $(CYGPATH_W) '../src/score.c'; else $(CYGPATH_W) '$(srcdir)/../src/score.c'; fi`
 
 alignment_test-alibuffer.o: ../src/alibuffer.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -MT alignment_test-alibuffer.o -MD -MP -MF $(DEPDIR)/alignment_test-alibuffer.Tpo -c -o alignment_test-alibuffer.o `test -f '../src/alibuffer.c' || echo '$(srcdir)/'`../src/alibuffer.c
@@ -975,20 +992,6 @@ alignment_test-alibuffer.obj: ../src/alibuffer.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -c -o alignment_test-alibuffer.obj `if test -f '../src/alibuffer.c'; then $(CYGPATH_W) '../src/alibuffer.c'; else $(CYGPATH_W) '$(srcdir)/../src/alibuffer.c'; fi`
 
-alignment_test-alignment.o: ../src/alignment.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -MT alignment_test-alignment.o -MD -MP -MF $(DEPDIR)/alignment_test-alignment.Tpo -c -o alignment_test-alignment.o `test -f '../src/alignment.c' || echo '$(srcdir)/'`../src/alignment.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/alignment_test-alignment.Tpo $(DEPDIR)/alignment_test-alignment.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/alignment.c' object='alignment_test-alignment.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -c -o alignment_test-alignment.o `test -f '../src/alignment.c' || echo '$(srcdir)/'`../src/alignment.c
-
-alignment_test-alignment.obj: ../src/alignment.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -MT alignment_test-alignment.obj -MD -MP -MF $(DEPDIR)/alignment_test-alignment.Tpo -c -o alignment_test-alignment.obj `if test -f '../src/alignment.c'; then $(CYGPATH_W) '../src/alignment.c'; else $(CYGPATH_W) '$(srcdir)/../src/alignment.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/alignment_test-alignment.Tpo $(DEPDIR)/alignment_test-alignment.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/alignment.c' object='alignment_test-alignment.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -c -o alignment_test-alignment.obj `if test -f '../src/alignment.c'; then $(CYGPATH_W) '../src/alignment.c'; else $(CYGPATH_W) '$(srcdir)/../src/alignment.c'; fi`
-
 alignment_test-swsimd.o: ../src/swsimd.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -MT alignment_test-swsimd.o -MD -MP -MF $(DEPDIR)/alignment_test-swsimd.Tpo -c -o alignment_test-swsimd.o `test -f '../src/swsimd.c' || echo '$(srcdir)/'`../src/swsimd.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/alignment_test-swsimd.Tpo $(DEPDIR)/alignment_test-swsimd.Po
@@ -1002,6 +1005,20 @@ alignment_test-swsimd.obj: ../src/swsimd.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/swsimd.c' object='alignment_test-swsimd.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -c -o alignment_test-swsimd.obj `if test -f '../src/swsimd.c'; then $(CYGPATH_W) '../src/swsimd.c'; else $(CYGPATH_W) '$(srcdir)/../src/swsimd.c'; fi`
+
+alignment_test-alignment.o: ../src/alignment.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -MT alignment_test-alignment.o -MD -MP -MF $(DEPDIR)/alignment_test-alignment.Tpo -c -o alignment_test-alignment.o `test -f '../src/alignment.c' || echo '$(srcdir)/'`../src/alignment.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/alignment_test-alignment.Tpo $(DEPDIR)/alignment_test-alignment.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/alignment.c' object='alignment_test-alignment.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -c -o alignment_test-alignment.o `test -f '../src/alignment.c' || echo '$(srcdir)/'`../src/alignment.c
+
+alignment_test-alignment.obj: ../src/alignment.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -MT alignment_test-alignment.obj -MD -MP -MF $(DEPDIR)/alignment_test-alignment.Tpo -c -o alignment_test-alignment.obj `if test -f '../src/alignment.c'; then $(CYGPATH_W) '../src/alignment.c'; else $(CYGPATH_W) '$(srcdir)/../src/alignment.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/alignment_test-alignment.Tpo $(DEPDIR)/alignment_test-alignment.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/alignment.c' object='alignment_test-alignment.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alignment_test_CPPFLAGS) $(CPPFLAGS) $(alignment_test_CFLAGS) $(CFLAGS) -c -o alignment_test-alignment.obj `if test -f '../src/alignment.c'; then $(CYGPATH_W) '../src/alignment.c'; else $(CYGPATH_W) '$(srcdir)/../src/alignment.c'; fi`
 
 elib.o: ../src/elib.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT elib.o -MD -MP -MF $(DEPDIR)/elib.Tpo -c -o elib.o `test -f '../src/elib.c' || echo '$(srcdir)/'`../src/elib.c
@@ -1352,48 +1369,6 @@ infmt_test-infmt.obj: ../src/infmt.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/infmt.c' object='infmt_test-infmt.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(infmt_test_CFLAGS) $(CFLAGS) -c -o infmt_test-infmt.obj `if test -f '../src/infmt.c'; then $(CYGPATH_W) '../src/infmt.c'; else $(CYGPATH_W) '$(srcdir)/../src/infmt.c'; fi`
-
-mergesort_test-mergesort_test.o: mergesort_test.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mergesort_test_CFLAGS) $(CFLAGS) -MT mergesort_test-mergesort_test.o -MD -MP -MF $(DEPDIR)/mergesort_test-mergesort_test.Tpo -c -o mergesort_test-mergesort_test.o `test -f 'mergesort_test.c' || echo '$(srcdir)/'`mergesort_test.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mergesort_test-mergesort_test.Tpo $(DEPDIR)/mergesort_test-mergesort_test.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mergesort_test.c' object='mergesort_test-mergesort_test.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mergesort_test_CFLAGS) $(CFLAGS) -c -o mergesort_test-mergesort_test.o `test -f 'mergesort_test.c' || echo '$(srcdir)/'`mergesort_test.c
-
-mergesort_test-mergesort_test.obj: mergesort_test.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mergesort_test_CFLAGS) $(CFLAGS) -MT mergesort_test-mergesort_test.obj -MD -MP -MF $(DEPDIR)/mergesort_test-mergesort_test.Tpo -c -o mergesort_test-mergesort_test.obj `if test -f 'mergesort_test.c'; then $(CYGPATH_W) 'mergesort_test.c'; else $(CYGPATH_W) '$(srcdir)/mergesort_test.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mergesort_test-mergesort_test.Tpo $(DEPDIR)/mergesort_test-mergesort_test.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mergesort_test.c' object='mergesort_test-mergesort_test.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mergesort_test_CFLAGS) $(CFLAGS) -c -o mergesort_test-mergesort_test.obj `if test -f 'mergesort_test.c'; then $(CYGPATH_W) 'mergesort_test.c'; else $(CYGPATH_W) '$(srcdir)/mergesort_test.c'; fi`
-
-mergesort_test-elib.o: ../src/elib.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mergesort_test_CFLAGS) $(CFLAGS) -MT mergesort_test-elib.o -MD -MP -MF $(DEPDIR)/mergesort_test-elib.Tpo -c -o mergesort_test-elib.o `test -f '../src/elib.c' || echo '$(srcdir)/'`../src/elib.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mergesort_test-elib.Tpo $(DEPDIR)/mergesort_test-elib.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/elib.c' object='mergesort_test-elib.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mergesort_test_CFLAGS) $(CFLAGS) -c -o mergesort_test-elib.o `test -f '../src/elib.c' || echo '$(srcdir)/'`../src/elib.c
-
-mergesort_test-elib.obj: ../src/elib.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mergesort_test_CFLAGS) $(CFLAGS) -MT mergesort_test-elib.obj -MD -MP -MF $(DEPDIR)/mergesort_test-elib.Tpo -c -o mergesort_test-elib.obj `if test -f '../src/elib.c'; then $(CYGPATH_W) '../src/elib.c'; else $(CYGPATH_W) '$(srcdir)/../src/elib.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mergesort_test-elib.Tpo $(DEPDIR)/mergesort_test-elib.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/elib.c' object='mergesort_test-elib.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mergesort_test_CFLAGS) $(CFLAGS) -c -o mergesort_test-elib.obj `if test -f '../src/elib.c'; then $(CYGPATH_W) '../src/elib.c'; else $(CYGPATH_W) '$(srcdir)/../src/elib.c'; fi`
-
-mergesort_test-sort.o: ../src/sort.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mergesort_test_CFLAGS) $(CFLAGS) -MT mergesort_test-sort.o -MD -MP -MF $(DEPDIR)/mergesort_test-sort.Tpo -c -o mergesort_test-sort.o `test -f '../src/sort.c' || echo '$(srcdir)/'`../src/sort.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mergesort_test-sort.Tpo $(DEPDIR)/mergesort_test-sort.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/sort.c' object='mergesort_test-sort.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mergesort_test_CFLAGS) $(CFLAGS) -c -o mergesort_test-sort.o `test -f '../src/sort.c' || echo '$(srcdir)/'`../src/sort.c
-
-mergesort_test-sort.obj: ../src/sort.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mergesort_test_CFLAGS) $(CFLAGS) -MT mergesort_test-sort.obj -MD -MP -MF $(DEPDIR)/mergesort_test-sort.Tpo -c -o mergesort_test-sort.obj `if test -f '../src/sort.c'; then $(CYGPATH_W) '../src/sort.c'; else $(CYGPATH_W) '$(srcdir)/../src/sort.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mergesort_test-sort.Tpo $(DEPDIR)/mergesort_test-sort.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/sort.c' object='mergesort_test-sort.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mergesort_test_CFLAGS) $(CFLAGS) -c -o mergesort_test-sort.obj `if test -f '../src/sort.c'; then $(CYGPATH_W) '../src/sort.c'; else $(CYGPATH_W) '$(srcdir)/../src/sort.c'; fi`
 
 rmap_test-rmap_test.o: rmap_test.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rmap_test_CFLAGS) $(CFLAGS) -MT rmap_test-rmap_test.o -MD -MP -MF $(DEPDIR)/rmap_test-rmap_test.Tpo -c -o rmap_test-rmap_test.o `test -f 'rmap_test.c' || echo '$(srcdir)/'`rmap_test.c
@@ -1969,20 +1944,6 @@ smalt_test-segment.obj: ../src/segment.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -c -o smalt_test-segment.obj `if test -f '../src/segment.c'; then $(CYGPATH_W) '../src/segment.c'; else $(CYGPATH_W) '$(srcdir)/../src/segment.c'; fi`
 
-smalt_test-score.o: ../src/score.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -MT smalt_test-score.o -MD -MP -MF $(DEPDIR)/smalt_test-score.Tpo -c -o smalt_test-score.o `test -f '../src/score.c' || echo '$(srcdir)/'`../src/score.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/smalt_test-score.Tpo $(DEPDIR)/smalt_test-score.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/score.c' object='smalt_test-score.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -c -o smalt_test-score.o `test -f '../src/score.c' || echo '$(srcdir)/'`../src/score.c
-
-smalt_test-score.obj: ../src/score.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -MT smalt_test-score.obj -MD -MP -MF $(DEPDIR)/smalt_test-score.Tpo -c -o smalt_test-score.obj `if test -f '../src/score.c'; then $(CYGPATH_W) '../src/score.c'; else $(CYGPATH_W) '$(srcdir)/../src/score.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/smalt_test-score.Tpo $(DEPDIR)/smalt_test-score.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/score.c' object='smalt_test-score.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -c -o smalt_test-score.obj `if test -f '../src/score.c'; then $(CYGPATH_W) '../src/score.c'; else $(CYGPATH_W) '$(srcdir)/../src/score.c'; fi`
-
 smalt_test-diffstr.o: ../src/diffstr.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -MT smalt_test-diffstr.o -MD -MP -MF $(DEPDIR)/smalt_test-diffstr.Tpo -c -o smalt_test-diffstr.o `test -f '../src/diffstr.c' || echo '$(srcdir)/'`../src/diffstr.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/smalt_test-diffstr.Tpo $(DEPDIR)/smalt_test-diffstr.Po
@@ -1996,6 +1957,20 @@ smalt_test-diffstr.obj: ../src/diffstr.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/diffstr.c' object='smalt_test-diffstr.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -c -o smalt_test-diffstr.obj `if test -f '../src/diffstr.c'; then $(CYGPATH_W) '../src/diffstr.c'; else $(CYGPATH_W) '$(srcdir)/../src/diffstr.c'; fi`
+
+smalt_test-score.o: ../src/score.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -MT smalt_test-score.o -MD -MP -MF $(DEPDIR)/smalt_test-score.Tpo -c -o smalt_test-score.o `test -f '../src/score.c' || echo '$(srcdir)/'`../src/score.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/smalt_test-score.Tpo $(DEPDIR)/smalt_test-score.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/score.c' object='smalt_test-score.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -c -o smalt_test-score.o `test -f '../src/score.c' || echo '$(srcdir)/'`../src/score.c
+
+smalt_test-score.obj: ../src/score.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -MT smalt_test-score.obj -MD -MP -MF $(DEPDIR)/smalt_test-score.Tpo -c -o smalt_test-score.obj `if test -f '../src/score.c'; then $(CYGPATH_W) '../src/score.c'; else $(CYGPATH_W) '$(srcdir)/../src/score.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/smalt_test-score.Tpo $(DEPDIR)/smalt_test-score.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/score.c' object='smalt_test-score.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -c -o smalt_test-score.obj `if test -f '../src/score.c'; then $(CYGPATH_W) '../src/score.c'; else $(CYGPATH_W) '$(srcdir)/../src/score.c'; fi`
 
 smalt_test-alibuffer.o: ../src/alibuffer.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -MT smalt_test-alibuffer.o -MD -MP -MF $(DEPDIR)/smalt_test-alibuffer.Tpo -c -o smalt_test-alibuffer.o `test -f '../src/alibuffer.c' || echo '$(srcdir)/'`../src/alibuffer.c
@@ -2011,20 +1986,6 @@ smalt_test-alibuffer.obj: ../src/alibuffer.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -c -o smalt_test-alibuffer.obj `if test -f '../src/alibuffer.c'; then $(CYGPATH_W) '../src/alibuffer.c'; else $(CYGPATH_W) '$(srcdir)/../src/alibuffer.c'; fi`
 
-smalt_test-alignment.o: ../src/alignment.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -MT smalt_test-alignment.o -MD -MP -MF $(DEPDIR)/smalt_test-alignment.Tpo -c -o smalt_test-alignment.o `test -f '../src/alignment.c' || echo '$(srcdir)/'`../src/alignment.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/smalt_test-alignment.Tpo $(DEPDIR)/smalt_test-alignment.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/alignment.c' object='smalt_test-alignment.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -c -o smalt_test-alignment.o `test -f '../src/alignment.c' || echo '$(srcdir)/'`../src/alignment.c
-
-smalt_test-alignment.obj: ../src/alignment.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -MT smalt_test-alignment.obj -MD -MP -MF $(DEPDIR)/smalt_test-alignment.Tpo -c -o smalt_test-alignment.obj `if test -f '../src/alignment.c'; then $(CYGPATH_W) '../src/alignment.c'; else $(CYGPATH_W) '$(srcdir)/../src/alignment.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/smalt_test-alignment.Tpo $(DEPDIR)/smalt_test-alignment.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/alignment.c' object='smalt_test-alignment.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -c -o smalt_test-alignment.obj `if test -f '../src/alignment.c'; then $(CYGPATH_W) '../src/alignment.c'; else $(CYGPATH_W) '$(srcdir)/../src/alignment.c'; fi`
-
 smalt_test-swsimd.o: ../src/swsimd.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -MT smalt_test-swsimd.o -MD -MP -MF $(DEPDIR)/smalt_test-swsimd.Tpo -c -o smalt_test-swsimd.o `test -f '../src/swsimd.c' || echo '$(srcdir)/'`../src/swsimd.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/smalt_test-swsimd.Tpo $(DEPDIR)/smalt_test-swsimd.Po
@@ -2039,6 +2000,20 @@ smalt_test-swsimd.obj: ../src/swsimd.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -c -o smalt_test-swsimd.obj `if test -f '../src/swsimd.c'; then $(CYGPATH_W) '../src/swsimd.c'; else $(CYGPATH_W) '$(srcdir)/../src/swsimd.c'; fi`
 
+smalt_test-alignment.o: ../src/alignment.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -MT smalt_test-alignment.o -MD -MP -MF $(DEPDIR)/smalt_test-alignment.Tpo -c -o smalt_test-alignment.o `test -f '../src/alignment.c' || echo '$(srcdir)/'`../src/alignment.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/smalt_test-alignment.Tpo $(DEPDIR)/smalt_test-alignment.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/alignment.c' object='smalt_test-alignment.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -c -o smalt_test-alignment.o `test -f '../src/alignment.c' || echo '$(srcdir)/'`../src/alignment.c
+
+smalt_test-alignment.obj: ../src/alignment.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -MT smalt_test-alignment.obj -MD -MP -MF $(DEPDIR)/smalt_test-alignment.Tpo -c -o smalt_test-alignment.obj `if test -f '../src/alignment.c'; then $(CYGPATH_W) '../src/alignment.c'; else $(CYGPATH_W) '$(srcdir)/../src/alignment.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/smalt_test-alignment.Tpo $(DEPDIR)/smalt_test-alignment.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/alignment.c' object='smalt_test-alignment.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -c -o smalt_test-alignment.obj `if test -f '../src/alignment.c'; then $(CYGPATH_W) '../src/alignment.c'; else $(CYGPATH_W) '$(srcdir)/../src/alignment.c'; fi`
+
 smalt_test-tracker.o: tracker.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -MT smalt_test-tracker.o -MD -MP -MF $(DEPDIR)/smalt_test-tracker.Tpo -c -o smalt_test-tracker.o `test -f 'tracker.c' || echo '$(srcdir)/'`tracker.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/smalt_test-tracker.Tpo $(DEPDIR)/smalt_test-tracker.Po
@@ -2052,6 +2027,62 @@ smalt_test-tracker.obj: tracker.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tracker.c' object='smalt_test-tracker.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smalt_test_CPPFLAGS) $(CPPFLAGS) $(smalt_test_CFLAGS) $(CFLAGS) -c -o smalt_test-tracker.obj `if test -f 'tracker.c'; then $(CYGPATH_W) 'tracker.c'; else $(CYGPATH_W) '$(srcdir)/tracker.c'; fi`
+
+swsimd_test-swsimd_test.o: swsimd_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -MT swsimd_test-swsimd_test.o -MD -MP -MF $(DEPDIR)/swsimd_test-swsimd_test.Tpo -c -o swsimd_test-swsimd_test.o `test -f 'swsimd_test.c' || echo '$(srcdir)/'`swsimd_test.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/swsimd_test-swsimd_test.Tpo $(DEPDIR)/swsimd_test-swsimd_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='swsimd_test.c' object='swsimd_test-swsimd_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -c -o swsimd_test-swsimd_test.o `test -f 'swsimd_test.c' || echo '$(srcdir)/'`swsimd_test.c
+
+swsimd_test-swsimd_test.obj: swsimd_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -MT swsimd_test-swsimd_test.obj -MD -MP -MF $(DEPDIR)/swsimd_test-swsimd_test.Tpo -c -o swsimd_test-swsimd_test.obj `if test -f 'swsimd_test.c'; then $(CYGPATH_W) 'swsimd_test.c'; else $(CYGPATH_W) '$(srcdir)/swsimd_test.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/swsimd_test-swsimd_test.Tpo $(DEPDIR)/swsimd_test-swsimd_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='swsimd_test.c' object='swsimd_test-swsimd_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -c -o swsimd_test-swsimd_test.obj `if test -f 'swsimd_test.c'; then $(CYGPATH_W) 'swsimd_test.c'; else $(CYGPATH_W) '$(srcdir)/swsimd_test.c'; fi`
+
+swsimd_test-score.o: ../src/score.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -MT swsimd_test-score.o -MD -MP -MF $(DEPDIR)/swsimd_test-score.Tpo -c -o swsimd_test-score.o `test -f '../src/score.c' || echo '$(srcdir)/'`../src/score.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/swsimd_test-score.Tpo $(DEPDIR)/swsimd_test-score.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/score.c' object='swsimd_test-score.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -c -o swsimd_test-score.o `test -f '../src/score.c' || echo '$(srcdir)/'`../src/score.c
+
+swsimd_test-score.obj: ../src/score.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -MT swsimd_test-score.obj -MD -MP -MF $(DEPDIR)/swsimd_test-score.Tpo -c -o swsimd_test-score.obj `if test -f '../src/score.c'; then $(CYGPATH_W) '../src/score.c'; else $(CYGPATH_W) '$(srcdir)/../src/score.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/swsimd_test-score.Tpo $(DEPDIR)/swsimd_test-score.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/score.c' object='swsimd_test-score.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -c -o swsimd_test-score.obj `if test -f '../src/score.c'; then $(CYGPATH_W) '../src/score.c'; else $(CYGPATH_W) '$(srcdir)/../src/score.c'; fi`
+
+swsimd_test-alibuffer.o: ../src/alibuffer.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -MT swsimd_test-alibuffer.o -MD -MP -MF $(DEPDIR)/swsimd_test-alibuffer.Tpo -c -o swsimd_test-alibuffer.o `test -f '../src/alibuffer.c' || echo '$(srcdir)/'`../src/alibuffer.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/swsimd_test-alibuffer.Tpo $(DEPDIR)/swsimd_test-alibuffer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/alibuffer.c' object='swsimd_test-alibuffer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -c -o swsimd_test-alibuffer.o `test -f '../src/alibuffer.c' || echo '$(srcdir)/'`../src/alibuffer.c
+
+swsimd_test-alibuffer.obj: ../src/alibuffer.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -MT swsimd_test-alibuffer.obj -MD -MP -MF $(DEPDIR)/swsimd_test-alibuffer.Tpo -c -o swsimd_test-alibuffer.obj `if test -f '../src/alibuffer.c'; then $(CYGPATH_W) '../src/alibuffer.c'; else $(CYGPATH_W) '$(srcdir)/../src/alibuffer.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/swsimd_test-alibuffer.Tpo $(DEPDIR)/swsimd_test-alibuffer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/alibuffer.c' object='swsimd_test-alibuffer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -c -o swsimd_test-alibuffer.obj `if test -f '../src/alibuffer.c'; then $(CYGPATH_W) '../src/alibuffer.c'; else $(CYGPATH_W) '$(srcdir)/../src/alibuffer.c'; fi`
+
+swsimd_test-swsimd.o: ../src/swsimd.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -MT swsimd_test-swsimd.o -MD -MP -MF $(DEPDIR)/swsimd_test-swsimd.Tpo -c -o swsimd_test-swsimd.o `test -f '../src/swsimd.c' || echo '$(srcdir)/'`../src/swsimd.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/swsimd_test-swsimd.Tpo $(DEPDIR)/swsimd_test-swsimd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/swsimd.c' object='swsimd_test-swsimd.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -c -o swsimd_test-swsimd.o `test -f '../src/swsimd.c' || echo '$(srcdir)/'`../src/swsimd.c
+
+swsimd_test-swsimd.obj: ../src/swsimd.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -MT swsimd_test-swsimd.obj -MD -MP -MF $(DEPDIR)/swsimd_test-swsimd.Tpo -c -o swsimd_test-swsimd.obj `if test -f '../src/swsimd.c'; then $(CYGPATH_W) '../src/swsimd.c'; else $(CYGPATH_W) '$(srcdir)/../src/swsimd.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/swsimd_test-swsimd.Tpo $(DEPDIR)/swsimd_test-swsimd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../src/swsimd.c' object='swsimd_test-swsimd.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(swsimd_test_CPPFLAGS) $(CPPFLAGS) $(swsimd_test_CFLAGS) $(CFLAGS) -c -o swsimd_test-swsimd.obj `if test -f '../src/swsimd.c'; then $(CYGPATH_W) '../src/swsimd.c'; else $(CYGPATH_W) '$(srcdir)/../src/swsimd.c'; fi`
 install-dist_dataDATA: $(dist_data_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(datadir)" || $(MKDIR_P) "$(DESTDIR)$(datadir)"

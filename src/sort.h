@@ -30,8 +30,8 @@ extern "C"
 {
 #endif
 
-#ifndef sort_h
-#define sort_h
+#ifndef SORT_H
+#define SORT_H
 
   //#define sort_debug
 

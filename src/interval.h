@@ -31,8 +31,8 @@ extern "C"
 {
 #endif
 
-#ifndef interval_h
-#define interval_h
+#ifndef INTERVAL_H
+#define INTERVAL_H
 
 #include <stdint.h>
 #include "sequence.h"

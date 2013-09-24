@@ -35,9 +35,11 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@ICC_COMPILER_TRUE@@ICC_NOLIMITH_TRUE@am__append_1 = -D_GCC_LIMITS_H_
-@ICC_COMPILER_FALSE@am__append_2 = -Wall -Wextra
-@APPLE_64BIT_TRUE@am__append_3 = -m64 -D_FILE_OFFSET_BITS=64 \
+@ICC_COMPILER_TRUE@@ICC_MMIC_TRUE@am__append_1 = -mmic	
+@ICC_COMPILER_TRUE@am__append_2 = -Wall
+@ICC_COMPILER_TRUE@@ICC_NOLIMITH_TRUE@am__append_3 = -D_GCC_LIMITS_H_
+@ICC_COMPILER_FALSE@am__append_4 = -Wall -Wextra
+@APPLE_64BIT_TRUE@am__append_5 = -m64 -D_FILE_OFFSET_BITS=64 \
 @APPLE_64BIT_TRUE@	${APPLECFLAGS}
 bin_PROGRAMS = simread$(EXEEXT) fetchseq$(EXEEXT) splitreads$(EXEEXT) \
 	mixreads$(EXEEXT) splitmates$(EXEEXT) readstats$(EXEEXT) \
@@ -242,7 +244,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CFLAGS = -I../src/ $(am__append_1) $(am__append_2) $(am__append_3)
+AM_CFLAGS = -I../src/ $(am__append_1) $(am__append_2) $(am__append_3) \
+	$(am__append_4) $(am__append_5)
 @WITH_ZLIB_FALSE@ZLIB_LDFLAG = 
 @WITH_ZLIB_TRUE@ZLIB_LDFLAG = -lz
 dist_data_DATA = SAM.py

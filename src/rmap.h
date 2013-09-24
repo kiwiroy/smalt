@@ -30,8 +30,8 @@ extern "C"
 {
 #endif
 
-#ifndef rmap_h
-#define rmap_h
+#ifndef RMAP_H
+#define RMAP_H
 
   //#define rmap_debug
 #define rmap_short_hitinfo

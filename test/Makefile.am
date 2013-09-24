@@ -7,6 +7,9 @@ LIBNAM_PATTERN = -l%
 AM_CFLAGS = -I../src/
 
 if ICC_COMPILER
+if ICC_MMIC
+AM_CFLAGS += -mmic	
+endif
 if ICC_NOLIMITH
 AM_CFLAGS += -D_GCC_LIMITS_H_
 endif
@@ -19,25 +22,28 @@ AM_CFLAGS += -m64 -D_FILE_OFFSET_BITS=64
 APPLELDFLAGS = -pthread
 endif
 
-if SSE2
+if WITH_SIMD
 if ICC_COMPILER
-SSE_INTRINS_FLAGS = -xO
+SIMD_INTRINS_FLAGS =
 else
-SSE_INTRINS_FLAGS = -msse2
+SIMD_INTRINS_FLAGS = -msse2
 endif
 else
-SSE_INTRINS_FLAGS =
+SIMD_INTRINS_FLAGS =
 endif
 
 SEQ_LIB = ../src/libseq.a
 SGM_LIB = ../src/libsgm.a ${SEQ_LIB}
 
-ALI_SRC = ../src/score.c ../src/score.h ../src/diffstr.c ../src/diffstr.h \
-	  ../src/alibuffer.c ../src/alibuffer.h ../src/alibuffer_struct.h \
-	  ../src/alignment.c ../src/alignment.h
-if SSE2
-ALI_SRC += ../src/swsimd.c ../src/swsimd.h
+SMIWAT_SRC = ../src/score.c ../src/score.h \
+	../src/alibuffer.c ../src/alibuffer.h ../src/alibuffer_struct.h
+
+if WITH_SIMD
+SMIWAT_SRC += ../src/swsimd.c ../src/swsimd.h
 endif
+
+ALI_SRC = ../src/diffstr.c ../src/diffstr.h ${SMIWAT_SRC} \
+	  ../src/alignment.c ../src/alignment.h
 
 HIT_SRC = ../src/sort.c ../src/sort.h \
 	../src/interval.c ../src/interval.h \
@@ -119,10 +125,10 @@ ZLIB_LDFLAG=
 endif
 
 if WITH_TESTALL
-if SSE2	
-check_PROGRAMS += mergesort_test
+if WITH_SIMD	
+check_PROGRAMS += swsimd_test # mergesort_test
 endif
-check_PROGRAMS += ${EXTRA_PROGRAMS}
+#check_PROGRAMS += ${EXTRA_PROGRAMS}
 endif
 
 ## test routines for array.c
@@ -138,11 +144,12 @@ diffstr_test_SOURCES = diffstr_test.c ../src/diffstr.c ../src/diffstr.h ../src/e
 nodist_bam_test_SOURCES = bam_test.c ../src/elib.c ../src/elib.h
 
 ## merge sort using SIMD
-if SSE2
-nodist_mergesort_test_SOURCES = mergesort_test.c ../src/elib.c ../src/elib.h ../src/randef.h ../src/sortdef.h \
-	../src/sort.c ../src/sort.h
-mergesort_test_CFLAGS = $(AM_CLFAGS) $(SSE_INTRINS_FLAGS)
-endif
+#if WITH_SIMD
+#nodist_mergesort_test_SOURCES = mergesort_test.c \
+#	../src/elib.c ../src/elib.h ../src/randef.h ../src/sortdef.h \
+#	../src/sort.c ../src/sort.h
+#mergesort_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS)
+#endif
 
 ## test routines for sequence.c
 sequenceReadWrite_test_SOURCES = sequenceReadWrite_test.c
@@ -196,10 +203,17 @@ candseg_test_LDADD = $(SEQ_LIB) -lm $(ZLIB_LDFLAG)
 
 # tests of alignment routines
 nodist_alignment_test_SOURCES = alignment_test.c ${ALI_SRC}
-alignment_test_CFLAGS = $(AM_CFLAGS) $(SSE_INTRINS_FLAGS)
+alignment_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS)
 alignment_test_CPPFLAGS = -Dalignment_debug -Dalignment_timing
 alignment_test_LDADD = $(SEQ_LIB) -lm $(ZLIB_LDFLAG)
 
+# vectorised Smith-Waterman alignment
+if WITH_SIMD
+nodist_swsimd_test_SOURCES = swsimd_test.c ${SMIWAT_SRC}
+swsimd_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS)
+swsimd_test_CPPFLAGS = -Dalignment_matrix_debug
+swsimd_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
+endif
 
 # test of mapping routines
 nodist_rmap_test_SOURCES = rmap_test.c ${MAP_SRC}
@@ -213,14 +227,14 @@ rmap_test_LDFLAGS = $(BAMBAMC_LDFLG)
 
 # test splitting of alignments across neighbouring reference sequences
 smalt_Xali_test_SOURCES = ${SMALT_SRC}
-smalt_Xali_test_CFLAGS = $(AM_CFLAGS) $(SSE_INTRINS_FLAGS) $(BAMBAMC_INCL)
+smalt_Xali_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS) $(BAMBAMC_INCL)
 smalt_Xali_test_CPPFLAGS = -DSMALT_DEBUG_XALI
 smalt_Xali_test_LDADD = $(SGM_LIB) $(BAMBAMC_DEPS) -lm -lpthread $(ZLIB_LDFLAG)
 smalt_Xali_test_LDFLAGS =  $(APPLELDFLAGS) $(BAMBAMC_LDFLG)
 
 # testing smalt with simulated reads (not distributed)
 nodist_smalt_test_SOURCES = ${SMALT_TEST_SRC}
-smalt_test_CFLAGS = $(AM_CFLAGS) $(SSE_INTRINS_FLAGS) -I../test $(BAMBAMC_INCL)
+smalt_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS) -I../test $(BAMBAMC_INCL)
 smalt_test_CPPFLAGS = -DRESULTS_TRACKER
 
 smalt_test_LDADD = $(SEQ_LIB) $(BAMBAMC_DEPS) -lm -lpthread $(ZLIB_LDFLAG)

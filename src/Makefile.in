@@ -35,12 +35,12 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@ICC_COMPILER_TRUE@@ICC_NOLIMITH_TRUE@am__append_1 = -D_GCC_LIMITS_H_
-@APPLE_64BIT_TRUE@am__append_2 = -m64 -D_FILE_OFFSET_BITS=64
-@SSE2_TRUE@am__append_3 = swsimd.c swsimd.h	
+@ICC_COMPILER_TRUE@@ICC_MMIC_TRUE@am__append_1 = -mmic	
+@ICC_COMPILER_TRUE@@ICC_NOLIMITH_TRUE@am__append_2 = -D_GCC_LIMITS_H_
+@APPLE_64BIT_TRUE@am__append_3 = -m64 -D_FILE_OFFSET_BITS=64
+@WITH_SIMD_TRUE@am__append_4 = swsimd.c swsimd.h	
 bin_PROGRAMS = smalt$(EXEEXT)
-@ICC_COMPILER_TRUE@@SSE2_TRUE@am__append_4 = -xO
-@ICC_COMPILER_FALSE@@SSE2_TRUE@am__append_5 = -msse2
+@ICC_COMPILER_FALSE@@WITH_SIMD_TRUE@am__append_5 = -msse2
 @WITH_ZLIB_TRUE@am__append_6 = -lz	
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -67,7 +67,7 @@ am__libsgm_a_SOURCES_DIST = score.c score.h diffstr.c diffstr.h \
 	alignment.h swsimd.c swsimd.h sort.c sort.h array.c array.h \
 	vdef.h interval.c interval.h hashidx.c hashidx.h hashhit.c \
 	hashhit.h segment.c segment.h
-@SSE2_TRUE@am__objects_1 = libsgm_a-swsimd.$(OBJEXT)
+@WITH_SIMD_TRUE@am__objects_1 = libsgm_a-swsimd.$(OBJEXT)
 am__objects_2 = libsgm_a-score.$(OBJEXT) libsgm_a-diffstr.$(OBJEXT) \
 	libsgm_a-alibuffer.$(OBJEXT) libsgm_a-alignment.$(OBJEXT) \
 	$(am__objects_1)
@@ -219,12 +219,12 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@ICC_COMPILER_FALSE@AM_CFLAGS = -Wall -Wextra $(am__append_2)
-@ICC_COMPILER_TRUE@AM_CFLAGS = -Wall -W $(am__append_1) \
-@ICC_COMPILER_TRUE@	$(am__append_2)
+@ICC_COMPILER_FALSE@AM_CFLAGS = -Wall -Wextra $(am__append_3)
+@ICC_COMPILER_TRUE@AM_CFLAGS = -Wall $(am__append_1) $(am__append_2) \
+@ICC_COMPILER_TRUE@	$(am__append_3)
 @APPLE_64BIT_TRUE@APPLELDFLAGS = -pthread 
 ALI_SRC = score.c score.h diffstr.c diffstr.h alibuffer.c alibuffer.h \
-	alibuffer_struct.h alignment.c alignment.h $(am__append_3)
+	alibuffer_struct.h alignment.c alignment.h $(am__append_4)
 SGM_SRC = sort.c sort.h array.c array.h vdef.h interval.c interval.h \
 	  hashidx.c hashidx.h hashhit.c hashhit.h \
           segment.c segment.h 
@@ -237,7 +237,7 @@ MAP_SRC = results.c results.h randef.h \
 noinst_LIBRARIES = libseq.a libsgm.a
 libseq_a_SOURCES = elib.c elib.h filio.c filio.h sequence.c sequence.h
 libsgm_a_SOURCES = ${ALI_SRC} ${SGM_SRC}
-libsgm_a_CFLAGS = ${AM_CFLAGS} $(am__append_4) $(am__append_5)
+libsgm_a_CFLAGS = ${AM_CFLAGS} $(am__append_5)
 libsgm_a_LIBADD = libseq.a
 smalt_SOURCES = smalt.c menu.h menu.c threads.h threads.c infmt.c infmt.h ${MAP_SRC}
 smalt_CFLAGS = $(BAMBAMC_INCL) ${AM_CFLAGS}

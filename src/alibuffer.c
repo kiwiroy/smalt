@@ -28,12 +28,8 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <config.h>
-#ifdef HAVE_EMMINTRIN_H
-#include <emmintrin.h>
-#endif
 
 #include "elib.h"
-#include "score.h"
 #include "alibuffer.h"
 #include "alibuffer_struct.h"
 
@@ -45,9 +41,6 @@ enum {
 /****************************************************************************
  ******************************* Macros *************************************
  ****************************************************************************/
-
-#define ALIGN_16BYTE(p) (((size_t) (p) + SCORSIMD_ROUNDMASK) & (~SCORSIMD_ROUNDMASK));
-/**< Align memory to 16 byte boundary */
 
 /******************************************************************************
  ********************** Public Methods of Type AliBuffer **********************
@@ -84,10 +77,17 @@ int aliBufferInit(AliBuffer *p, unsigned int qlen)
 {
   unsigned int newlen;
   size_t siz, newsiz;
-#ifdef HAVE_EMMINTRIN_H
-  int qlenSHRT;
+#ifdef SCORE_SIMD
+  int nvec;
+  const int nvecelem = 
+#ifdef SCORE_SIMD_IMIC
+    SCORSIMD_NINTS; 
+#else
+  SCORSIMD_NSHORTS; 
+#endif
 #endif 
-  if (qlen <= p->qlen_max)
+
+  if (qlen <= (unsigned int) p->qlen_max)
     return ERRCODE_SUCCESS;
 
   if (qlen > INT_MAX)
@@ -97,11 +97,17 @@ int aliBufferInit(AliBuffer *p, unsigned int qlen)
   newlen *= p->blocksiz;
   if (newlen > INT_MAX)
     newlen = INT_MAX;
-  siz = (newlen+1)*2*sizeof(int);
 
-#ifdef HAVE_EMMINTRIN_H
-  qlenSHRT = (newlen + SCORSIMD_NSHORTS - 1)/SCORSIMD_NSHORTS;
-  newsiz = SLACK_BYTES + 3 * qlenSHRT * sizeof(__m128i);
+  siz = (
+#ifdef SCORE_SIMD
+	 SCORSIMD_MEMALIMASK + 1 + /* slack for alignment to 16/64 byte boundary */
+#endif
+	 (newlen+1)*sizeof(ALIDPMSCOR_t))*2;
+
+#ifdef SCORE_SIMD
+  nvec = (newlen + nvecelem - 1)/nvecelem;
+  newsiz = (1 + /* slack for alignment to 16/64 byte boundary */
+	    3 * nvec) * sizeof(SIMDV_t);
   if (siz < newsiz)
     siz = newsiz;
 #endif  
@@ -117,16 +123,16 @@ int aliBufferInit(AliBuffer *p, unsigned int qlen)
     p->datap = hp;
     p->allocsiz = newsiz;
   }
-  p->baseHp = (ALIDPMSCOR_t *) ALIGN_16BYTE(p->datap);
+  p->baseHp = (ALIDPMSCOR_t *) SCORE_ALIGN_MEMORY(p->datap);
   p->baseEp = p->baseHp + newlen + 1;
-  p->baseEp = (ALIDPMSCOR_t *) ALIGN_16BYTE(p->baseEp);
+  p->baseEp = (ALIDPMSCOR_t *) SCORE_ALIGN_MEMORY(p->baseEp);
   
 
-#ifdef HAVE_EMMINTRIN_H
-  /* align to 16 byte boundary for 128 bit SIMD register */
-  p->H1v = (__m128i *) ALIGN_16BYTE(p->datap);
-  p->H2v = p->H1v + qlenSHRT;
-  p->Ev  = p->H2v + qlenSHRT;
+#ifdef SCORE_SIMD
+  /* align to 16/64 byte boundary for SIMD register */
+  p->H1v = (SIMDV_t *) SCORE_ALIGN_MEMORY(p->datap);
+  p->H2v = p->H1v + nvec;
+  p->Ev  = p->H2v + nvec;
 #endif
 
   p->qlen_max = (int) newlen;
