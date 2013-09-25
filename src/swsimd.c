@@ -3,8 +3,8 @@
 /*****************************************************************************
  *****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010 Genome Research Ltd.                                  * 
- *                                                                           *        
+ *  Copyright (C) 2010, 2013 Genome Research Ltd.                            * 
+ *                                                                           *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                              *
  *                                                                           *
  *  This file is part of SMALT.                                              *
@@ -43,9 +43,8 @@ enum {
 typedef unsigned char UCHAR;
 
 #ifdef SCORE_SIMD_IMIC
-static const int SIMD_LEFTSHIFT_PERMXV[NELEM_REGISTER] = 
+static __attribute__((align(64))) const int SIMD_LEFTSHIFT_PERMXV[NELEM_REGISTER] = 
   {0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14};
-static int BIAS = INT_MIN;
 #else
 static short BIAS = ((short) 1)<<15;
 #endif
@@ -57,13 +56,13 @@ static short BIAS = ((short) 1)<<15;
 #ifdef SCORE_SIMD_IMIC
 
 #define SIMD_ZERO_VECTOR(v) \
-  (v) = _mm512_setzero_epi32();
+  (v) = _mm512_setzero_epi32()
 
 #define SIMD_COPY_SCALAR_TO_VECTOR(a, v) \
-  (v) = _mm512_set1_epi32((int) (a));
+  (v) = _mm512_set1_epi32((int) (a))
 
-#define SIMD_NEGBIAS_VECTOR(v) \
-  (v) = _mm512_set1_epi32(INT_MIN);
+#define SIMD_COPY_VECTOR(a, v)\
+  (v) = _mm512_shuffle_epi32((a), 0xe4)
 
 #define SIMD_MAXELEMV(vOrig, vMax, vTmp)	 \
   vTmp = _mm512_permute4f128_epi32(vOrig, 0xB1); \
@@ -135,13 +134,31 @@ static short BIAS = ((short) 1)<<15;
 
 #endif
 
+
 /******************************************************************************
  ********************** Private SIMD Alignment Methods ************************
  ******************************************************************************/
-
 #ifdef alignment_matrix_debug
 #ifdef SCORE_SIMD_IMIC
+void printfArr(const int *vp, const char *label, int bias)
+{
+  int i;
+  if (NULL == label)
+    printf("V:{%i", vp[0] - bias);
+  else
+    printf("%s {%i", label, vp[0] - bias);
+  for (i=1; i<NELEM_REGISTER; i++)
+    printf(",%i", vp[i] - bias);
+  printf("}\n");
+}
 
+void printfSIMDV(const __m512i *vp, int *oup, const char *label, int bias)
+{
+  _mm512_store_epi32(oup, *vp);
+  printfArr(oup, label, bias);
+}
+#endif
+#ifdef SCORE_SIMD_IMIC
 static void printfStripedIntVector(int *vp, unsigned int qlen, int segsiz)
 {
   unsigned int j , k, nseg;
@@ -152,7 +169,7 @@ static void printfStripedIntVector(int *vp, unsigned int qlen, int segsiz)
   
   for (j=0; j<nseg; j++)
     for (k = (unsigned int) j; k<qlen; k += SCORSIMD_NINTS)
-      printf("%3i|", vp[k] - BIAS);
+      printf("%3i|", vp[k]);
   //printf("%3u|", k);
 }
 #else
@@ -200,10 +217,11 @@ static int alignSmiWatIntStriped(unsigned int *maxscor,
       * http://farrar.michael.googlepages.com/Smith-waterman
       */
 {
-  int errcode, i, j, segsiz, score, cmpval;
+  int errcode = ERRCODE_SUCCESS;
+  int i, j, segsiz, score, cmpval;
   short tmp;
   unsigned short gap_init, gap_ext;
-  const __m512i *vScorep, *vProfp;
+  const __m512i *vProfp;
   __m512i vH, vE, vF, vMax, vMin, vGapI, vGapE, vTmp, *vp;
   __m512i *vEp = abp->Ev;
   __m512i *vHSp = abp->H1v;
@@ -217,8 +235,14 @@ static int alignSmiWatIntStriped(unsigned int *maxscor,
   const char *decoderp = seqCodecGetDecoder(codecp, NULL);
   unsigned int maximum_score = 0;
   unsigned int q, qlen;
-  SIMDV_t vMaxBuf, vTmpBuf;
+  __m512i vMaxBuf, vTmpBuf;
+  /* int lazy_Floop_ctr;  */
+  int *oubuf_allocp = (int *) malloc(128);
+  int *oubufp = (int *) SCORE_ALIGN_MEMORY(oubuf_allocp);
+  if (NULL == oubuf_allocp)
+    return ERRCODE_NOMEM;
 #endif
+
 
 
   *maxscor = 0;
@@ -233,7 +257,7 @@ static int alignSmiWatIntStriped(unsigned int *maxscor,
 			   NULL, 
 #endif
 			   &gap_init, &gap_ext, NULL, &segsiz,
-			   SCORPROF_STRIPED_16, spp);
+			   SCORPROF_STRIPED_32, spp);
   if (!vProfp)
     return ERRCODE_SWATSTRIP;
 
@@ -241,33 +265,37 @@ static int alignSmiWatIntStriped(unsigned int *maxscor,
   SIMD_COPY_SCALAR_TO_VECTOR(gap_init, vGapI);
   SIMD_COPY_SCALAR_TO_VECTOR(gap_ext, vGapE);
   
-  /*  load vMaxScore with the zeros.  since we are using signed */
-  /*  math, we will bias the maxscore to -32768 so we have the */
-  /*  full range of the short.
-   */
-  SIMD_NEGBIAS_VECTOR(vMax);
-  SIMD_COPY_SCALAR_TO_VECTOR(gap_init, vMin);
 
-  /* initialize storage vector to 0 (biased to -32768) */
+  /* initialize storage vector to 0 */
+  SIMD_ZERO_VECTOR(vMax);
+  SIMD_ZERO_VECTOR(vMin);
+
   for (i=0; i<segsiz; i++) {
     _mm512_store_epi32(vEp + i, vMax);
     _mm512_store_epi32(vHSp + i, vMax);
   }
 
+#ifdef alignment_matrix_debug
+  printf("allocation address vProfp: %p\n", vProfp);
+  printfSIMDV(&vMax, oubufp, "vMax", 0);
+  printfSIMDV(&vMin, oubufp, "vMin", 0);
+#endif
   for (i=0; i<uslen; i++) {
-    vScorep = vProfp + (usqp[i]&SEQCOD_ALPHA_MASK) * segsiz;
-    
+    const __m512i *vScorep = vProfp + (usqp[i]&SEQCOD_ALPHA_MASK) * segsiz;
+
     /* zero out F */
-    SIMD_NEGBIAS_VECTOR(vF);
+    SIMD_ZERO_VECTOR(vF);
     
     /* load the next h value,
-     * initialise element on right to -32768 (conceptual 0) */
+     * initialise element on right to conceptual 0 */
     vH = _mm512_load_epi32(vHSp + segsiz - 1);
     vH = _mm512_mask_permutevar_epi32(vMin,
 				      mPERM,
 				      vSLX,
 				      vH);
-	
+#ifdef alignment_matrix_debug
+    //printfSIMDV(&vH, oubufp, "vH", 0);
+#endif
     /* swap the two H vectors */
     vp = vHLp;
     vHLp = vHSp;
@@ -277,27 +305,31 @@ static int alignSmiWatIntStriped(unsigned int *maxscor,
       /* load values of vF and vH from previous row (one unit up) */
       vE = _mm512_load_epi32(vEp + j);
 
+      vTmp = _mm512_load_epi32(vScorep + j);
+
       /* add score to vH */
-      vH = _mm512_add_epi32(vH, vScorep[j]);
+      vH = _mm512_add_epi32(vH, vTmp);
 
       /* Update highest score encountered this far */
       vMax = _mm512_max_epi32(vMax, vH);
 
 #ifdef alignment_matrix_debug
+      /*       //printfSIMDV(&vMax, oubufp, "vMax", 0); */      
       /* find largest score in the vMax vector */
       SIMD_MAXELEMV(vMax, vMaxBuf, vTmpBuf);
-     _mm512_mask_packstorelo_epi32(&score, mSEL1, vMaxBuf);
+      _mm512_mask_packstorelo_epi32(&score, mSEL1, vMaxBuf);
 
-      //printf("sse_score = %i\n", score);
-      if (score - BIAS > maximum_score) {
-	maximum_score = score - BIAS;
-	printf("IMIC_max_scor(%i,%i) = %u\n", i, j, maximum_score);
+      /* //printf("sse_score = %i\n", score); */
+      if ((unsigned int) score > maximum_score) {
+      	maximum_score = (unsigned int) score;
+	printf("IMIC_max_scor(%i,%i) %u\n", i, j, maximum_score);
       }
 #endif
 
       /* get max from vH, vE and vF */
       vH = _mm512_max_epi32 (vH, vE);
       vH = _mm512_max_epi32 (vH, vF);
+      vH = _mm512_max_epi32 (vH, vMin);
 
       /* save vH values */
       _mm512_store_epi32 (vHSp + j, vH);
@@ -334,10 +366,20 @@ static int alignSmiWatIntStriped(unsigned int *maxscor,
     cmpmsk = _mm512_cmp_epi32_mask (vF, vTmp, _MM_CMPINT_GT);
     cmpval = _mm512_mask2int (cmpmsk);
 
-    /* lazy F-loop */
-    while (cmpval != 0x0000) { /* not all 8-bit integers == 0 */
+#ifdef alignment_matrix_debug
+    /* printf("cmpval[%i,%i]=%x\n", i,j, cmpval); */
+
+    /* lazy_Floop_ctr = 0; */
+    while (cmpval != 0x0000
+	   /* && lazy_Floop_ctr < 32 */
+	   ) { 
+#else
+    while (cmpval != 0x0000) {
+#endif
+	/* lazy F-loop */
       vE = _mm512_load_epi32 (vEp + j);
       vH = _mm512_max_epi32 (vH, vF);
+      vH = _mm512_max_epi32 (vH, vMin);
 
       /* save vH values */
       _mm512_store_epi32 (vHSp + j, vH);
@@ -352,13 +394,13 @@ static int alignSmiWatIntStriped(unsigned int *maxscor,
 
       j++;
       if (j >= segsiz) {
-	j = 0;
-	/* shift left by 1 element, 
-	 * initialise element 0 to conceptual 0 */
-	vF = _mm512_mask_permutevar_epi32(vMin,
-					  mPERM,
-					  vSLX,
-					  vF);
+    	j = 0;
+    	/* shift left by 1 element,
+    	 * initialise element 0 to conceptual 0 */
+    	vF = _mm512_mask_permutevar_epi32(vMin,
+    					  mPERM,
+    					  vSLX,
+    					  vF);
      }
 
       vH = _mm512_load_epi32 (vHSp + j);
@@ -366,7 +408,11 @@ static int alignSmiWatIntStriped(unsigned int *maxscor,
       vTmp = _mm512_sub_epi32 (vH, vGapI);
       cmpmsk = _mm512_cmp_epi32_mask (vF, vTmp, _MM_CMPINT_GT);
       cmpval = _mm512_mask2int (cmpmsk);
-    }
+#ifdef alignment_matrix_debug
+      /* printf("cmpval[%i]=%x\n", lazy_Floop_ctr, cmpval); */
+      /* lazy_Floop_ctr++; */
+#endif
+  }
 #ifdef alignment_matrix_debug
     printf("  [%i,%i]: ", i, 0);
     for (q=0; q<qlen; q++)
@@ -384,15 +430,12 @@ static int alignSmiWatIntStriped(unsigned int *maxscor,
   /* find largest score in the maxscorv vector */
 
   SIMD_MAXELEMV_DESTRUCT(vMax, vTmp);
-  _mm512_mask_packstorelo_epi32(&score, mSEL1, vMax); 
+  _mm512_mask_packstorelo_epi32(&score, mSEL1, vMax);
   
-  if (score >= INT_MAX) {
-    errcode = ERRCODE_SWATEXCEED;
-  } else {
-    errcode = ERRCODE_SUCCESS;
-    *maxscor = (unsigned int) score - BIAS;
-  }
-  
+  *maxscor = (unsigned int) score;
+#ifdef alignment_matrix_debug  
+  free(oubuf_allocp);
+#endif
   return errcode;
 }
 
@@ -492,7 +535,8 @@ static int alignSmiWatShortStriped(unsigned short *maxscor,
       vE = _mm_load_si128 (vEp + j);
 
       /* add score to vH */
-      vH = _mm_adds_epi16 (vH, vScorep[j]);
+      vTmp = _mm_load_si128 (vScorep + j);
+      vH = _mm_adds_epi16 (vH, vTmp);
 
       /* Update highest score encountered this far */
       vMax = _mm_max_epi16 (vMax, vH);
@@ -697,7 +741,8 @@ static int alignSmiWatByteStriped(UCHAR *maxscor,
       vE = _mm_load_si128 (vEp + j);
 
       /* add score to vH */
-      vH = _mm_adds_epu8 (vH, vScorep[j]);
+      vTmp = _mm_load_si128 (vScorep + j);
+      vH = _mm_adds_epu8 (vH, vTmp);
       vH = _mm_subs_epu8 (vH, vBias);
 
       /* Update highest score encountered this far */

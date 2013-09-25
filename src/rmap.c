@@ -938,11 +938,15 @@ static RMAPPROF *createRMAPPROF(const SeqCodec * const codecp)
 /**< \param mode Combination of SCORE_PROFILE_MODES */
 {
   RMAPPROF *p;
-#ifdef HAVE_EMMINTRIN_H
-  const UCHAR mode = SCORPROF_SCALAR | SCORPROF_STRIPED_8 | SCORPROF_STRIPED_16;
-#else 
-  const UCHAR mode = SCORPROF_SCALAR;
+  const UCHAR mode = SCORPROF_SCALAR
+#ifdef SCORE_SIMD
+#ifdef SCORE_SIMD_SSE2
+    | SCORPROF_STRIPED_8 | SCORPROF_STRIPED_16
+#else
+    | SCORPROF_STRIPED_32
 #endif
+#endif
+    ;
 
   EMALLOCP0(p);
   if (NULL == p)

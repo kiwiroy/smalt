@@ -373,7 +373,7 @@ struct _ScoreProfile {
   size_t striped_nalloc;  /**< memory allocated for striped profiles */
 
 #ifdef SCORE_SIMD_IMIC
-  SIMDV_t *striped_intp;  /**< striped profile 32-bit scores */
+  int *striped_intp;      /**< striped profile 32-bit scores */
 #else
   SIMDV_t *striped_bytep; /**< striped profile 8-bit scores */
   SIMDV_t *striped_shortp;/**< striped profile 16-bit scores */
@@ -464,7 +464,7 @@ static int makeStripedProfileFromSequence(ScoreProfile *app, const char *seq_bas
 
 #ifdef SCORE_SIMD_IMIC
   app->striped_intp = 0;
-  len = (app->mod & SCORPROF_STRIPED_16)? (length + SCORSIMD_NINTS - 1) / SCORSIMD_NINTS: 0;
+  len = (app->mod & SCORPROF_STRIPED_32)? (length + SCORSIMD_NINTS - 1) / SCORSIMD_NINTS: 0;
 #else  
   size_t lenBYT = (app->mod & SCORPROF_STRIPED_8)? (length + SCORSIMD_NBYTES - 1) / SCORSIMD_NBYTES: 0;
   app->striped_bytep = app->striped_shortp = 0;
@@ -476,13 +476,18 @@ static int makeStripedProfileFromSequence(ScoreProfile *app, const char *seq_bas
   n_alloc_striped = 1 /* slack for memory alignment */
     + len * app->alphabetsiz; 
   
-#ifdef SCORE_SIMD_SEE2
+#ifdef SCORE_SIMD_SSE2
   /* additional slack (for two alignment operations) */
   if ((app->mod & SCORPROF_STRIPED_8) && (app->mod & SCORPROF_STRIPED_16))
     n_alloc_striped += 1;
 #endif
 
-  n_alloc_striped *= sizeof(SIMDV_t);
+  n_alloc_striped *= 
+#ifdef SCORE_SIMD_IMIC
+    SCORSIMD_NINTS*sizeof(int);
+#else
+    sizeof(SIMDV_t);
+#endif
 
   if (n_alloc_striped > app->striped_nalloc) {
     void *hp;
@@ -495,8 +500,8 @@ static int makeStripedProfileFromSequence(ScoreProfile *app, const char *seq_bas
 
   /* align memory to 16/64 byte boundaries */
 #ifdef SCORE_SIMD_IMIC
-  if (app->mod & SCORPROF_STRIPED_16) {
-    app->striped_intp = (SIMDV_t *) SCORE_ALIGN_MEMORY(app->striped_datap);
+  if (app->mod & SCORPROF_STRIPED_32) {
+    app->striped_intp = (int *) SCORE_ALIGN_MEMORY(app->striped_datap);
   }
 #else
   if (app->mod & SCORPROF_STRIPED_8) {
@@ -511,7 +516,7 @@ static int makeStripedProfileFromSequence(ScoreProfile *app, const char *seq_bas
 
   /* fill striped profile */
 #ifdef SCORE_SIMD_IMIC
-  FILL_STRIPED(app->mod & SCORPROF_STRIPED_16, 
+  FILL_STRIPED(app->mod & SCORPROF_STRIPED_32, 
 	       int, SCORSIMD_NINTS,
 	       app->striped_intp, 0);
 #else
@@ -546,9 +551,11 @@ ScoreProfile *scoreCreateProfile(int blocksize, const SeqCodec *codep, UCHAR mod
 #ifdef SCORE_SIMD
   if (!(mod & (SCORPROF_SCALAR |
 #ifdef SCORE_SIMD_SSE2
-	       SCORPROF_STRIPED_8 |
+	       SCORPROF_STRIPED_8 | SCORPROF_STRIPED_16
+#else
+	       SCORPROF_STRIPED_32
 #endif
-	       SCORPROF_STRIPED_16)))
+	       )))
     return NULL;
 #else
   mod = SCORPROF_SCALAR;
@@ -570,9 +577,11 @@ ScoreProfile *scoreCreateProfile(int blocksize, const SeqCodec *codep, UCHAR mod
 #ifdef SCORE_SIMD
     if ((mod & (
 #ifdef SCORE_SIMD_SSE2
-		 SCORPROF_STRIPED_8 |
+		 SCORPROF_STRIPED_8 | SCORPROF_STRIPED_16
+#else
+		 SCORPROF_STRIPED_32
 #endif
-		 SCORPROF_STRIPED_16))) {
+		))) {
     ECALLOCP(blocksize, app->striped_datap);
     if (!app->striped_datap) {
       scoreDeleteProfile(app);
@@ -635,9 +644,11 @@ int scoreMakeProfileFromSequence(ScoreProfile *app, const SeqFastq *sqp,
 #ifdef SCORE_SIMD
   if ((app->mod & (
 #ifdef SCORE_SIMD_SSE2
-		   SCORPROF_STRIPED_8 |
+		   SCORPROF_STRIPED_8 | SCORPROF_STRIPED_16
+#else
+		   SCORPROF_STRIPED_32
 #endif
-		   SCORPROF_STRIPED_16)) && 
+		   )) && 
 
       (errcode = makeStripedProfileFromSequence(app, seq_basp, length, amp)))
     return errcode;
@@ -687,7 +698,7 @@ const void *scoreGetStripedProfile(short *alphabetsiz, SEQLEN_t *seqlen,
 				   unsigned short *bias, int *segsiz, char mod,
 				   const ScoreProfile *spp)
 {
-  const SIMDV_t *p = 0;
+  const void *p = 0;
 
   if (alphabetsiz) *alphabetsiz = spp->alphabetsiz;
   if (seqlen) *seqlen = spp->length;
@@ -701,7 +712,7 @@ const void *scoreGetStripedProfile(short *alphabetsiz, SEQLEN_t *seqlen,
 #endif
 
 #ifdef SCORE_SIMD_IMIC
-  if (mod  == SCORPROF_STRIPED_16) {
+  if (mod  == SCORPROF_STRIPED_32) {
     if (segsiz) 
       *segsiz = (spp->length + SCORSIMD_NINTS - 1) / SCORSIMD_NINTS;
     p = spp->striped_intp; 

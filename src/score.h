@@ -102,9 +102,10 @@ typedef __m128i SIMDV_t;
     SCORPROF_SCALAR = 0x01,     /**< for Smith-Waterman w/o SSE2 */
 #ifdef SCORE_SIMD_SSE2
     SCORPROF_STRIPED_8 = 0x02,  /**< striped for 8-bit scores using SIMD */
+    SCORPROF_STRIPED_16 =0x04   /**< striped for 16-bit scores using SIMD */
 #endif
-#ifdef SCORE_SIMD
-    SCORPROF_STRIPED_16 = 0x04, /**< striped for 16-bit scores using SIMD */
+#ifdef SCORE_SIMD_IMIC
+    SCORPROF_STRIPED_32 = 0x08, /**< striped for 32-bit scores using SIMD */
 #endif
   };
   
