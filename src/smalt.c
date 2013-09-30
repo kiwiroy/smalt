@@ -27,6 +27,7 @@
 //#define smalt_debug
 //#define smalt_debug_thread_single
 //#define SMALT_DEBUG_XALI
+#define SMALT_TIMING
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,10 +66,11 @@ enum {
 				*  lump them all together and find out reference seqence index
 				*  later. */
 #endif
-  SMALT_MAX_THREAD_NUM = 64,  /**< Maximum number of threads to be spawned */
-  SMALT_THREAD_ARGFAC_SRT  = 4,/**< Number of buffered thread arguments/results
-				* as a multiplicative factor. I.e. for n>2 threads there are
-				* SMALT_THREAD_ARGCONST + SMALT_THREAD_ARGFAC*n arguments buffered. */
+  SMALT_MAX_THREAD_NUM = 240,  /**< Maximum number of threads to be spawned */
+  SMALT_THREAD_ARGFAC_SRT  = 4,/**< Number of buffered thread arguments/results, when output
+				* should in order of input, as a multiplicative factor. 
+				* I.e. for n>2 threads there are
+				* SMALT_THREAD_ARGFAC*n arguments buffered. */
   SMALT_THREAD_ARGFAC_NOSRT = 2,
   SMALT_THREAD_NOARG = -1,    /**< negative thread number signals empty thread stack */
   SMALT_MAXNBITS_PERF = 10,   /**< Maximum number of bits for perfect part of hash key */
@@ -82,8 +84,8 @@ enum {
   SMALT_INSHIST_IVAL = 1000, /* report sampled histogram every SMALT_INSHIST_IVAL lines */
 #endif
   SMALT_INSSAMPLE_BLKSZ = 2048,     /* Block size for memory allocation of isert size sample */
-  SMALT_INSSAMPLE_MINSIZ = 1028,    /* minimum sample size */
-  SMALT_NARGS_PER_THREAD = 8,      /* number of per-read buffers in block per thread */
+  SMALT_INSSAMPLE_MINSIZ = 1028,   /* minimum sample size */
+  SMALT_NARGS_PER_THREAD = 32,      /* number of per-read buffers in block per thread */
 };
 
 enum THREADARG_FLAGS {
@@ -1315,6 +1317,10 @@ static int mapReads(ErrMsg *errmsgp,
   THREAD_CHECKF *checkf = NULL;
   THREAD_CMPF *cmpf = NULL;
   int arg_fac = SMALT_THREAD_ARGFAC_NOSRT;
+#ifdef SMALT_TIMING
+  time_t time_start, time_setup, time_stop;
+#endif
+
   if ((errcode = threadsInit())) {
     ERRMSGNO(errmsgp, errcode);
     return errcode;
@@ -1324,9 +1330,17 @@ static int mapReads(ErrMsg *errmsgp,
 
   if (nthreads > SMALT_MAX_THREAD_NUM) 
     nthreads = SMALT_MAX_THREAD_NUM;
+
+#ifdef SMALT_TIMING
+  time(&time_start);
+#endif
   
   if ((errcode = initMapConst(&common_args, menup)))
     ERRMSGNO(errmsgp, errcode);
+
+#ifdef SMALT_TIMING
+  time(&time_setup);
+#endif
 
   errcode = threadsSetTask(THRTASK_ARGBUF, 0, 
 			   initArgBlock, &common_args, 
@@ -1389,8 +1403,17 @@ static int mapReads(ErrMsg *errmsgp,
   
   threadsCleanup();
 
+#ifdef SMALT_TIMING
+  time(&time_stop);
+#endif
   cleanupMapConst(&common_args);
- 
+
+#ifdef SMALT_TIMING
+  menuPrintWallClockTime(stderr, time_start, time_setup,
+			 "Time spent setting up hash index");
+  menuPrintWallClockTime(stderr, time_setup, time_stop,
+			 "Time spent mapping reads");
+#endif
   return errcode;
 }
 
@@ -1470,7 +1493,8 @@ int main(int argc, char *argv[])
       time(&time_start);
       buildHashIndex(errmsg, menup);
       time(&time_stop);
-      menuPrintWallClockTime(stderr, time_start, time_stop);
+      menuPrintWallClockTime(stderr, time_start, time_stop,
+			     NULL);
       break;
     case MENU_CHECK:
       errcode = checkReads(errmsg, menup);
@@ -1485,7 +1509,8 @@ int main(int argc, char *argv[])
       time(&time_start);
       mapReads(errmsg, menup);
       time(&time_stop);
-      menuPrintWallClockTime(stderr, time_start, time_stop);
+      menuPrintWallClockTime(stderr, time_start, time_stop, 
+			     NULL);
       break;
     case MENU_HELP:
       break;

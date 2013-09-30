@@ -614,7 +614,7 @@ alignment_test_LDADD = $(SEQ_LIB) -lm $(ZLIB_LDFLAG)
 @WITH_SIMD_TRUE@nodist_swsimd_test_SOURCES = swsimd_test.c ${SMIWAT_SRC}
 @WITH_SIMD_TRUE@swsimd_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS)
 @WITH_SIMD_TRUE@swsimd_test_CPPFLAGS = -Dalignment_matrix_debug
-@WITH_SIMD_TRUE@swsimd_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
+@WITH_SIMD_TRUE@swsimd_test_LDADD = $(SEQ_LIB) -lm $(ZLIB_LDFLAG)
 
 # test of mapping routines
 nodist_rmap_test_SOURCES = rmap_test.c ${MAP_SRC}

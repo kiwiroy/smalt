@@ -2,11 +2,11 @@
 = SMALT release history =
 =========================
 
-Version 0.7.5.2 (24 September 2013)
+Version 0.7.5.2 (27 September 2013)
 ===================================
 
-- modifications for compilation on Intel's Many Integrated Cores Architecture.
-  compile with ./configure --enable-mic
+- modifications for compilation on Intel's Many Integrated Cores
+  Architecture.  compile with ./configure --enable-mic
 
 
 Version 0.7.5.1 (7 August 2013)

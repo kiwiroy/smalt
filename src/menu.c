@@ -61,7 +61,7 @@ static const char MENU_PROGNAM[] =\
 static const char MENU_PROGNAM_VERSION_FMT[] = \
   "                             (version: %s)\n";
 static const char MENU_RELEASE_VERSION[] = PACKAGE_VERSION;
-static const char MENU_RELEASE_DATE[] =  "25-09-2013";
+static const char MENU_RELEASE_DATE[] =  "27-09-2013";
 static const char MENU_RELEASE_AUTHORS[] = "Hannes Ponstingl";
 static const char MENU_RELEASE_BUGREPORT[] = PACKAGE_BUGREPORT;
 static const char MENU_COPYRIGHT_NOTICE[] = "Copyright (C) 2010 - 2013 Genome Research Ltd.";
@@ -2021,7 +2021,7 @@ int menuGetFileNames(const MenuOpt *mp,
   return mp->ninfil;
 }
 
-void menuPrintWallClockTime(FILE *fp, time_t time_start, time_t time_stop)
+void menuPrintWallClockTime(FILE *fp, time_t time_start, time_t time_stop, const char *headerp)
 {
   double secs = difftime(time_stop, time_start);
   short days = secs/TIME24HRSINSECS;
@@ -2029,7 +2029,11 @@ void menuPrintWallClockTime(FILE *fp, time_t time_start, time_t time_stop)
   short mins = (secs - days*TIME24HRSINSECS - hours*3600)/60;
   double seconds = (secs - days*TIME24HRSINSECS - hours*3600 - mins*60);
 
-  fprintf(fp, "# %s: Total elapsed wall clock time: ", MENU_PROGNAM_SHORT);
+  if (NULL == headerp)
+    fprintf(fp, "# %s: Total elapsed wall clock time: ", MENU_PROGNAM_SHORT);
+  else
+    fprintf(fp, "# %s: %s:", MENU_PROGNAM_SHORT, headerp);
+
   if (days > 0)
     fprintf(fp, "%hi days ", days);
   if (hours > 0)

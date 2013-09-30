@@ -212,7 +212,7 @@ if WITH_SIMD
 nodist_swsimd_test_SOURCES = swsimd_test.c ${SMIWAT_SRC}
 swsimd_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS)
 swsimd_test_CPPFLAGS = -Dalignment_matrix_debug
-swsimd_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
+swsimd_test_LDADD = $(SEQ_LIB) -lm $(ZLIB_LDFLAG)
 endif
 
 # test of mapping routines
