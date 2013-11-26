@@ -42,8 +42,23 @@ Optional Prerequisites
 ======================
 
 If you would like to use SAM/BAM as input or BAM as ouput file format,
-download and install German Tischler's BAMBAM library from
-ftp://ftp.sanger.ac.uk/pub/users/gt1/
+download and install the bambamc library of the BIOBAMBAM package from
+GitHub https://github.com/gt1/biobambam.  Without the bambamc library,
+SMALT expects (possibly gzipped) FASTA/FASTQ files as input.
 
-Without this library, SMALT expects (possibly gzipped) FASTA/FASTQ
-files as input.
+
+bambamc library
+===============
+
+The configure script for SMALT uses the pkg-config tool to link the
+bambamc library.
+
+To install the bambamc library you should have the pkg-config tool
+ [http://www.freedesktop.org/wiki/Software/pkg-config] as well as the
+ GNU autoconf tools installed [http://www.gnu.org/software/autoconf].
+
+The installation generates a metadata file bambamc.pc for pkg-config
+in the directory ${BIOBAMBAM_INSTALL_PREFIX}/lib/pkgconfig. You may
+have to add this directory to the (colon separated) list of paths in
+the environment variable PKG_CONFIG_DIR.
+

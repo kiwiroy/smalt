@@ -93,6 +93,9 @@ enum {
   FINEHASH_MAXKTUPPOS = 128*1024*1024, /**< maximum number of word positions for fine on-the-fly hashing */
 #endif
   SPLITREAD_OVERLAP_PERCENT = 60, /**< Max. Percentage of overlap allowed for split reads */
+#ifdef RESULTS_TRACKER
+  RESULTS_TRACKER_IS1BASED = 1,
+#endif
 };
 
 enum RMAPCAND_FLAGS {
@@ -974,11 +977,11 @@ static int makeRMAPPROFfromRead(RMAPPROF *prp,
   errcode = seqFastqAppendSegment(prp->readRCp, readp, 0, 0, 1, codecp);
 
   if (!(errcode)) {    
-    errcode = scoreMakeProfileFromSequence(prp->scorprofp, readp, scormtxp, codecp);
+    errcode = scoreMakeProfileFromSequence(prp->scorprofp, readp, scormtxp);
   }
    
   if (!(errcode))
-    errcode = scoreMakeProfileFromSequence(prp->scorprofRCp, prp->readRCp, scormtxp, codecp);
+    errcode = scoreMakeProfileFromSequence(prp->scorprofRCp, prp->readRCp, scormtxp);
 
   return errcode;
 }
@@ -1655,7 +1658,9 @@ int rmapSingle(ErrMsg *errmsgp,
   bufp = rmp->bfp;
 
 #ifdef RESULTS_TRACKER
-  if ((errcode = trackMakeFromSequence(trkrp, readp, ssp, htp)))
+  if ((errcode = trackMakeFromSequence(trkrp, readp, 
+				       RESULTS_TRACKER_IS1BASED, 
+				       ssp, htp)))
     ERRMSGNO(errmsgp, errcode);
 #endif
 
@@ -1770,10 +1775,12 @@ int rmapPair(ErrMsg *errmsgp,
   *pairflgp = RSLTPAIRFLG_PAIRED;  
 
 #ifdef RESULTS_TRACKER
-  if ((errcode = trackMakeFromSequence(trkrp, readp, ssp, htp)))
+  if ((errcode = trackMakeFromSequence(trkrp, readp, RESULTS_TRACKER_IS1BASED,
+				       ssp, htp)))
     ERRMSGNO(errmsgp, errcode);
 
-  if ((errcode = trackMakeFromSequence(trkmp, matep, ssp, htp)))
+  if ((errcode = trackMakeFromSequence(trkmp, matep, RESULTS_TRACKER_IS1BASED,
+				       ssp, htp)))
      ERRMSGNO(errmsgp, errcode);
 #endif
 

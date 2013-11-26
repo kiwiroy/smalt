@@ -2,6 +2,14 @@
 = SMALT release history =
 =========================
 
+Version 0.7.5.2 (26 November 2013)
+==================================
+
+- Minor changes allowing to switch between 0-based and 1-based offsets
+  for debugging (tracking) and to make vectorised alignment code
+  safer. Amended installation instructions for bambamc libary.
+
+
 Version 0.7.5.1 (7 August 2013)
 ===============================
 

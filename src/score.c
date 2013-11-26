@@ -439,8 +439,8 @@ static int fprintProfile(FILE *fp, const ScoreProfile *app, int s_start, int s_l
 
 
 #ifdef HAVE_EMMINTRIN_H
-static int makeStripedProfileFromSequence(ScoreProfile *app, const char *seq_basp, SEQLEN_t length, 
-				   const ScoreMatrix *amp, const SeqCodec *codep)
+static int makeStripedProfileFromSequence(ScoreProfile *app, const char *seq_basp, 
+					  SEQLEN_t length, const ScoreMatrix *amp)
 {
   UCHAR *sprof_bp;
   short i, *sprof_sp;
@@ -457,7 +457,13 @@ static int makeStripedProfileFromSequence(ScoreProfile *app, const char *seq_bas
   n_alloc_striped *= sizeof(__m128i);
   if (n_alloc_striped > app->striped_nalloc) {
     void *hp;
-    hp = EREALLOCP(app->striped_datap, n_alloc_striped);
+    n_alloc_striped = (n_alloc_striped + app->blocksiz - 1)/app->blocksiz;
+    n_alloc_striped *= app->blocksiz;
+    if (NULL == app->striped_datap) {
+      hp = EMALLOC(n_alloc_striped);
+    } else {
+      hp = EREALLOCP(app->striped_datap, n_alloc_striped);
+    }
     if (!hp) 
       return ERRCODE_NOMEM;
     app->striped_datap = (UCHAR *) hp;
@@ -577,7 +583,7 @@ void scoreDeleteProfile(ScoreProfile *app)
 }
     
 int scoreMakeProfileFromSequence(ScoreProfile *app, const SeqFastq *sqp, 
-				 const ScoreMatrix *amp, const SeqCodec *codep)
+				 const ScoreMatrix *amp)
 {
   int errcode;
   const char *cp, *seq_basp;
@@ -605,7 +611,7 @@ int scoreMakeProfileFromSequence(ScoreProfile *app, const SeqFastq *sqp,
   }
 #ifdef HAVE_EMMINTRIN_H
   if ((app->mod & (SCORPROF_STRIPED_8 | SCORPROF_STRIPED_16)) && 
-      (errcode = makeStripedProfileFromSequence(app, seq_basp, length, amp, codep)))
+      (errcode = makeStripedProfileFromSequence(app, seq_basp, length, amp)))
     return errcode;
 #endif
   app->length = length;

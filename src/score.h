@@ -162,12 +162,11 @@ extern "C"
   /**< Destructor */
 
   int scoreMakeProfileFromSequence(ScoreProfile *app, const SeqFastq *sqp, 
-				   const ScoreMatrix *amp, const SeqCodec *codep);
+				   const ScoreMatrix *amp);
   /**< Make a profile for a sequence. 
    * \param app Pointer to profile.
    * \param sqp Pointer to sequence.
    * \param amp Alignment matrix.
-   * \param codep Nucleotide code used.
    */
 
   signed char * const *scoreGetProfile(short *alphabetsiz, SEQLEN_t *seqlen, 

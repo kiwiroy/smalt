@@ -3,13 +3,10 @@
 ## Mac 64bit binaries: compile with 
 ## CFLAGS="-Wall -g -O2 -pthread -m64 -D_FILE_OFFSET_BITS=64"
 ## CXXFLAGS="-m64 -D_FILE_OFFSET_BITS=64"
-if ICC_COMPILER
-AM_CFLAGS = -Wall -W
+AM_CFLAGS = -Wall -Wextra
+
 if ICC_NOLIMITH
 AM_CFLAGS += -D_GCC_LIMITS_H_
-endif
-else
-AM_CFLAGS = -Wall -Wextra
 endif
 
 

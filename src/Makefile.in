@@ -35,7 +35,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@ICC_COMPILER_TRUE@@ICC_NOLIMITH_TRUE@am__append_1 = -D_GCC_LIMITS_H_
+@ICC_NOLIMITH_TRUE@am__append_1 = -D_GCC_LIMITS_H_
 @APPLE_64BIT_TRUE@am__append_2 = -m64 -D_FILE_OFFSET_BITS=64
 @SSE2_TRUE@am__append_3 = swsimd.c swsimd.h	
 bin_PROGRAMS = smalt$(EXEEXT)
@@ -219,9 +219,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@ICC_COMPILER_FALSE@AM_CFLAGS = -Wall -Wextra $(am__append_2)
-@ICC_COMPILER_TRUE@AM_CFLAGS = -Wall -W $(am__append_1) \
-@ICC_COMPILER_TRUE@	$(am__append_2)
+AM_CFLAGS = -Wall -Wextra $(am__append_1) $(am__append_2)
 @APPLE_64BIT_TRUE@APPLELDFLAGS = -pthread 
 ALI_SRC = score.c score.h diffstr.c diffstr.h alibuffer.c alibuffer.h \
 	alibuffer_struct.h alignment.c alignment.h $(am__append_3)

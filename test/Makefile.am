@@ -4,7 +4,7 @@ DIST_SUBDIRS = data
 INCLUDE_PATTERN = -I%
 LIBNAM_PATTERN = -l%
 
-AM_CFLAGS = -I../src/
+AM_CFLAGS = -I../src/ -I../test
 
 if ICC_COMPILER
 if ICC_NOLIMITH
@@ -93,11 +93,10 @@ check_PROGRAMS = sequenceReadWrite_test sequenceCompress_test \
 		diffstr_test \
 		smalt_Xali_test
 
-EXTRA_PROGRAMS = seqSetIO_test seqSetCompress_test seqSetSort_test \
+EXTRA_PROGRAMS = seqSetIO_test \
                 hashhit_test hashhit_track_test hashidx_test \
 		segment_test segment_simple_test \
-	        array_test diffstr_slice_test bam_test\
-		candseg_test \
+	        array_test diffstr_slice_test \
 		alignment_test \
 	        rmap_test smalt_test\
 		smalt_basq basqual_test \
@@ -134,14 +133,12 @@ array_test_LDFLAGS = -lm $(ZLIB_LDFLAG)
 nodist_diffstr_slice_test_SOURCES = diffstr_slice_test.c ../src/diffstr.c ../src/diffstr.h ../src/elib.c ../src/elib.h
 diffstr_test_SOURCES = diffstr_test.c ../src/diffstr.c ../src/diffstr.h ../src/elib.c ../src/elib.h
 
-## test routines for BAM file format
-nodist_bam_test_SOURCES = bam_test.c ../src/elib.c ../src/elib.h
-
 ## merge sort using SIMD
 if SSE2
-nodist_mergesort_test_SOURCES = mergesort_test.c ../src/elib.c ../src/elib.h ../src/randef.h ../src/sortdef.h \
+nodist_mergesort_test_SOURCES = mergesort_test.c ../src/elib.c ../src/elib.h \
+	../src/randef.h ../src/sortdef.h \
 	../src/sort.c ../src/sort.h
-mergesort_test_CFLAGS = $(AM_CLFAGS) $(SSE_INTRINS_FLAGS)
+mergesort_test_CFLAGS = $(AM_CFLAGS) $(SSE_INTRINS_FLAGS)
 endif
 
 ## test routines for sequence.c
@@ -160,12 +157,6 @@ sequenceDeCompress_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
 nodist_seqSetIO_test_SOURCES = seqSetIO_test.c
 seqSetIO_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
 
-nodist_seqSetCompress_test_SOURCES = seqSetCompress_test.c
-seqSetCompress_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
-
-nodist_seqSetSort_test_SOURCES = seqSetSort_test.c
-seqSetSort_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
-
 # test routines for hashing
 nodist_hashhit_test_SOURCES = hashhit_test.c
 hashhit_test_LDADD = $(SGM_LIB) -lm $(ZLIB_LDFLAG)
@@ -173,7 +164,7 @@ hashhit_test_LDADD = $(SGM_LIB) -lm $(ZLIB_LDFLAG)
 nodist_hashhit_track_test_SOURCES = hashhit_track_test.c ${HIT_SRC} \
 	tracker.c tracker.h \
 	../src/diffstr.c ../src/diffstr.h
-hashhit_track_test_CFLAGS= -I../test -I../src
+hashhit_track_test_CFLAGS=  $(AM_CFLAGS) -I
 hashhit_track_test_CPPFLAGS = -DRESULTS_TRACKER
 hashhit_track_test_LDADD = $(SEQ_LIB) -lm $(ZLIB_LDFLAG)
 
@@ -186,13 +177,6 @@ segment_test_LDADD = $(SGM_LIB) -lm $(ZLIB_LDFLAG)
 
 nodist_segment_simple_test_SOURCES = segment_simple_test.c
 segment_simple_test_LDADD = $(SGM_LIB) -lm $(ZLIB_LDFLAG)
-
-# tests for candidate segment filters
-nodist_candseg_test_SOURCES = candseg_test.c ../src/candseg.c ../src/candseg.h ${SGM_SRC}\
-	../src/diffstr.c ../src/diffstr.h tracker.c tracker.h
-candseg_test_CFLAGS =  $(AM_CFLAGS) -I../test
-candseg_test_CPPFLAGS = -DCANDSEG_TRACKER -DRESULTS_TRACKER
-candseg_test_LDADD = $(SEQ_LIB) -lm $(ZLIB_LDFLAG)
 
 # tests of alignment routines
 nodist_alignment_test_SOURCES = alignment_test.c ${ALI_SRC}
@@ -220,7 +204,7 @@ smalt_Xali_test_LDFLAGS =  $(APPLELDFLAGS) $(BAMBAMC_LDFLG)
 
 # testing smalt with simulated reads (not distributed)
 nodist_smalt_test_SOURCES = ${SMALT_TEST_SRC}
-smalt_test_CFLAGS = $(AM_CFLAGS) $(SSE_INTRINS_FLAGS) -I../test $(BAMBAMC_INCL)
+smalt_test_CFLAGS = $(AM_CFLAGS) $(SSE_INTRINS_FLAGS) $(BAMBAMC_INCL)
 smalt_test_CPPFLAGS = -DRESULTS_TRACKER
 
 smalt_test_LDADD = $(SEQ_LIB) $(BAMBAMC_DEPS) -lm -lpthread $(ZLIB_LDFLAG)
@@ -237,7 +221,7 @@ smalt_basq_LDFLAGS = $(APPLELDFLAGS) $(BAMBAMC_LDFLG)
 
 # extracting quality values for statistical analysis
 nodist_basqual_test_SOURCES = basqual_test.c ../misc/basqual.c ../misc/basqual.h
-basqual_test_CFLAGS = $(AM_CFLAGS) 
+basqual_test_CFLAGS = $(AM_CFLAGS) -I../misc
 basqual_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
 
 # generic interface to sequence input formats

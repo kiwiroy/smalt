@@ -5,8 +5,8 @@
 /*****************************************************************************
  *****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010 Genome Research Ltd.                                  * 
- *                                                                           *        
+ *  Copyright (C) 2010-2013 Genome Research Ltd.                             * 
+ *                                                                           *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                              *
  *                                                                           *
  *  This file is part of SMALT.                                              *
@@ -207,7 +207,8 @@ static int alignSmiWatShortStriped(unsigned short *maxscor,
       vE = _mm_load_si128 (vEp + j);
 
       /* add score to vH */
-      vH = _mm_adds_epi16 (vH, vScorep[j]);
+      vTmp = _mm_load_si128 (vScorep + j);
+      vH = _mm_adds_epi16 (vH, vTmp);
 
       /* Update highest score encountered this far */
       vMax = _mm_max_epi16 (vMax, vH);
@@ -423,7 +424,8 @@ static int alignSmiWatByteStriped(UCHAR *maxscor,
       vE = _mm_load_si128 (vEp + j);
 
       /* add score to vH */
-      vH = _mm_adds_epu8 (vH, vScorep[j]);
+      vTmp = _mm_load_si128 (vScorep + j);
+      vH = _mm_adds_epu8 (vH, vTmp);
       vH = _mm_subs_epu8 (vH, vBias);
 
       /* Update highest score encountered this far */
@@ -576,6 +578,14 @@ int swAlignStripedSSE2(ALIDPMSCOR_t *maxscor,
   unsigned short shortscor;
 
   *maxscor = 0;
+  /* if (unprofiled_seqlen < (((int) UCHAR_MAX)<<2)) { */
+  /*   tryByteStriped = 1; */
+  /* } else { */
+  /*   scoreGetProfile(NULL, &qlen, NULL, NULL, profp); */
+  /*   if (qlen < (((int) UCHAR_MAX)<<2)) */
+  /*     tryByteStriped = 1; */
+  /* } */
+    
   errcode = alignSmiWatByteStriped(&bytscor, 
 				   abp, 
 				   profp,
