@@ -44,20 +44,18 @@ check_PROGRAMS = sequenceReadWrite_test$(EXEEXT) \
 	sequenceCompress_test$(EXEEXT) \
 	sequenceDeCompress_test$(EXEEXT) \
 	sequenceReverseComplement_test$(EXEEXT) diffstr_test$(EXEEXT) \
-	smalt_Xali_test$(EXEEXT) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	$(am__EXEEXT_4) $(am__EXEEXT_5)
+	smalt_Xali_test$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2) \
+	$(am__EXEEXT_3) $(am__EXEEXT_4)
 EXTRA_PROGRAMS = seqSetIO_test$(EXEEXT) hashhit_test$(EXEEXT) \
 	hashhit_track_test$(EXEEXT) hashidx_test$(EXEEXT) \
 	segment_test$(EXEEXT) segment_simple_test$(EXEEXT) \
 	array_test$(EXEEXT) diffstr_slice_test$(EXEEXT) \
 	alignment_test$(EXEEXT) rmap_test$(EXEEXT) smalt_test$(EXEEXT) \
-	smalt_basq$(EXEEXT) basqual_test$(EXEEXT) infmt_test$(EXEEXT) \
-	$(am__EXEEXT_1)
+	smalt_basq$(EXEEXT) basqual_test$(EXEEXT) infmt_test$(EXEEXT)
 @WITH_SAMTOOLS_TRUE@am__append_6 = samtools_api_test
 @WITH_BAMBAMC_TRUE@am__append_7 = bambam_test
-@WITH_ZLIB_TRUE@am__append_8 = zlib_test gzip_test
-@SSE2_TRUE@@WITH_TESTALL_TRUE@am__append_9 = mergesort_test
-@WITH_TESTALL_TRUE@am__append_10 = ${EXTRA_PROGRAMS}
+@SSE2_TRUE@@WITH_TESTALL_TRUE@am__append_8 = mergesort_test
+@WITH_TESTALL_TRUE@am__append_9 = ${EXTRA_PROGRAMS}
 subdir = test
 SUBDIRS =
 DIST_COMMON = $(dist_data_DATA) $(srcdir)/Makefile.am \
@@ -70,11 +68,10 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-@WITH_ZLIB_TRUE@am__EXEEXT_1 = zlib_test$(EXEEXT) gzip_test$(EXEEXT)
-@WITH_SAMTOOLS_TRUE@am__EXEEXT_2 = samtools_api_test$(EXEEXT)
-@WITH_BAMBAMC_TRUE@am__EXEEXT_3 = bambam_test$(EXEEXT)
-@SSE2_TRUE@@WITH_TESTALL_TRUE@am__EXEEXT_4 = mergesort_test$(EXEEXT)
-@WITH_TESTALL_TRUE@am__EXEEXT_5 = $(EXTRA_PROGRAMS)
+@WITH_SAMTOOLS_TRUE@am__EXEEXT_1 = samtools_api_test$(EXEEXT)
+@WITH_BAMBAMC_TRUE@am__EXEEXT_2 = bambam_test$(EXEEXT)
+@SSE2_TRUE@@WITH_TESTALL_TRUE@am__EXEEXT_3 = mergesort_test$(EXEEXT)
+@WITH_TESTALL_TRUE@am__EXEEXT_4 = $(EXTRA_PROGRAMS)
 @SSE2_TRUE@am__objects_1 = alignment_test-swsimd.$(OBJEXT)
 am__objects_2 = alignment_test-score.$(OBJEXT) \
 	alignment_test-diffstr.$(OBJEXT) \
@@ -116,10 +113,6 @@ am_diffstr_test_OBJECTS = diffstr_test.$(OBJEXT) diffstr.$(OBJEXT) \
 	elib.$(OBJEXT)
 diffstr_test_OBJECTS = $(am_diffstr_test_OBJECTS)
 diffstr_test_LDADD = $(LDADD)
-@WITH_ZLIB_TRUE@nodist_gzip_test_OBJECTS = gzip_test.$(OBJEXT) \
-@WITH_ZLIB_TRUE@	elib.$(OBJEXT)
-gzip_test_OBJECTS = $(nodist_gzip_test_OBJECTS)
-gzip_test_DEPENDENCIES =
 nodist_hashhit_test_OBJECTS = hashhit_test.$(OBJEXT)
 hashhit_test_OBJECTS = $(nodist_hashhit_test_OBJECTS)
 hashhit_test_DEPENDENCIES = $(am__DEPENDENCIES_2) \
@@ -143,8 +136,7 @@ hashidx_test_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 nodist_infmt_test_OBJECTS = infmt_test-infmt_test.$(OBJEXT) \
 	infmt_test-infmt.$(OBJEXT)
 infmt_test_OBJECTS = $(nodist_infmt_test_OBJECTS)
-infmt_test_DEPENDENCIES = $(SEQ_LIB) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+infmt_test_DEPENDENCIES = $(SEQ_LIB) $(am__DEPENDENCIES_1)
 infmt_test_LINK = $(CCLD) $(infmt_test_CFLAGS) $(CFLAGS) \
 	$(infmt_test_LDFLAGS) $(LDFLAGS) -o $@
 @SSE2_TRUE@nodist_mergesort_test_OBJECTS =  \
@@ -252,10 +244,6 @@ smalt_test_DEPENDENCIES = $(SEQ_LIB) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 smalt_test_LINK = $(CCLD) $(smalt_test_CFLAGS) $(CFLAGS) \
 	$(smalt_test_LDFLAGS) $(LDFLAGS) -o $@
-@WITH_ZLIB_TRUE@nodist_zlib_test_OBJECTS = zlib_test.$(OBJEXT) \
-@WITH_ZLIB_TRUE@	elib.$(OBJEXT)
-zlib_test_OBJECTS = $(nodist_zlib_test_OBJECTS)
-zlib_test_DEPENDENCIES =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -268,7 +256,7 @@ SOURCES = $(nodist_alignment_test_SOURCES) \
 	$(nodist_array_test_SOURCES) $(bambam_test_SOURCES) \
 	$(nodist_basqual_test_SOURCES) \
 	$(nodist_diffstr_slice_test_SOURCES) $(diffstr_test_SOURCES) \
-	$(nodist_gzip_test_SOURCES) $(nodist_hashhit_test_SOURCES) \
+	$(nodist_hashhit_test_SOURCES) \
 	$(nodist_hashhit_track_test_SOURCES) \
 	$(nodist_hashidx_test_SOURCES) $(nodist_infmt_test_SOURCES) \
 	$(nodist_mergesort_test_SOURCES) $(nodist_rmap_test_SOURCES) \
@@ -280,7 +268,7 @@ SOURCES = $(nodist_alignment_test_SOURCES) \
 	$(sequenceReadWrite_test_SOURCES) \
 	$(sequenceReverseComplement_test_SOURCES) \
 	$(smalt_Xali_test_SOURCES) $(nodist_smalt_basq_SOURCES) \
-	$(nodist_smalt_test_SOURCES) $(nodist_zlib_test_SOURCES)
+	$(nodist_smalt_test_SOURCES)
 DIST_SOURCES = $(am__bambam_test_SOURCES_DIST) $(diffstr_test_SOURCES) \
 	$(am__samtools_api_test_SOURCES_DIST) \
 	$(sequenceCompress_test_SOURCES) \
@@ -609,7 +597,7 @@ nodist_infmt_test_SOURCES = infmt_test.c ../src/infmt.c ../src/infmt.h
 #endif
 infmt_test_CFLAGS = $(AM_CFLAGS) $(BAMBAMC_INCL)
 infmt_test_LDFLAGS = $(BAMBAMC_LDFLG)
-infmt_test_LDADD = $(SEQ_LIB) $(BAMBAMC_DEPS) $(ZLIB_LDFLAG)
+infmt_test_LDADD = $(SEQ_LIB) $(BAMBAMC_DEPS)
 
 # optional samtools api
 @WITH_SAMTOOLS_TRUE@samtools_api_test_SOURCES = samtools_api_test.c ../src/elib.c ../src/elib.h
@@ -626,17 +614,6 @@ infmt_test_LDADD = $(SEQ_LIB) $(BAMBAMC_DEPS) $(ZLIB_LDFLAG)
 @WITH_BAMBAMC_TRUE@bambam_test_CPPFLAGS = -DRESULTS_BASQUAL
 @WITH_BAMBAMC_TRUE@bambam_test_LDFLAGS = $(BAMBAMC_LDFLG)
 @WITH_BAMBAMC_TRUE@bambam_test_LDADD = $(BAMBAMC_DEPS)
-#
-#bambam_test_CFLAGS = -I../src $(filter-out -std=%, $(BAMBAMC_CFLAGS))
-#bambam_test_LDFLAGS = $(BAMBAMC_LIBS)
-
-# zlib test
-@WITH_ZLIB_TRUE@nodist_zlib_test_SOURCES = zlib_test.c ../src/elib.c ../src/elib.h
-@WITH_ZLIB_TRUE@zlib_test_LDADD = -lz
-
-# gzip functions in zlib
-@WITH_ZLIB_TRUE@nodist_gzip_test_SOURCES = gzip_test.c ../src/elib.c ../src/elib.h
-@WITH_ZLIB_TRUE@gzip_test_LDADD = -lz
 all: all-recursive
 
 .SUFFIXES:
@@ -692,9 +669,6 @@ diffstr_slice_test$(EXEEXT): $(diffstr_slice_test_OBJECTS) $(diffstr_slice_test_
 diffstr_test$(EXEEXT): $(diffstr_test_OBJECTS) $(diffstr_test_DEPENDENCIES) 
 	@rm -f diffstr_test$(EXEEXT)
 	$(LINK) $(diffstr_test_OBJECTS) $(diffstr_test_LDADD) $(LIBS)
-gzip_test$(EXEEXT): $(gzip_test_OBJECTS) $(gzip_test_DEPENDENCIES) 
-	@rm -f gzip_test$(EXEEXT)
-	$(LINK) $(gzip_test_OBJECTS) $(gzip_test_LDADD) $(LIBS)
 hashhit_test$(EXEEXT): $(hashhit_test_OBJECTS) $(hashhit_test_DEPENDENCIES) 
 	@rm -f hashhit_test$(EXEEXT)
 	$(LINK) $(hashhit_test_OBJECTS) $(hashhit_test_LDADD) $(LIBS)
@@ -746,9 +720,6 @@ smalt_basq$(EXEEXT): $(smalt_basq_OBJECTS) $(smalt_basq_DEPENDENCIES)
 smalt_test$(EXEEXT): $(smalt_test_OBJECTS) $(smalt_test_DEPENDENCIES) 
 	@rm -f smalt_test$(EXEEXT)
 	$(smalt_test_LINK) $(smalt_test_OBJECTS) $(smalt_test_LDADD) $(LIBS)
-zlib_test$(EXEEXT): $(zlib_test_OBJECTS) $(zlib_test_DEPENDENCIES) 
-	@rm -f zlib_test$(EXEEXT)
-	$(LINK) $(zlib_test_OBJECTS) $(zlib_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -771,7 +742,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diffstr_slice_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diffstr_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elib.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gzip_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hashhit_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hashhit_track_test-diffstr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hashhit_track_test-hashhit.Po@am__quote@
@@ -840,7 +810,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smalt_test-swsimd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smalt_test-threads.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smalt_test-tracker.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zlib_test.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -2278,6 +2247,9 @@ uninstall-am: uninstall-dist_dataDATA
 	uninstall uninstall-am uninstall-dist_dataDATA
 
                 #regression_test.py #alignment_test.py
+#
+#bambam_test_CFLAGS = -I../src $(filter-out -std=%, $(BAMBAMC_CFLAGS))
+#bambam_test_LDFLAGS = $(BAMBAMC_LIBS)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

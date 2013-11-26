@@ -111,13 +111,12 @@ check_PROGRAMS += bambam_test
 endif
 
 if WITH_ZLIB
-EXTRA_PROGRAMS += zlib_test gzip_test
 ZLIB_LDFLAG= -lz
 else
 ZLIB_LDFLAG=
 endif
 
-if WITH_TESTALL
+if WITH_TESTALL 
 if SSE2	
 check_PROGRAMS += mergesort_test
 endif
@@ -232,7 +231,7 @@ nodist_infmt_test_SOURCES = infmt_test.c ../src/infmt.c ../src/infmt.h
 #endif
 infmt_test_CFLAGS = $(AM_CFLAGS) $(BAMBAMC_INCL)
 infmt_test_LDFLAGS = $(BAMBAMC_LDFLG)
-infmt_test_LDADD = $(SEQ_LIB) $(BAMBAMC_DEPS) $(ZLIB_LDFLAG)
+infmt_test_LDADD = $(SEQ_LIB) $(BAMBAMC_DEPS)
 
 # optional samtools api
 if WITH_SAMTOOLS
@@ -257,12 +256,3 @@ bambam_test_LDADD = $(BAMBAMC_DEPS)
 #bambam_test_LDFLAGS = $(BAMBAMC_LIBS)
 endif
 
-# zlib test
-if WITH_ZLIB
-nodist_zlib_test_SOURCES = zlib_test.c ../src/elib.c ../src/elib.h
-zlib_test_LDADD = -lz
-
-# gzip functions in zlib
-nodist_gzip_test_SOURCES = gzip_test.c ../src/elib.c ../src/elib.h
-gzip_test_LDADD = -lz
-endif
