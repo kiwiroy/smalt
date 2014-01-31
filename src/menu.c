@@ -49,7 +49,7 @@ enum MENU_OPTION_CONST {
 #endif
 
 #ifndef PACKAGE_VERSION
-#define PACKAGE_VERSION "0.7.5.1"
+#define PACKAGE_VERSION "0.7.5.2"
 #endif
 
 #ifndef PACKAGE_BUGREPORT
@@ -61,7 +61,7 @@ static const char MENU_PROGNAM[] =\
 static const char MENU_PROGNAM_VERSION_FMT[] = \
   "                             (version: %s)\n";
 static const char MENU_RELEASE_VERSION[] = PACKAGE_VERSION;
-static const char MENU_RELEASE_DATE[] =  "07-08-2013";
+static const char MENU_RELEASE_DATE[] =  "26-11-2013";
 static const char MENU_RELEASE_AUTHORS[] = "Hannes Ponstingl";
 static const char MENU_RELEASE_BUGREPORT[] = PACKAGE_BUGREPORT;
 static const char MENU_COPYRIGHT_NOTICE[] = "Copyright (C) 2010 - 2013 Genome Research Ltd.";
@@ -247,14 +247,14 @@ static const OPTDOC MENU_OPTDOC_MAP[] = {
   otyp:OPTYP_STRING,
   vnam:"ouform",
 #ifdef HAVE_BAMBAMC
-  sdesc: "Output format [sam(default)|bam|cigar|gff|ssaa].\n"\
+  sdesc: "Output format [sam(default)|bam|cigar|gff|saha].\n"\
   "           Ext: [sam|bam]:nohead,x,clip.",
   ldesc:\
   "     Specifies the output format. <ouform> can be either 'sam'(default), 'bam',\n"\
   "     'cigar', 'gff' or 'ssaha'. Optional extension '[sam|bam]:nohead,x,clip'\n" \
   "     (see manual).\n"
 #else
-  sdesc: "Output format [sam|cigar|gff|ssaa]. Extension sam:nohead,clip.",
+  sdesc: "Output format [sam|cigar|gff|saha]. Extension sam:nohead,clip.",
   ldesc:								\
   "     Specifies the output format. <ouform> can be either 'sam'(default),\n"\
   "     'cigar', 'gff' or 'ssaha'. Optional extension 'sam:nohead,x,clip'\n" \
