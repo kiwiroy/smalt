@@ -8,8 +8,8 @@
 /*****************************************************************************
  *****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010 Genome Research Ltd.                                  * 
- *                                                                           *        
+ *  Copyright (C) 2010 - 2014 Genome Research Ltd.                           * 
+ *                                                                           *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                              *
  *                                                                           *
  *  This file is part of SMALT.                                              *
@@ -57,7 +57,7 @@ int main (int argc, char *argv[])
   SEQNUM_t s, nseq;
   char *infilnam, *seqnam;
   const char *cp, *snam;
-  SEQLEN_t slen, qlen, segoffs, seglen;
+  SEQLEN_t qlen, segoffs, seglen;
   SETSIZ_t soffs;
   unsigned long long sso;
   SeqFastq *sqp;
@@ -94,7 +94,7 @@ int main (int argc, char *argv[])
 
   nseq = seqSetGetOffsets(ssp, NULL);
   for (s=0; s<nseq; s++) {
-    slen = seqSetGetSeqDatByIndex(&soffs, &snam, s, ssp);
+    seqSetGetSeqDatByIndex(&soffs, &snam, s, ssp);
     if (!cmpStrNonBlank(snam, seqnam)) {
       if ((errcode = seqSetFetchSegmentBySequence(sqp, s, segoffs-1, seglen, ssp, codecp)))
 	ERRMSGNO(errmsgp, errcode);

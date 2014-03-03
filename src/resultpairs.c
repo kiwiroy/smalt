@@ -3,7 +3,7 @@
 /*****************************************************************************
  *****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010-2013 Genome Research Ltd.                             *
+ *  Copyright (C) 2010 - 2014 Genome Research Ltd.                           *
  *                                                                           *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                              *
  *                                                                           *
@@ -451,10 +451,9 @@ static int generateOFFSIVAL(OFFSIVALARR *oivr,
       */
 {
   int errcode;
-  RSLTIDX_t nres;
   struct SETUPOFFSIVALARG_ arg;
   
-  nres = resultSetGetNumberOfResultsInSegment(0, rsp);
+  resultSetGetNumberOfResultsInSegment(0, rsp);
   ARRLEN(*oivr) = (size_t) 0;
 
   if (resultSetGetNumberOfResultsInSegment(0, rsp) < 1) 

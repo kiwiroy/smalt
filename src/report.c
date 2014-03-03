@@ -3,7 +3,7 @@
 /*****************************************************************************
  *****************************************************************************
  *                                                                           *
- *  Copyright (C) 2012-2013 Genome Research Ltd.                             *
+ *  Copyright (C) 2012 - 2014 Genome Research Ltd.                           *
  *                                                                           *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                              *
  *                                                                           *
@@ -1042,9 +1042,6 @@ static int writeREPALIbam(BamBam_BamWriter *bamwriterp,
     qualstr = seqFastqGetConstQualityFactors(sqbufp, NULL, NULL);
   }
 
-  if (pos > ULONG_MAX || mpos > ULONG_MAX)
-    return ERRCODE_OVERFLOW;
-
   if (rrp->status & REPMATEFLG_MAPPED) {
     errcode = diffStrAsView(dvp, diffstr, 
 			    (oumodiflg & REPORTMODIF_XMISMATCH)? 
@@ -1239,7 +1236,8 @@ static int writeREPALI(
     int reflen;
     if ((errcode = diffStrCalcSeqLen(NULL, &reflen, target_dfsp->dstrp)))
       return errcode;
-    if ((target_pos <= rp->s_start) && (rp->s_end < target_pos + reflen)) {
+    if ((((SEQLEN_t) target_pos) <= rp->s_start) && 
+	(rp->s_end < (SEQLEN_t) (target_pos + reflen))) {
       BOOL_t revflag = (rp->status&REPMATEFLG_REVERSE)? 1:0;
       if (revflag == ((target_flags & TRACKFLG_REVERSE)? 1:0))
 	*isHit = 1;

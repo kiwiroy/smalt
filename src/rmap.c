@@ -3,7 +3,7 @@
 /*****************************************************************************
  *****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010 - 2013 Genome Research Ltd.                           * 
+ *  Copyright (C) 2010 - 2014 Genome Research Ltd.                           * 
  *                                                                           *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                              *
  *                                                                           *
@@ -252,9 +252,9 @@ static uint32_t calcMinCover(int *min_ktup, UCHAR mincov_percent,
       */
 {
   uint32_t readlen, mincover;
-  UCHAR ktup, nskip;
+  UCHAR nskip;
 
-  ktup = hashTableGetKtupLen(htp, &nskip);
+  hashTableGetKtupLen(htp, &nskip);
   seqFastqGetConstSequence(sqp, &readlen, NULL); 
 
   if (mincov_percent > 100)
@@ -710,7 +710,7 @@ static int scoreRMAPCAND(RMAPCANDARR *csr,
 #ifdef SCORE_SIMD
     isSIMDAliCand = 
       qlen >= MINLEN_QUERY_STRIPED && 
-      (cp->band_r - cp->band_l)*BWSCAL_QLEN > qlen &&
+      ((SEQLEN_t) (cp->band_r - cp->band_l)*BWSCAL_QLEN) > qlen &&
       cp->qs == 0 && cp->qe >= qlen-1;
     if ( (isSIMDAliCand) ) {
       errcode = swSIMDAlignStriped(&cp->swscor, 
@@ -730,7 +730,7 @@ static int scoreRMAPCAND(RMAPCANDARR *csr,
       errcode = aliSmiWatInBandFast(&cp->swscor, 
 				    alibufp, 
 				    scprofp, 
-#if defined alignment_debug || defined alignment_matrix_debug
+#if defined alignment_matrix_debug
 				    codecp,
 				    profdseqp,
 #endif
@@ -1656,10 +1656,8 @@ int rmapSingle(ErrMsg *errmsgp,
 	       const SeqCodec *codecp)
 {
   int errcode;
-  RMAPBUFF *bufp;
 
   rmapBlank(rmp);
-  bufp = rmp->bfp;
 
 #ifdef RESULTS_TRACKER
   if ((errcode = trackMakeFromSequence(trkrp, readp, 

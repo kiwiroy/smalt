@@ -3,7 +3,7 @@
 /*****************************************************************************
  *****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010 Genome Research Ltd.                                  * 
+ *  Copyright (C) 2010 - 2014 Genome Research Ltd.                           * 
  *                                                                           *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                              *
  *                                                                           *
@@ -265,10 +265,11 @@ static void blankALICPLX(ALICPLX *p)
   return;
 }
 
-static int scaleALICPLX(int *adj_score, int orig_score, int pos_score,
+static int scaleALICPLX(int *adj_score, int orig_score, 
+			/* int pos_score, */
 			const ALICPLX *cplxp)
 {
-  int i, old_adj_score, t_counts, n_letters, count;
+  int i, t_counts, n_letters, count;
   double t_factor, t_sum;
 
   for (i = t_counts = t_factor = t_sum = n_letters = 0; i < cplxp->n_types; i++) {
@@ -283,7 +284,7 @@ static int scaleALICPLX(int *adj_score, int orig_score, int pos_score,
   t_factor -=  t_counts * log((double)t_counts);
   t_sum -= t_factor;
   t_factor /=  t_counts * log((n_letters > 4) ? 1. / n_letters : .25);
-  old_adj_score = orig_score + t_factor * pos_score - pos_score + .5;
+  /* old_adj_score = orig_score + t_factor * pos_score - pos_score + .5; */
   *adj_score = orig_score + t_sum / cplxp->lambda + .999;
   
   if ((*adj_score) > orig_score) {
@@ -632,7 +633,7 @@ static int makeMetaFromTrack(ALIMETA *metap,
   BOOL is_gap_open = FALSE;
   UCHAR nmatch;
   int i, j;
-  ALIDPMSCOR_t s, checksum_score = 0, pos_score = 0;
+  ALIDPMSCOR_t s, checksum_score = 0; /* pos_score = 0 */
   const ALIDIRECT_t *dp;
   ALIMATSCOR_t score_gap_open, score_gap_ext;
   ALIMATSCOR_t * const *scorepp = scoreGetProfile(NULL, NULL, &score_gap_open, 
@@ -683,7 +684,7 @@ static int makeMetaFromTrack(ALIMETA *metap,
 	nmatch = 0;
       }
       checksum_score += s;
-      pos_score += s;
+      /* pos_score += s; */
 #ifdef alignment_debug
       unprofiled_symbol = decoderp[(UCHAR) unprofiled_seq[i]];
       profiled_symbol = decoderp[(UCHAR) profiled_seq[j]];
@@ -756,7 +757,9 @@ static int makeMetaFromTrack(ALIMETA *metap,
   if (checksum_score != tp->max_scor) 
     errcode = ERRCODE_SWATSCOR;
   else if (cplxp)
-    errcode = scaleALICPLX(&checksum_score, tp->max_scor, pos_score, cplxp);
+    errcode = scaleALICPLX(&checksum_score, tp->max_scor, 
+			   /* pos_score, */
+			   cplxp);
    
   metap->score = checksum_score;
 
@@ -825,7 +828,7 @@ static int alignSmiWatBand(ALITRACK *bktp,
 			   &gap_init, &gap_ext, profp);
 
 #ifdef alignment_debug
-  if (bandp->q_len > splen)
+  if ((unsigned int) bandp->q_len > splen)
      printf("ERROR: wrong band paramter q_len = %i, should be <= %u\n!",
 	    bandp->q_len, splen);
 #endif
@@ -1054,7 +1057,7 @@ static int alignSmiWatBandFast(int *maxswscor,
 			   &gap_init, &gap_ext, profp);
 
 #ifdef alignment_debug
-  if (bandp->q_len > splen)
+  if (((unsigned int) bandp->q_len) > splen)
      printf("ERROR: wrong band paramter q_len = %i, should be <= %u\n!",
 	    bandp->q_len, splen);
 #endif
@@ -1588,7 +1591,7 @@ int aliSmiWatInBand(AliRsltSet *rssp,
 int aliSmiWatInBandFast(ALIDPMSCOR_t *maxswscor,
 			AliBuffer *bufp,
 			const ScoreProfile *profp,
-#if defined alignment_debug || defined algnment_matrix_debug
+#if defined algnment_matrix_debug
 			const SeqCodec *codecp,
 			const char *profiled_seqp,
 #endif
@@ -1696,7 +1699,6 @@ int aliDebugFullSmiWat(AliRsltSet *rssp, AliBuffer *bufp,
 #ifdef alignment_timing
 int aliSmiWatInBandDirect(AliRsltSet *rssp, AliBuffer *bufp,
 			  const ScoreProfile *profp,
-			  const SeqCodec *codecp,
 			  const char *psqp,
 			  const char *usqp, int us_len,
 			  int l_edge, int r_edge,

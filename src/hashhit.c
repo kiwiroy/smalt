@@ -3,7 +3,7 @@
 /*****************************************************************************
  *****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010 - 2012 Genome Research Ltd.                           *
+ *  Copyright (C) 2010 - 2014 Genome Research Ltd.                           *
  *                                                                           *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                              *
  *                                                                           *
@@ -1442,7 +1442,8 @@ fillHitListFromHitInfoSegment
   int errcode;
   const UCHAR is_reverse = hip->status & HITINFO_REVERSE;
   const UCHAR nskip = hip->nskip;
-  HASHNUM_t nhits, nh, j, i, k;
+  HASHNUM_t nhits, nh, i, k;
+  short j;
   SEQLEN_t n, tuplectr;
   const SEQLEN_t n_seeds = 
     (use_short_hitinfo) && hip->seed_rank > 0 ? 
@@ -1455,7 +1456,7 @@ fillHitListFromHitInfoSegment
   const FILTERIVAL *ivalp = 0;
 #ifdef RESULTS_TRACKER
   HASHPOS_t trkpos_lo, trkpos_hi;
-  BOOL is_trk_overlap;
+  BOOL is_trk_overlap = 0;
   TRACKFLG_t trk_flg;
   if (trkp != NULL) {
     trackGetKtupData(trkp, &trkpos_lo, &trkpos_hi, &trk_flg);
@@ -1493,7 +1494,7 @@ fillHitListFromHitInfoSegment
     seedp->cix += i;
     posp += i;
 
-    if (hlp->nhits + nh > hlp->nhits_alloc) {
+    if (hlp->nhits + nh > (HASHNUM_t) hlp->nhits_alloc) {
       if (maxhit_per_tuple > 0)
 	return ERRCODE_ALLOCBOUNDARY;
       qmaskp[seedp->qoffs] = HITQUAL_MULTIHIT;
@@ -1506,10 +1507,11 @@ fillHitListFromHitInfoSegment
 
     if (hhfp) {
       /* filtered */
-      for (i=j=0; i<nh && posp[i] < segpos_hi; i++) {
+      for (i=0, j=0; i<nh && posp[i] < segpos_hi; i++) {
 	ivalp = hhfp->ivp+j;
 	if (posp[i] < ivalp->lower) continue;
-	for(; posp[i] > ivalp->upper && j < hhfp->num; j++);
+	for(; posp[i] > ivalp->upper && j < hhfp->num; j++)
+	  ivalp = hhfp->ivp+j;
 	if (j>=hhfp->num) break;
 	if (posp[i] >= ivalp->lower) {
 #ifdef RESULTS_TRACKER

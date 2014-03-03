@@ -3,7 +3,7 @@
 /****************************************************************************
  ****************************************************************************
  *                                                                          *
- *  Copyright (C) 2010-2013 Genome Research Ltd.                            *
+ *  Copyright (C) 2010 - 2014 Genome Research Ltd.                          *
  *                                                                          *        
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                             *
  *                                                                          *
@@ -2623,7 +2623,7 @@ SeqSet *seqSetReadBinFil(int *errcode, const char *filnam)
     *errcode = ERRCODE_ASSERT;
   } else {
     if (fread(seqlenp, sizeof(uint32_t), 
-	      seqnum_dat, fp) != seqnum_dat) {
+	      seqnum_dat, fp) != (size_t) seqnum_dat) {
       *errcode = ERRCODE_FILEFORM;
     } else {
       *errcode = readCompressedSeqOfKnownLength(ssp->sqp, fp, seqsiz);

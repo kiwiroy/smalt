@@ -4,8 +4,8 @@
 /*****************************************************************************
  *****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010 Genome Research Ltd.                                  * 
- *                                                                           *        
+ *  Copyright (C) 2010-2014 Genome Research Ltd.                             * 
+ *                                                                           *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                              *
  *                                                                           *
  *  This file is part of SMALT.                                              *
@@ -70,7 +70,8 @@ int main(int argc, char *argv[])
     ctr++;
     seqFastqGetSequence(seqp, &rlen, NULL);
     seqFastqBlank(seqbufp);
-    if (rlen > newreadlen && newreadlen > 0)
+    if ((newreadlen > 0) && 
+	(rlen > ((SEQLEN_t) newreadlen)))
       rlen = newreadlen;
     seqFastqAppendSegment(seqbufp, seqp, 0, rlen, 0, 0);
     seqFastqWrite(sfp_out, seqbufp, 0);

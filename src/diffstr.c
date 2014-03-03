@@ -3,7 +3,7 @@
 /*****************************************************************************
  *****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010-2013 Genome Research Ltd.                             *
+ *  Copyright (C) 2010 - 2014 Genome Research Ltd.                           *
  *                                                                           * 
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                              *
  *                                                                           *
@@ -125,6 +125,7 @@ struct _DiffView { /**< Explicit alignment string representation */
 #define SETDIFF(gap, typ) (UCHAR) ((gap) + (((UCHAR) (typ)) << DIFFSTR_TYPSHIFT))
 /**< Set the one-character code (typ:gap) for the alignment segment */
 
+#define DIFFSTR_GET_TYP(uc, typ) (typ) = (unsigned char) ((uc) >> DIFFSTR_TYPSHIFT);
 /******************************************************************************
  ********************* Private Methods of Type DiffView ***********************
  ******************************************************************************/
@@ -954,14 +955,14 @@ int diffStrGetDiffStats(int *n_sub, int *n_ins, int *n_del,
 {
   int ni = 0, nd = 0, ns = 0;
   int errcode = ERRCODE_SUCCESS;
-  DIFFSTR_T typ=DIFFCOD_M, count;
+  DIFFSTR_T typ=DIFFCOD_M;
 
   if (n_sub) *n_sub = 0;
   if (n_ins) *n_ins = 0;
   if (n_del) *n_del = 0;
 
   for (; !(errcode) && (*diffstrp); diffstrp++) {
-    DIFFSTR_GET(diffstrp[0], count, typ);
+    DIFFSTR_GET_TYP(diffstrp[0], typ);
     if (typ == DIFFCOD_I) {
       if (INT_MAX == ni)
 	errcode = ERRCODE_OVERFLOW;
@@ -1493,11 +1494,11 @@ int diffStrScore(const DIFFSTR_T *diffstrp, int *swscor, SWSCOR match, SWSCOR mi
 
 int diffStrGetLevenshteinDistance(const DIFFSTR_T *diffstrp)
 {
-  UCHAR count, typ = DIFFCOD_M;
+  UCHAR typ = DIFFCOD_M;
   int i, ed = 0;
 
   for (i=0; (diffstrp[i]) && i < INT_MAX; i++) {
-    DIFFSTR_GET(diffstrp[i], count, typ);
+    DIFFSTR_GET_TYP(diffstrp[i], typ);
     if (typ != DIFFCOD_M)
       ed++;
   }

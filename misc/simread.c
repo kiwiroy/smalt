@@ -4,7 +4,7 @@
 /****************************************************************************
  ****************************************************************************
  *                                                                          *
- *  Copyright (C) 2010 Genome Research Ltd.                                 * 
+ *  Copyright (C) 2010-2014 Genome Research Ltd.                            * 
  *                                                                          *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                             *
  *                                                                          *
@@ -703,7 +703,7 @@ static int generateReads(SeqFastq *readp, SeqFastq *matep,
 int main(int argc, char *argv[])
 {
   int errcode;
-  int i, with_indel;
+  int i;
   int readnum, readlen, insertsiz, randseed;
   double percerr, *ins1p, stdisiz, insertstd1;
   uint64_t basnum;

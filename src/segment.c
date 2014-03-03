@@ -3,7 +3,7 @@
 /*****************************************************************************
  *****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010-2012 Genome Research Ltd.                             *
+ *  Copyright (C) 2010 - 2014 Genome Research Ltd.                           *
  *                                                                           *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                              *
  *                                                                           *
@@ -426,7 +426,7 @@ static int makeSeedsFromHits(SEEDARR *seedr,
       * begin with hit region idxr[reg_start] and end with
       * idx[reg_start + nreg - 1] */
 {
-  UCHAR ktup, nskip, ntup_cut;
+  UCHAR ktup, nskip;
   int s;
   SEQPOS lastq, qo, qoffs;
 /* #ifdef segment_debug */
@@ -444,7 +444,6 @@ static int makeSeedsFromHits(SEEDARR *seedr,
   trackGetKtupData(trkp, &trkpos_lo, &trkpos_hi, &trk_flg);
 #endif
 
-  ntup_cut = ktup/nskip;
   if (!(nreg)) {
     ARRLEN(*seedr) = 0;
     reg_start = 0;
@@ -556,9 +555,6 @@ static int calcSegmentOverlap(const SEGMENT *sgAp, const SEGMENT *sgBp,
   SEQPOS qa_start, qb_start, qa_end, qb_end;
   SEGMLEN a, b;
   SEGCOV_t overlap = 0;
-  const SEED *sap, *sbp;
-  sap = seedr + sgAp->ix;
-  sbp = seedr + sgBp->ix;
  
   qb_start = seedr[0].sqo&HASHHIT_HALFMASK;
   a=b=0;
@@ -1048,7 +1044,7 @@ static int extendCand(SEGCAND *sgcp, SEGMARR segmr, const HITREGARR hregr, const
       * they are complementary (on query) or small */
 {
   int errcode, ovl;
-  SEGMIDX a, i, e, endix;
+  SEGMIDX i, endix;
   SEGMENT *sip, *sap = segmr + sgcp->segix;
   HITREGION *hregp = hregr + sgcp->hregix;
   
@@ -1057,7 +1053,7 @@ static int extendCand(SEGCAND *sgcp, SEGMARR segmr, const HITREGARR hregr, const
     return ERRCODE_ASSERT;
 
   /* first look to the left ... */
-  for (a=i=sgcp->segix-1; i>=hregp->idx; i--) {
+  for (i=sgcp->segix-1; i>=hregp->idx; i--) {
     sip = segmr+i;
     if (sip->nseed < 0) 
       break;
@@ -1067,11 +1063,10 @@ static int extendCand(SEGCAND *sgcp, SEGMARR segmr, const HITREGARR hregr, const
     if ((errcode = updateCandBoundaries(sgcp, sip, seedr, ktup, nskip)))
       return errcode;
     sip->nseed *= -1; /* flag segment out */
-    a = i;
   }
   
   /* ... then to the right */
-  for (e=i=sgcp->segix+1; i<endix; i--) {
+  for (i=sgcp->segix+1; i<endix; i--) {
     sip = segmr+i;
     if (sip->nseed < 0) 
       break;
@@ -1081,7 +1076,6 @@ static int extendCand(SEGCAND *sgcp, SEGMARR segmr, const HITREGARR hregr, const
     if ((errcode = updateCandBoundaries(sgcp, sip, seedr, ktup, nskip)))
       return errcode;
     sip->nseed *= -1; /* flag segment out */
-    e = i;
   }
   return ERRCODE_SUCCESS;
 }
@@ -1109,12 +1103,10 @@ static int addCandsFast(CANDARR *candr, SEGCOV_t *maxcover, SEGCOV_t *max2ndcove
   SEGCAND *cdp;
 
 #ifdef RESULTS_TRACKER
-  BOOL trk_is_reverse = 0, trk_is_covering = 0;
+  BOOL trk_is_covering = 0;
   SEQPOS trkpos_lo, trkpos_hi;
   TRACKFLG_t trk_flg;
   trackGetKtupData(trkp, &trkpos_lo, &trkpos_hi, &trk_flg);
-  if ((trkp) && (trk_flg & TRACKFLG_REVERSE))
-    trk_is_reverse = 1;
 #endif
 
   nreg = ARRLEN(hregr);
@@ -1741,12 +1733,10 @@ const SEGCAND *segAliCandsGetSegment(const SegAliCands *sacp, SEEDIDX idx)
 void segAliCandsPrint(FILE *fp, SEGNUM_t max_depth, const SegAliCands *sacp)
 {
   short i, n_cand;
-  const SEGCAND *scp;
 
   n_cand = (sacp->n_sort > max_depth)? max_depth: sacp->n_sort;
   printf("======= List of %hi candidate segments =======\n", n_cand);
   for (i=0; i<n_cand; i++) {
-    scp = sacp->candr + sacp->sort_idx[i];
     fprintf(fp, "[%hi] %u: ", i, sacp->sort_idx[i]);
     printSEGCAND(fp, sacp->candr + sacp->sort_idx[i]);
   }
