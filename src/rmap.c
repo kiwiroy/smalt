@@ -37,7 +37,7 @@
 #include "hashidx.h"
 #include "segment.h"
 #include "score.h"
-#ifdef HAVE_EMMINTRIN_H
+#ifdef SCORE_SIMD
 #include "swsimd.h"
 #endif
 #include "alignment.h"
@@ -541,7 +541,7 @@ static int makeRMAPCANDfromSegment(RMAPCAND *cp, SeqFastq *sqbufp, COVERAGE *cov
 					  &cp->dqo, &cp->dro,
 					  &cp->sqidx, &bitflags,
 					  coverp,
-#ifdef HAVE_EMMINTRIN_H
+#ifdef SCORE_SIMD
 					  0,
 #else
 					  EDGELEN_MAX, 
@@ -621,8 +621,8 @@ static int scoreRMAPCAND(RMAPCANDARR *csr,
 #ifdef rmap_debug
   const char *dp, *decoderp = seqCodecGetDecoder(codecp, NULL);
 #endif
-#ifdef HAVE_EMMINTRIN_H
-  BOOL isCandForStripedSSE2Alignment;
+#ifdef SCORE_SIMD
+  BOOL isSIMDAliCand;
 #endif
 
   if (n_candseg > INT_MAX || mmscordiff < 1 
@@ -707,13 +707,13 @@ static int scoreRMAPCAND(RMAPCANDARR *csr,
     fputc('\n', stdout);
 #endif
 
-#ifdef HAVE_EMMINTRIN_H
-    isCandForStripedSSE2Alignment = 
+#ifdef SCORE_SIMD
+    isSIMDAliCand = 
       qlen >= MINLEN_QUERY_STRIPED && 
       (cp->band_r - cp->band_l)*BWSCAL_QLEN > qlen &&
       cp->qs == 0 && cp->qe >= qlen-1;
-    if ( (isCandForStripedSSE2Alignment) ) {
-      errcode = swAlignStripedSSE2(&cp->swscor, 
+    if ( (isSIMDAliCand) ) {
+      errcode = swSIMDAlignStriped(&cp->swscor, 
 				   alibufp, 
 				   scprofp,
 #ifdef  alignment_matrix_debug 
@@ -723,8 +723,8 @@ static int scoreRMAPCAND(RMAPCANDARR *csr,
 				   unprofiled_seqp,
 				   unprofiled_seqlen);
     } 
-    if ( !(isCandForStripedSSE2Alignment) || (errcode == ERRCODE_SWATEXCEED) ) {
-#endif /* #ifdef HAVE_EMMINTRIN_H */
+    if ( !(isSIMDAliCand) || (errcode == ERRCODE_SWATEXCEED) ) {
+#endif /* #ifdef SCORE_SIMD */
       if (cp->qs > INT_MAX)
 	return ERRCODE_ASSERT;
       errcode = aliSmiWatInBandFast(&cp->swscor, 
@@ -738,7 +738,7 @@ static int scoreRMAPCAND(RMAPCANDARR *csr,
 				    cp->band_l, cp->band_r,
 				    (int) cp->qs, (int) cp->qe,
 				    0, (int) unprofiled_seqlen-1);
-#ifdef HAVE_EMMINTRIN_H
+#ifdef SCORE_SIMD
     }
 #endif
     if (errcode)
@@ -941,11 +941,15 @@ static RMAPPROF *createRMAPPROF(const SeqCodec * const codecp)
 /**< \param mode Combination of SCORE_PROFILE_MODES */
 {
   RMAPPROF *p;
-#ifdef HAVE_EMMINTRIN_H
-  const UCHAR mode = SCORPROF_SCALAR | SCORPROF_STRIPED_8 | SCORPROF_STRIPED_16;
-#else 
-  const UCHAR mode = SCORPROF_SCALAR;
+  const UCHAR mode = SCORPROF_SCALAR
+#ifdef SCORE_SIMD
+#ifdef SCORE_SIMD_SSE2
+    | SCORPROF_STRIPED_8 | SCORPROF_STRIPED_16
+#else
+    | SCORPROF_STRIPED_32
 #endif
+#endif
+    ;
 
   EMALLOCP0(p);
   if (NULL == p)

@@ -3,8 +3,8 @@
 /*****************************************************************************
  *****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010 Genome Research Ltd.                                  * 
- *                                                                           *        
+ *  Copyright (C) 2010-2013 Genome Research Ltd.                             * 
+ *                                                                           *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                              *
  *                                                                           *
  *  This file is part of SMALT.                                              *
@@ -30,20 +30,48 @@ extern "C"
 {
 #endif
 
-#ifndef score_h
-#define score_h
+#ifndef SCORE_H
+#define SCORE_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
+
+#if defined HAVE_EMMINTRIN_H || defined HAVE_IMMINTRIN_H
+#define SCORE_SIMD
+#ifdef HAVE_IMMINTRIN_H
+#define SCORE_SIMD_IMIC
+#undef SCORE_SIMD_SSE2
+#include <immintrin.h>
+#else
+#undef SCORE_SIMD_IMIC
+#define SCORE_SIMD_SSE2
+#include <emmintrin.h>
 #endif
+#else
+#undef SCORE_SIMD
+#undef SCORE_SIMD_SSE2
+#undef SCORE_SIMD_IMIC
+#endif
+
+#endif
+
 #include "sequence.h"
+
+#ifdef SCORE_SIMD
+#ifdef SCORE_SIMD_IMIC
+typedef __m512i SIMDV_t;
+#else
+typedef __m128i SIMDV_t;
+#endif
+#endif
 
   /****************************************************************************
    ****************************** Constants ***********************************
    ****************************************************************************/
   enum SCORE_PENALTIES {
-    SCORPNLTY_MAXVAL = 127, /**< maximum of absolute value for an affine penalty score
-			     * (e.g. for opening a gap or for a mismatch) */ 
+    SCORPNLTY_MAXVAL = 127, 
+    /**< maximum of absolute value for an affine penalty score
+     * (e.g. for opening a gap or for a mismatch) */ 
   };
 
   enum SCORE_PENALTY_TYPES {
@@ -54,23 +82,39 @@ extern "C"
     SCORPNLTYP_NUM = 4
   };
 
+#ifdef SCORE_SIMD
   enum SCORE_SIMD_CONST {
-    SCORSIMD_NBYTES = 16,             /**< number of bytes in 128 bit SIMD register */
-    SCORSIMD_NSHORTS = 8,             /**< number of short integers in 128 bit SIMD register */
-    SCORSIMD_ROUNDMASK = 0x0f,       /**< Mask used for pointer alignment to 16-byte boundaries */
+#ifdef SCORE_SIMD_IMIC
+    SCORSIMD_NINTS = 16, 
+    /**< number of 32-it integers in 512 bit SIMD register */
+    SCORSIMD_MEMALIMASK = 0x3f,
+#else
+    SCORSIMD_NBYTES = 16,
+    /**< number of bytes in 128 bit SIMD register */
+    SCORSIMD_NSHORTS = 8,   
+    /**< number of short integers in 128 bit SIMD register */
+    SCORSIMD_MEMALIMASK = 0x0f,
+#endif
   };
+#endif
 
   enum SCORE_PROFILE_MODES {
     SCORPROF_SCALAR = 0x01,     /**< for Smith-Waterman w/o SSE2 */
+#ifdef SCORE_SIMD_SSE2
     SCORPROF_STRIPED_8 = 0x02,  /**< striped for 8-bit scores using SIMD */
-    SCORPROF_STRIPED_16 = 0x04, /**< striped for 16-bit scores using SIMD */
+    SCORPROF_STRIPED_16 =0x04   /**< striped for 16-bit scores using SIMD */
+#endif
+#ifdef SCORE_SIMD_IMIC
+    SCORPROF_STRIPED_32 = 0x08, /**< striped for 32-bit scores using SIMD */
+#endif
   };
   
   /****************************************************************************
    ***************************** Opaque Types *********************************
    ****************************************************************************/
   typedef struct ScorePenalties_ ScorePenalties;
-  /**< Alignment penalties (mismatch, gap opening, extension for dynamic programming */
+  /**< Alignment penalties (mismatch, gap opening, extension for
+     dynamic programming */
 
   typedef struct _ScoreMatrix ScoreMatrix;
   /**< Matrix of alignment scores for dynamic programming */
@@ -78,10 +122,17 @@ extern "C"
   typedef struct _ScoreProfile ScoreProfile;
    /**< Sequence profile for dynamic programming */
   
+   /***************************************************************************
+    ********************************** Macros *********************************
+    ***************************************************************************/
   
-   /******************************************************************************
-   *********************** Methods of Type ScorePenalties ***********************
-   ******************************************************************************/
+#define SCORE_ALIGN_MEMORY(p) \
+  (((size_t) (p) + SCORSIMD_MEMALIMASK) & ~((size_t) SCORSIMD_MEMALIMASK))
+  /**< Align memory to 16/64 byte boundary */
+
+   /***************************************************************************
+   *********************** Methods of Type ScorePenalties *********************
+   ****************************************************************************/
 
   ScorePenalties *scorePenaltiesCreate(void);
   /**< Constructor 
@@ -104,9 +155,9 @@ extern "C"
    * \param gapext Returns the score for extending a gap (can be NULL)
    */
  
-  /******************************************************************************
-   ************************* Methods of Type ScoreMatrix ************************
-   ******************************************************************************/
+  /****************************************************************************
+   ************************* Methods of Type ScoreMatrix **********************
+   ****************************************************************************/
 
   ScoreMatrix *scoreCreateMatrix(const SeqCodec *scp, const ScorePenalties *penp);
   /**< Constructor 
@@ -147,11 +198,12 @@ extern "C"
   /**< Print alignment matrix on standard output 
    */
   
-  /******************************************************************************
-   *********************** Methods of Type ScoreProfile *************************
-   ******************************************************************************/
+  /****************************************************************************
+   *********************** Methods of Type ScoreProfile ***********************
+   ****************************************************************************/
   
-  ScoreProfile *scoreCreateProfile(int blocksize, const SeqCodec *codep, unsigned char mod);
+  ScoreProfile *scoreCreateProfile(int blocksize, const SeqCodec *codep, 
+				   unsigned char mod);
   /**< Constructor.
    * \param blocksize Blocksize for memory allocation 
    * \param codep Sequence en-/decoder.
@@ -193,7 +245,7 @@ extern "C"
    * \param spp Score profile.
    */
 
-#ifdef HAVE_EMMINTRIN_H
+#ifdef SCORE_SIMD
   const void *scoreGetStripedProfile(short *alphabetsiz, SEQLEN_t *seqlen, 
 				     unsigned short *gap_init, unsigned short *gap_ext,
 				     unsigned short *bias, int *segsiz, char mod,

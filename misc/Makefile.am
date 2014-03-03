@@ -1,6 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 AM_CFLAGS = -I../src/
 if ICC_COMPILER
+if ICC_MMIC
+AM_CFLAGS += -mmic	
+endif
+AM_CFLAGS += -Wall
 if ICC_NOLIMITH
 AM_CFLAGS += -D_GCC_LIMITS_H_
 endif

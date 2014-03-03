@@ -3,12 +3,19 @@
 ## Mac 64bit binaries: compile with 
 ## CFLAGS="-Wall -g -O2 -pthread -m64 -D_FILE_OFFSET_BITS=64"
 ## CXXFLAGS="-m64 -D_FILE_OFFSET_BITS=64"
+
+if ICC_COMPILER
+AM_CFLAGS = -Wall
+if ICC_MMIC
+AM_CFLAGS += -mmic	
+endif
+else
 AM_CFLAGS = -Wall -Wextra
+endif
 
 if ICC_NOLIMITH
 AM_CFLAGS += -D_GCC_LIMITS_H_
 endif
-
 
 if APPLE_64BIT
 AM_CFLAGS += -m64 -D_FILE_OFFSET_BITS=64
@@ -18,7 +25,7 @@ endif
 ALI_SRC = score.c score.h diffstr.c diffstr.h \
 	  alibuffer.c alibuffer.h alibuffer_struct.h \
 	  alignment.c alignment.h
-if SSE2
+if WITH_SIMD
 ALI_SRC += swsimd.c swsimd.h	
 endif
 
@@ -39,10 +46,8 @@ libseq_a_SOURCES = elib.c elib.h filio.c filio.h sequence.c sequence.h
 
 libsgm_a_SOURCES = ${ALI_SRC} ${SGM_SRC}
 libsgm_a_CFLAGS = ${AM_CFLAGS}
-if SSE2
-if ICC_COMPILER
-libsgm_a_CFLAGS += -xO
-else
+if WITH_SIMD
+if !ICC_COMPILER
 libsgm_a_CFLAGS += -msse2
 endif
 endif

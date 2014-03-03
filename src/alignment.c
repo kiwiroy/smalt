@@ -32,16 +32,13 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-#ifdef HAVE_EMMINTRIN_H
-#include <emmintrin.h>
-#endif
 
 #include "elib.h"
-#if defined HAVE_EMMINTRIN_H && defined alignment_debug
-#include "swsimd.h"
-#endif
 #include "alignment.h"
 #include "alibuffer_struct.h"
+#if defined SCORE_SIMD && defined alignment_debug
+#include "swsimd.h"
+#endif
 
 enum {
   FALSE = 0,
@@ -1638,7 +1635,7 @@ int aliDebugFullSmiWat(AliRsltSet *rssp, AliBuffer *bufp,
   int errcode;
   unsigned int ps_len;
   ALIBAND band;
-#ifdef HAVE_EMMINTRIN_H
+#ifdef SCORE_SIMD
   int  fastscor;
 #endif
   scoreGetProfile(NULL, &ps_len, NULL, NULL, profp);
@@ -1673,12 +1670,12 @@ int aliDebugFullSmiWat(AliRsltSet *rssp, AliBuffer *bufp,
 			      codecp,
 			      psqp, usqp);
 
-#ifdef HAVE_EMMINTRIN_H
+#ifdef SCORE_SIMD
   if (errcode)
     return errcode;
 
   if (us_end > us_start){
-    errcode = swAlignStripedSSE2(&fastscor, bufp, profp,
+    errcode = swSIMDAlignStriped(&fastscor, bufp, profp,
 #ifdef alignment_matrix_debug
 				 codecp,
 				 psqp,

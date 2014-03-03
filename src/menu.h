@@ -249,8 +249,13 @@ extern "C"
    */
 
   void menuPrintWallClockTime(FILE *fp, 
-			      time_t time_start, time_t time_stop);
+			      time_t time_start, time_t time_stop,
+			      const char *headerp);
   /**< Print the wall clock time passed between 2 time points
+   * \param fp Output stream.
+   * \param time_start start point.
+   * \param time_end end point.
+   * \param headerp Text for a header line before time is output.
    */
 #endif
 #ifdef __cplusplus

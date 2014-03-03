@@ -34,6 +34,7 @@ extern "C"
 #define ALIBUFFER_STRUCT_H
 
 #include <config.h>
+#include "score.h"
 
   typedef int ALIDPMSCOR_t;
   
@@ -48,10 +49,10 @@ extern "C"
 			    * allocated per buffer */
     int blocksiz;          /**< Block size (granularity) for memory allocation
 			    * as the number of ALIDPMSCOR_t elements per buffer. */
-#ifdef HAVE_EMMINTRIN_H
-    __m128i *H1v;
-    __m128i *H2v;
-    __m128i *Ev;
+#ifdef SCORE_SIMD
+    SIMDV_t *H1v;
+    SIMDV_t *H2v;
+    SIMDV_t *Ev;    
 #endif
   };
 

@@ -180,7 +180,8 @@ extern "C"
    ************************* Methods of type SeqIO ****************************
    ****************************************************************************/
 
-  SeqIO *seqIOopen(int *errcode, const char *filnam, char mode, unsigned long buffsize);
+  SeqIO *seqIOopen(int *errcode, const char *filnam, char mode, 
+		   unsigned long buffsize);
   /**< Open a file for sequence I/O in FASTA/FASTQ format
    * \param errcode != 0 (one of ERRMSG_CODES) 
    *        if error occurs in which case NULL is returned.

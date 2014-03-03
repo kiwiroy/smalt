@@ -40,8 +40,7 @@
 
 
 enum TRHEAD_CONST {
-  THREAD_NUM_MAX = 64,  /**< Maximum number of threads to be spawned */
-  BUFFARG_NUM_FAC_DEFAULT  = 8, /**< Number of buffered thread arguments/results
+  BUFFARG_NUM_FAC_DEFAULT  = 4, /**< Number of buffered thread arguments/results
 				 * as a multiplicative factor. I.e. for n>0 threads there are
 				 * n*BUFFARG_NUM_FAC buffered arguments */
   THREAD_BUFF_NUM = 3,  /**< Number of buffers for arguments that are passed between

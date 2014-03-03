@@ -3,8 +3,8 @@
 /*****************************************************************************
  *****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010 Genome Research Ltd.                                  * 
- *                                                                           *        
+ *  Copyright (C) 2010 - 2014 Genome Research Ltd.                           * 
+ *                                                                           *
  *  Author: Hannes Ponstingl (hp3@sanger.ac.uk)                              *
  *                                                                           *
  *  This file is part of SMALT.                                              *
@@ -32,15 +32,10 @@
 #include "elib.h"
 #include "score.h"
 
-#ifdef HAVE_EMMINTRIN_H
-#include <emmintrin.h>
-#endif
-
 enum {  
   MAXNUM_3BIT = 0x07,             /**< size of a 3-bit alphabet */
   MINALPHABET = 4,                /**< smallest alphabet */
   DEFAULT_BLOCKSIZ_PROFILE = 256, /**<Granularity for memory re-allocation */
-  SLACK_BYTES = 64,               /**< slack bytes for striped profiles */
 };
 
 enum DEFAULT_ALIGNMENT_CODES {
@@ -373,13 +368,18 @@ struct _ScoreProfile {
 			  * position j along the sequence (starting from
 			  * 0 for first nucleotide). score is for scalar 
 			  * Smith-Waterman. */
-#ifdef HAVE_EMMINTRIN_H
-  UCHAR *striped_datap;   /** < for memory allocation */
-  __m128i *striped_bytep; /**< striped profile 8-bit scores */
-  __m128i *striped_shortp;/**< striped profile 16-bit scores */
+#ifdef SCORE_SIMD
+  void *striped_datap;    /** < for memory allocation */
+  size_t striped_nalloc;  /**< memory allocated for striped profiles */
+
+#ifdef SCORE_SIMD_IMIC
+  int *striped_intp;      /**< striped profile 32-bit scores */
+#else
+  SIMDV_t *striped_bytep; /**< striped profile 8-bit scores */
+  SIMDV_t *striped_shortp;/**< striped profile 16-bit scores */
   short bias;             /**< score bias to produce positive scores
 			   * because sse2 8-bit operations are unsigned */
-  size_t striped_nalloc;  /**< memory allocated for striped profiles */
+#endif
 #endif
   ALIMATSCOR_t match_avg; /**< average match score */
   ALIMATSCOR_t mismatch_avg; /**< average mismatch score */
@@ -390,9 +390,6 @@ struct _ScoreProfile {
 /****************************************************************************
  ******************************* Macros *************************************
  ****************************************************************************/
-
-#define ALIGN_16BYTE(p) (((size_t) (p) + SCORSIMD_ROUNDMASK) & ~((size_t) SCORSIMD_ROUNDMASK))
-/**< Align memory to 16 byte boundary */
 
 /******************************************************************************
  ******************* Private Methods of Type ScoreProfile *********************
@@ -438,23 +435,60 @@ static int fprintProfile(FILE *fp, const ScoreProfile *app, int s_start, int s_l
 #endif
 
 
-#ifdef HAVE_EMMINTRIN_H
+#ifdef SCORE_SIMD
 static int makeStripedProfileFromSequence(ScoreProfile *app, const char *seq_basp, 
 					  SEQLEN_t length, const ScoreMatrix *amp)
 {
-  UCHAR *sprof_bp;
-  short i, *sprof_sp;
-  SEQLEN_t lenBYT, lenSHRT, j, k, segsiz, segbyt;
-  size_t n_alloc_striped;
-  const ALIMATSCOR_t *sp;
+  size_t len, n_alloc_striped;
 
+#define FILL_STRIPED(cond, typ, nvelem, alimemp, bias)			\
+  if ((cond)) {								\
+    short i;								\
+    SEQLEN_t segsiz, segbyt;						\
+    typ *sprofp;							\
+    sprofp = (typ *) (alimemp);						\
+    segsiz = (length + (nvelem) - 1)/(nvelem);				\
+    segbyt = segsiz * nvelem;						\
+    for (i=0; i<app->alphabetsiz; i++) {				\
+      SEQLEN_t j;							\
+      const ALIMATSCOR_t *sp = amp->score[i];				\
+      for (j=0; j<segsiz; j++) {					\
+	SEQLEN_t k;							\
+	for (k=j; k<length; k += segsiz)				\
+	  *sprofp++ = (typ) sp[seq_basp[k]&SEQCOD_ALPHA_MASK] - (bias);	\
+	for (; k<segbyt; k += segsiz)					\
+	  *sprofp++ = 0;						\
+      }									\
+    }									\
+  }
+
+#ifdef SCORE_SIMD_IMIC
+  app->striped_intp = 0;
+  len = (app->mod & SCORPROF_STRIPED_32)? (length + SCORSIMD_NINTS - 1) / SCORSIMD_NINTS: 0;
+#else  
+  size_t lenBYT = (app->mod & SCORPROF_STRIPED_8)? (length + SCORSIMD_NBYTES - 1) / SCORSIMD_NBYTES: 0;
   app->striped_bytep = app->striped_shortp = 0;
-  lenBYT = (app->mod & SCORPROF_STRIPED_8)? (length + SCORSIMD_NBYTES - 1) / SCORSIMD_NBYTES: 0;
-  lenSHRT = (app->mod & SCORPROF_STRIPED_16)? (length + SCORSIMD_NSHORTS - 1) / SCORSIMD_NSHORTS: 0;
+  len = lenBYT + 
+    ((app->mod & SCORPROF_STRIPED_16)? (length + SCORSIMD_NSHORTS - 1) / SCORSIMD_NSHORTS: 0);
+#endif
 
   /* reallocate memory if necessary */
-  n_alloc_striped = SLACK_BYTES + (lenBYT + lenSHRT) * app->alphabetsiz;
-  n_alloc_striped *= sizeof(__m128i);
+  n_alloc_striped = 1 /* slack for memory alignment */
+    + len * app->alphabetsiz; 
+  
+#ifdef SCORE_SIMD_SSE2
+  /* additional slack (for two alignment operations) */
+  if ((app->mod & SCORPROF_STRIPED_8) && (app->mod & SCORPROF_STRIPED_16))
+    n_alloc_striped += 1;
+#endif
+
+  n_alloc_striped *= 
+#ifdef SCORE_SIMD_IMIC
+    SCORSIMD_NINTS*sizeof(int);
+#else
+    sizeof(SIMDV_t);
+#endif
+
   if (n_alloc_striped > app->striped_nalloc) {
     void *hp;
     n_alloc_striped = (n_alloc_striped + app->blocksiz - 1)/app->blocksiz;
@@ -466,52 +500,44 @@ static int makeStripedProfileFromSequence(ScoreProfile *app, const char *seq_bas
     }
     if (!hp) 
       return ERRCODE_NOMEM;
-    app->striped_datap = (UCHAR *) hp;
+    app->striped_datap = hp;
     app->striped_nalloc = n_alloc_striped;
   }
 
-  /* align explicitly to 16-byte boundaries */
+  /* align memory to 16/64 byte boundaries */
+#ifdef SCORE_SIMD_IMIC
+  if (app->mod & SCORPROF_STRIPED_32) {
+    app->striped_intp = (int *) SCORE_ALIGN_MEMORY(app->striped_datap);
+  }
+#else
   if (app->mod & SCORPROF_STRIPED_8) {
-    app->striped_bytep = (__m128i *) ALIGN_16BYTE(app->striped_datap);
+    app->striped_bytep = (SIMDV_t *) SCORE_ALIGN_MEMORY(app->striped_datap);
+    app->bias = scoreMatrixGetMinSubstScore(amp);
     if (app->mod & SCORPROF_STRIPED_16)
       app->striped_shortp = app->striped_bytep + lenBYT * app->alphabetsiz;
   } else if (app->mod & SCORPROF_STRIPED_16) {
-    app->striped_shortp = (__m128i *) ALIGN_16BYTE(app->striped_datap);
+    app->striped_shortp = (SIMDV_t *) SCORE_ALIGN_MEMORY(app->striped_datap);
   }
- 
-  /* fill striped profile */
-  if (app->mod & SCORPROF_STRIPED_8) {
-    app->bias = scoreMatrixGetMinSubstScore(amp);
-    if (app->bias > 0) 
-      app->bias = 0;
-    sprof_bp = (UCHAR *) app->striped_bytep;
-    segsiz = (length +  SCORSIMD_NBYTES - 1)/SCORSIMD_NBYTES;
-    segbyt = segsiz * SCORSIMD_NBYTES;
-    for (i=0; i<app->alphabetsiz; i++) {
-      sp = amp->score[i];
-      for (j=0; j<segsiz; j++) {
-	for (k=j; k<segbyt; k += segsiz)
-	  *sprof_bp++ = (char) ((k<length)? sp[seq_basp[k]&SEQCOD_ALPHA_MASK]: 0) - app->bias;
-      }
-    }
-  }
+#endif
 
-  if (app->mod & SCORPROF_STRIPED_16) {
-    sprof_sp = (short *) app->striped_shortp;
-    segsiz = (length +  SCORSIMD_NSHORTS - 1)/SCORSIMD_NSHORTS;
-    segbyt = segsiz * SCORSIMD_NSHORTS;
-    for (i=0; i<app->alphabetsiz; i++) {
-      sp = amp->score[i];
-      for (j=0; j<segsiz; j++) {
-	for (k=j; k<segbyt; k += segsiz)
-	  *sprof_sp++ = (short) ((k<length)? sp[seq_basp[k]&SEQCOD_ALPHA_MASK]: 0);
-      }
-    }
-  }
-  
+  /* fill striped profile */
+#ifdef SCORE_SIMD_IMIC
+  FILL_STRIPED(app->mod & SCORPROF_STRIPED_32, 
+	       int, SCORSIMD_NINTS,
+	       app->striped_intp, 0);
+#else
+  FILL_STRIPED(app->mod & SCORPROF_STRIPED_8, 
+	       UCHAR, SCORSIMD_NBYTES,
+	       app->striped_bytep, app->bias);
+
+  FILL_STRIPED(app->mod & SCORPROF_STRIPED_16, 
+	       short, SCORSIMD_NSHORTS,
+	       app->striped_shortp, 0);
+#endif
   return ERRCODE_SUCCESS;
 }
-#endif //ifdef HAVE_EMMINTRIN_H
+#endif //ifdef SCORE_SIMD
+
 /******************************************************************************
  ******************** Public Methods of Type ScoreProfile *********************
  ******************************************************************************/
@@ -520,7 +546,6 @@ ScoreProfile *scoreCreateProfile(int blocksize, const SeqCodec *codep, UCHAR mod
 {
   short i;
   short alphabetsiz;
-
   ScoreProfile *app;
 
   EMALLOCP0(app);
@@ -529,8 +554,14 @@ ScoreProfile *scoreCreateProfile(int blocksize, const SeqCodec *codep, UCHAR mod
   seqCodecGetAlphabet(codep, &alphabetsiz);
   if (blocksize < 1) blocksize = DEFAULT_BLOCKSIZ_PROFILE;
 
-#ifdef HAVE_EMMINTRIN_H
-  if (!(mod & (SCORPROF_SCALAR | SCORPROF_STRIPED_8 | SCORPROF_STRIPED_16)))
+#ifdef SCORE_SIMD
+  if (!(mod & (SCORPROF_SCALAR |
+#ifdef SCORE_SIMD_SSE2
+	       SCORPROF_STRIPED_8 | SCORPROF_STRIPED_16
+#else
+	       SCORPROF_STRIPED_32
+#endif
+	       )))
     return NULL;
 #else
   mod = SCORPROF_SCALAR;
@@ -549,8 +580,14 @@ ScoreProfile *scoreCreateProfile(int blocksize, const SeqCodec *codep, UCHAR mod
       }
     }
   }
-#ifdef HAVE_EMMINTRIN_H
-  if ((mod & SCORPROF_STRIPED_8) || (mod & SCORPROF_STRIPED_16)) {
+#ifdef SCORE_SIMD
+    if ((mod & (
+#ifdef SCORE_SIMD_SSE2
+		 SCORPROF_STRIPED_8 | SCORPROF_STRIPED_16
+#else
+		 SCORPROF_STRIPED_32
+#endif
+		))) {
     ECALLOCP(blocksize, app->striped_datap);
     if (!app->striped_datap) {
       scoreDeleteProfile(app);
@@ -575,7 +612,7 @@ void scoreDeleteProfile(ScoreProfile *app)
 	free(app->score[i]);
       free(app->score);
     }
-#ifdef HAVE_EMMINTRIN_H
+#ifdef SCORE_STRIPED
     free(app->striped_datap);
 #endif
     free(app);
@@ -609,11 +646,18 @@ int scoreMakeProfileFromSequence(ScoreProfile *app, const SeqFastq *sqp,
       *hp = 0;
     }
   }
-#ifdef HAVE_EMMINTRIN_H
-  if ((app->mod & (SCORPROF_STRIPED_8 | SCORPROF_STRIPED_16)) && 
+#ifdef SCORE_SIMD
+  if ((app->mod & (
+#ifdef SCORE_SIMD_SSE2
+		   SCORPROF_STRIPED_8 | SCORPROF_STRIPED_16
+#else
+		   SCORPROF_STRIPED_32
+#endif
+		   )) && 
       (errcode = makeStripedProfileFromSequence(app, seq_basp, length, amp)))
     return errcode;
 #endif
+
   app->length = length;
   app->mismatch_avg = scoreMatrixGetAvgSubstScores(&app->match_avg, amp);
   app->gap_init = amp->gap_init;
@@ -652,20 +696,32 @@ short scoreProfileGetAvgPenalties(short *mismatch_avg,
 }
 
 
-#ifdef HAVE_EMMINTRIN_H
+#ifdef SCORE_SIMD
 const void *scoreGetStripedProfile(short *alphabetsiz, SEQLEN_t *seqlen, 
-				      unsigned short *gap_init, unsigned short *gap_ext,
-				      unsigned short *bias, int *segsiz, char mod,
-				      const ScoreProfile *spp)
+				   unsigned short *gap_init, unsigned short *gap_ext,
+				   unsigned short *bias, int *segsiz, char mod,
+				   const ScoreProfile *spp)
 {
-  const  __m128i *p = 0;
+  const void *p = 0;
 
   if (alphabetsiz) *alphabetsiz = spp->alphabetsiz;
   if (seqlen) *seqlen = spp->length;
   if (gap_init) *gap_init = (unsigned short) ((spp->gap_init < 0)? -1: 1) * spp->gap_init;
   if (gap_ext) *gap_ext = (unsigned short) ((spp->gap_ext < 0)? -1: 1) * spp->gap_ext; 
-  if (bias) *bias = (unsigned short) (spp->bias < 0)? -1*spp->bias: 0;
+  if (bias) *bias = (unsigned short) 
+#ifdef SCORE_SIMD_IMIC
+	      0;
+#else
+	      (spp->bias < 0)? -1*spp->bias: 0;
+#endif
 
+#ifdef SCORE_SIMD_IMIC
+  if (mod  == SCORPROF_STRIPED_32) {
+    if (segsiz) 
+      *segsiz = (spp->length + SCORSIMD_NINTS - 1) / SCORSIMD_NINTS;
+    p = spp->striped_intp; 
+  }
+#else
   if (mod  == SCORPROF_STRIPED_8) {
     if (segsiz) 
       *segsiz = (spp->length + SCORSIMD_NBYTES - 1) / SCORSIMD_NBYTES;
@@ -676,6 +732,7 @@ const void *scoreGetStripedProfile(short *alphabetsiz, SEQLEN_t *seqlen,
       *segsiz = (spp->length + SCORSIMD_NSHORTS - 1) / SCORSIMD_NSHORTS;
     p = spp->striped_shortp;
   }
+#endif
 
   return p;
 }

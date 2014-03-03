@@ -57,6 +57,13 @@ AM_PATH_PYTHON([2.6],[with_testdriver=true],
 # samtools executable is required for some tests
 AC_CHECK_PROG([samtoolsexec], [samtools], [yes])
 
+# check if compiling for Intel's Many Integrated Core Architecture (MIC)
+AC_ARG_ENABLE([mic], 
+              [AS_HELP_STRING([--enable-mic], 
+	      [compile for Many Integrated Core Architecture])],
+	      AS_IF([test $CC = "icc"], [for_intel_mic=$enableval], [for_intel_mic=no]),
+	      [for_intel_mic=no])
+AS_ECHO($for_intel_mic)
 # Checks for libraries.
 
 # optional: samtools built as library libbam
@@ -136,11 +143,14 @@ AC_SUBST([BAMBAMC_LDFLG], ["$bblibdirs"])
 AC_SUBST([BAMBAMC_DEPS],  ["$bblibdeps"])
 
 # check for zlib
-AC_CHECK_LIB([z], [gzread],
-             [withzlib=true;
-              AC_DEFINE([HAVE_ZLIB], [1], [Define to 1 if you have zlib])],
-	      [withzlib=false],)
-
+AS_IF([test x$for_intel_mic = xno],
+	   [ AC_CHECK_LIB([z], [gzread],
+             		      [withzlib=true;
+              		      AC_DEFINE([HAVE_ZLIB], [1], [Define to 1 if you have zlib])],
+	      		      [withzlib=false],) ],
+           [withzlib=false;]
+)
+AS_ECHO([x$withzlib])
 # POSIX threads API with only named but not unnamed semaphores (MacOSX)
 #AC_CHECK_LIB
 #	(
@@ -155,18 +165,28 @@ AC_HEADER_STDC
 
 # AC_CHECK_HEADERS([limits.h stdio.h stdlib.h string.h math.h])
 AC_CHECK_HEADERS([math.h pthread.h semaphore.h float.h stddef.h stdint.h])
+AS_IF([test x$withzlib = xtrue], AC_CHECK_HEADERS([zlib.h]))
 
 # some versions of icc on 64-bit can't compile limits.h 
 AC_CHECK_HEADER([limits.h], [withlimith=true], [withlimith=false], [])
 
-# exchange the follwing two lines if there are problems with 
+# check for immintrin.h header (intel C compiler icc: prototypes for intrinsics)
+AS_IF([test x$for_intel_mic = xyes],
+      [AC_CHECK_HEADERS(
+         [immintrin.h], 
+	 [withintrin=true], 
+         [withintrin=false;
+	   AC_MSG_WARN([won't compile for Intel MIC])],
+         [])],
+      [withintrin=false;]
+)
+AS_ECHO($withintrin)
 # recogising the emmintrin.h header (some gcc versions require '-msse2' set)
-AC_CHECK_HEADER([emmintrin.h], 
-	        [withsse2=true;
-		 AC_DEFINE([HAVE_EMMINTRIN_H], [1], [Define to 1 if you have <emmintrin.h>.])
-		], 
-		[withsse2=false], [])
-
+AS_IF([test x$withintrin = xtrue],
+      [withsse2=false],
+      AC_CHECK_HEADERS([emmintrin.h], [withsse2=true], [withsse2=false], [])
+)
+AS_ECHO($withsse2)
 #establish 32-bit vs 64-bit -> $host_cpu
 AC_CANONICAL_HOST
 #AS_ECHO($host)
@@ -183,18 +203,18 @@ AS_CASE([$build_os], [*darwin*], [build_macosx_darwin=true], [build_macosx_darwi
 AS_IF([test x$build_macosx_darwin = xtrue -a $host_cpu = x86_64], 
   [AC_MSG_NOTICE("compiling on darwin for x86_64 ...")])
 
+# Intel's C compiler
 # flag icc on 32 bit platform
-#AS_IF([test $CC = "icc"], [AS_ECHO("checking for intel compiler ... $CC")])
-#AS_IF([test $host_cpu = "i686"], [AS_ECHO("checking 32-bit system ... $host_cpu")])
-#AS_IF([test $CC = "icc" -a $host_cpu = "i686"], [AS_ECHO("established: icc on 32-bit system")])
-#AS_IF([test $CC = "icc"], [withicc=true], [withicc=false])
 AS_IF([test $CC = "icc" -a $host_cpu = "i686"], 
-	    AC_DEFINE([SMALT_AUTOCONF_ICC_OPT], [1], 
-	    [ICC on 32bit: avoid undefined references to __svml_exp2]))
+	    	AC_DEFINE([SMALT_AUTOCONF_ICC_OPT], [1], 
+	    	[ICC on 32bit: avoid undefined references to __svml_exp2]))
+AM_CONDITIONAL([ICC_COMPILER], [test $CC = "icc"])
+AM_CONDITIONAL([ICC_NOLIMITH], [test $CC = "icc" -a x$withlimith = xfalse])
+AM_CONDITIONAL([ICC_MMIC], [test x$for_intel_mic = xyes -a x$withintrin = xtrue])
+
 
 AM_CONDITIONAL([SSE2], [test x$withsse2 = xtrue])
-AM_CONDITIONAL([ICC_NOLIMITH], [test $CC = "icc" -a x$withlimith = xfalse])
-AM_CONDITIONAL([ICC_COMPILER], [test $CC = "icc"])
+AM_CONDITIONAL([WITH_SIMD], [test x$withintrin = xtrue -o x$withsse2 = xtrue])
 AM_CONDITIONAL([WITH_BAMBAMC], [test x$bambamc = xyes])
 AM_CONDITIONAL([WITH_SAMTOOLS], [test x$samtools = xyes])
 AM_CONDITIONAL([WITH_SAMTOOLS_EXEC], [test x$samtoolsexec = xyes])

@@ -33,22 +33,19 @@ extern "C"
 #ifndef SWSIMD_H
 #define SWSIMD_H
 
-#if defined alignment_matrix_debug || defined alignment_timing
+#if defined alignment_matrix_debug
 #include "sequence.h"
 #endif
 
 #include "score.h"
-#ifdef alignment_timing
-#include "alignment.h"
-#endif
 #include "alibuffer.h"
   
   /****************************************************************************
    ************************* Public Alignment Methods *************************
    ****************************************************************************/
 
-  int swAlignStripedSSE2(int *maxscor, 
-			 AliBuffer *abp,
+  int swSIMDAlignStriped(int *maxscor, 
+			 const AliBuffer *abp,
 			 const ScoreProfile *profp, 
 #ifdef alignment_matrix_debug 
 			 const SeqCodec *codecp,
@@ -66,23 +63,6 @@ extern "C"
    * \param unprofiled_seqlen Length of the unprofiled sequence.
    */
 
-#ifdef alignment_timing
-  int swAlignStripedDirect(AliRsltSet *rssp, AliBuffer *bufp,
-			   const ScoreProfile *profp,
-			   const SeqCodec *codecp,
-			   const char *psqp,
-			   const char *usqp, int us_len,
-			   int *maxscor);
-  /**< Performs direct vectorised Smith_Waterman alignment for timing.
-   * \param rssp Set of alignment results (used as buffer, no results are actually created).
-   * \param profp Sequence profile.
-   * \param psqp Profiled sequence (in SEQCOD_MANGLED code).
-   * \param usqp Sequence of the unprofiled segment (in SEQCOD_MANGLED code).
-   * \param uslen Length of the unprofiled segment.
-   * \param maxscor Returns the maximum score of the alignment.
-   */
-
-#endif /* #ifdef alignment_timing  */
 
 #endif /* #ifndef SWSIMD_H */
 #ifdef __cplusplus

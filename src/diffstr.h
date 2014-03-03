@@ -145,7 +145,8 @@ extern "C"
    ********************************* Macros ***********************************
    ****************************************************************************/
 #define DIFFSTR_LENGTH(dfsp) (dfsp)->len
-#define DIFFSTR_GET(uc, gap, typ) (typ) = (uc) >> DIFFSTR_TYPSHIFT; (gap) = (uc) & DIFFSTR_COUNTMASK;
+#define DIFFSTR_GET(uc, gap, typ) (typ) = (unsigned char) ((uc) >> DIFFSTR_TYPSHIFT); \
+  (gap) = (unsigned char) ((uc) & DIFFSTR_COUNTMASK);
   /* give upper bound for the length of a sring printed in any of the DIFFSTR_OUTPUT_FORMATS
    * this is 5 char per byte plus clipping on either side 2*(ceiling(31*ln2/ln10)+3) */
 #define DIFFSTR_MAXPRINTLEN(dfsp) (dfsp->len*5+26)

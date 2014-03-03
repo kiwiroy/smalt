@@ -3,11 +3,14 @@
 /* Define if you have the package bambamc installed as a library */
 #undef HAVE_BAMBAMC
 
-/* Define to 1 if you have <emmintrin.h>. */
+/* Define to 1 if you have the <emmintrin.h> header file. */
 #undef HAVE_EMMINTRIN_H
 
 /* Define to 1 if you have the <float.h> header file. */
 #undef HAVE_FLOAT_H
+
+/* Define to 1 if you have the <immintrin.h> header file. */
+#undef HAVE_IMMINTRIN_H
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -53,6 +56,9 @@
 
 /* Define to 1 if you have zlib */
 #undef HAVE_ZLIB
+
+/* Define to 1 if you have the <zlib.h> header file. */
+#undef HAVE_ZLIB_H
 
 /* Name of package */
 #undef PACKAGE
