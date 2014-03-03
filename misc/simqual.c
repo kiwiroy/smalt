@@ -64,8 +64,8 @@ static int mutateNtSeq(SeqFastq *sqp,
       */
 {
   char *qualp, *basp, cod;
-  short alphlen, encodsiz, modi, stdnt_idx;
-  int bq;
+  short alphlen, encodsiz;
+  int modi, stdnt_idx, bq;
   SEQLEN_t i, rlen;
   double errprob, randunit;
   const char *alphabetp = seqCodecGetAlphabet(codecp, &alphlen);
@@ -94,7 +94,7 @@ static int mutateNtSeq(SeqFastq *sqp,
     randunit = RANDRAW_UNIFORM_1();
     if (randunit > errprob)
       continue;
-    modi = randunit*SEQCOD_STDNT_MASK/errprob;
+    modi = (int) (randunit*SEQCOD_STDNT_MASK/errprob);
     if (modi + 1 > SEQCOD_STDNT_MASK)
       modi = SEQCOD_STDNT_MASK - 1;
     else if (modi < 0)
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
   char nambuf[NAMBUF_MAXLEN];
   char *qualp, *mutbasp;
   char *filnam_basq, *filnam_fastq_in, *filnam_fastq_out;
-  unsigned char is_modify;
+  int is_modify;
   uint8_t nqual, qmin;
   int rand_seed;
   SEQLEN_t rlen, rlen_simulated;

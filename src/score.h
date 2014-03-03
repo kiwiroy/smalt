@@ -81,7 +81,6 @@ typedef __m128i SIMDV_t;
     SCORPNLTYP_GAPEXT = 3,
     SCORPNLTYP_NUM = 4
   };
-
 #ifdef SCORE_SIMD
   enum SCORE_SIMD_CONST {
 #ifdef SCORE_SIMD_IMIC
@@ -125,10 +124,14 @@ typedef __m128i SIMDV_t;
    /***************************************************************************
     ********************************** Macros *********************************
     ***************************************************************************/
-  
+
+#ifdef SCORE_SIMD
 #define SCORE_ALIGN_MEMORY(p) \
   (((size_t) (p) + SCORSIMD_MEMALIMASK) & ~((size_t) SCORSIMD_MEMALIMASK))
   /**< Align memory to 16/64 byte boundary */
+#else
+#define  SCORE_ALIGN_MEMORY(p) (p)
+#endif
 
    /***************************************************************************
    *********************** Methods of Type ScorePenalties *********************

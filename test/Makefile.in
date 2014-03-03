@@ -39,24 +39,35 @@ host_triplet = @host@
 @ICC_COMPILER_FALSE@am__append_3 = -Wall -Wextra
 @APPLE_64BIT_TRUE@am__append_4 = -m64 -D_FILE_OFFSET_BITS=64
 @WITH_SIMD_TRUE@am__append_5 = ../src/swsimd.c ../src/swsimd.h
-@WITH_TESTDRIVER_TRUE@TESTS = $(TEST_DRIVERS) $(am__append_6)
-@WITH_SAMTOOLS_EXEC_TRUE@@WITH_TESTDRIVER_TRUE@am__append_6 = bam_cigar_test.py
-check_PROGRAMS = sequenceReadWrite_test$(EXEEXT) \
+@WITH_TESTALL_FALSE@@WITH_TESTDRIVER_TRUE@TESTS = $(am__EXEEXT_6) \
+@WITH_TESTALL_FALSE@@WITH_TESTDRIVER_TRUE@	$(am__append_7) \
+@WITH_TESTALL_FALSE@@WITH_TESTDRIVER_TRUE@	$(am__append_8)
+@WITH_TESTALL_TRUE@@WITH_TESTDRIVER_TRUE@TESTS = sequence_test.py \
+@WITH_TESTALL_TRUE@@WITH_TESTDRIVER_TRUE@	consistentFR_test.py \
+@WITH_TESTALL_TRUE@@WITH_TESTDRIVER_TRUE@	diffstr_test.py \
+@WITH_TESTALL_TRUE@@WITH_TESTDRIVER_TRUE@	$(am__EXEEXT_6) \
+@WITH_TESTALL_TRUE@@WITH_TESTDRIVER_TRUE@	$(am__append_7) \
+@WITH_TESTALL_TRUE@@WITH_TESTDRIVER_TRUE@	$(am__append_8)
+@WITH_TESTDRIVER_TRUE@am__append_6 = ${TEST_DRIVERS}
+@WITH_BAMBAMC_TRUE@@WITH_TESTDRIVER_TRUE@am__append_7 = xali_test.py
+@WITH_SAMTOOLS_EXEC_TRUE@@WITH_TESTDRIVER_TRUE@am__append_8 = bam_cigar_test.py
+check_PROGRAMS = sequenceReverseComplement_test$(EXEEXT) \
+	$(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+	$(am__EXEEXT_4) $(am__EXEEXT_5)
+@WITH_BAMBAMC_TRUE@am__append_9 = smalt_Xali_test
+EXTRA_PROGRAMS = sequenceReadWrite_test$(EXEEXT) \
 	sequenceCompress_test$(EXEEXT) \
-	sequenceDeCompress_test$(EXEEXT) \
-	sequenceReverseComplement_test$(EXEEXT) diffstr_test$(EXEEXT) \
-	smalt_Xali_test$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2) \
-	$(am__EXEEXT_3) $(am__EXEEXT_4)
-EXTRA_PROGRAMS = seqSetIO_test$(EXEEXT) hashhit_test$(EXEEXT) \
+	sequenceDeCompress_test$(EXEEXT) diffstr_test$(EXEEXT) \
+	seqSetIO_test$(EXEEXT) hashhit_test$(EXEEXT) \
 	hashhit_track_test$(EXEEXT) hashidx_test$(EXEEXT) \
 	segment_test$(EXEEXT) segment_simple_test$(EXEEXT) \
 	array_test$(EXEEXT) diffstr_slice_test$(EXEEXT) \
 	alignment_test$(EXEEXT) rmap_test$(EXEEXT) smalt_test$(EXEEXT) \
 	smalt_basq$(EXEEXT) basqual_test$(EXEEXT) infmt_test$(EXEEXT)
-@WITH_SAMTOOLS_TRUE@am__append_7 = samtools_api_test
-@WITH_BAMBAMC_TRUE@am__append_8 = bambam_test
-@WITH_SIMD_TRUE@@WITH_TESTALL_TRUE@am__append_9 = swsimd_test # mergesort_test
 @WITH_TESTALL_TRUE@am__append_10 = ${EXTRA_PROGRAMS}
+@WITH_SIMD_TRUE@@WITH_TESTALL_TRUE@am__append_11 = swsimd_test # mergesort_test
+@WITH_SAMTOOLS_TRUE@@WITH_TESTALL_TRUE@am__append_12 = samtools_api_test
+@WITH_BAMBAMC_TRUE@@WITH_TESTALL_TRUE@am__append_13 = bambam_test
 subdir = test
 SUBDIRS =
 DIST_COMMON = $(dist_data_DATA) $(srcdir)/Makefile.am \
@@ -69,11 +80,13 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-@WITH_SAMTOOLS_TRUE@am__EXEEXT_1 = samtools_api_test$(EXEEXT)
-@WITH_BAMBAMC_TRUE@am__EXEEXT_2 = bambam_test$(EXEEXT)
+@WITH_BAMBAMC_TRUE@am__EXEEXT_1 = smalt_Xali_test$(EXEEXT)
+@WITH_TESTALL_TRUE@am__EXEEXT_2 = $(EXTRA_PROGRAMS)
 @WITH_SIMD_TRUE@@WITH_TESTALL_TRUE@am__EXEEXT_3 =  \
 @WITH_SIMD_TRUE@@WITH_TESTALL_TRUE@	swsimd_test$(EXEEXT)
-@WITH_TESTALL_TRUE@am__EXEEXT_4 = $(EXTRA_PROGRAMS)
+@WITH_SAMTOOLS_TRUE@@WITH_TESTALL_TRUE@am__EXEEXT_4 = samtools_api_test$(EXEEXT)
+@WITH_BAMBAMC_TRUE@@WITH_TESTALL_TRUE@am__EXEEXT_5 =  \
+@WITH_BAMBAMC_TRUE@@WITH_TESTALL_TRUE@	bambam_test$(EXEEXT)
 @WITH_SIMD_TRUE@am__objects_1 = alignment_test-swsimd.$(OBJEXT)
 am__objects_2 = alignment_test-score.$(OBJEXT) \
 	alignment_test-alibuffer.$(OBJEXT) $(am__objects_1)
@@ -92,12 +105,10 @@ am__DEPENDENCIES_2 = ../src/libsgm.a $(SEQ_LIB)
 array_test_DEPENDENCIES = $(am__DEPENDENCIES_2)
 array_test_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(array_test_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am__bambam_test_SOURCES_DIST = bambam_test.c ../src/elib.c \
-	../src/elib.h
-@WITH_BAMBAMC_TRUE@am_bambam_test_OBJECTS =  \
+@WITH_BAMBAMC_TRUE@nodist_bambam_test_OBJECTS =  \
 @WITH_BAMBAMC_TRUE@	bambam_test-bambam_test.$(OBJEXT) \
 @WITH_BAMBAMC_TRUE@	bambam_test-elib.$(OBJEXT)
-bambam_test_OBJECTS = $(am_bambam_test_OBJECTS)
+bambam_test_OBJECTS = $(nodist_bambam_test_OBJECTS)
 @WITH_BAMBAMC_TRUE@bambam_test_DEPENDENCIES = $(am__DEPENDENCIES_1)
 bambam_test_LINK = $(CCLD) $(bambam_test_CFLAGS) $(CFLAGS) \
 	$(bambam_test_LDFLAGS) $(LDFLAGS) -o $@
@@ -151,11 +162,9 @@ rmap_test_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 rmap_test_LINK = $(CCLD) $(rmap_test_CFLAGS) $(CFLAGS) \
 	$(rmap_test_LDFLAGS) $(LDFLAGS) -o $@
-am__samtools_api_test_SOURCES_DIST = samtools_api_test.c ../src/elib.c \
-	../src/elib.h
-@WITH_SAMTOOLS_TRUE@am_samtools_api_test_OBJECTS = samtools_api_test-samtools_api_test.$(OBJEXT) \
+@WITH_SAMTOOLS_TRUE@nodist_samtools_api_test_OBJECTS = samtools_api_test-samtools_api_test.$(OBJEXT) \
 @WITH_SAMTOOLS_TRUE@	samtools_api_test-elib.$(OBJEXT)
-samtools_api_test_OBJECTS = $(am_samtools_api_test_OBJECTS)
+samtools_api_test_OBJECTS = $(nodist_samtools_api_test_OBJECTS)
 @WITH_SAMTOOLS_TRUE@samtools_api_test_DEPENDENCIES =  \
 @WITH_SAMTOOLS_TRUE@	$(am__DEPENDENCIES_1)
 samtools_api_test_LINK = $(CCLD) $(samtools_api_test_CFLAGS) $(CFLAGS) \
@@ -171,17 +180,21 @@ segment_test_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 nodist_seqSetIO_test_OBJECTS = seqSetIO_test.$(OBJEXT)
 seqSetIO_test_OBJECTS = $(nodist_seqSetIO_test_OBJECTS)
 seqSetIO_test_DEPENDENCIES = $(SEQ_LIB) $(am__DEPENDENCIES_1)
-am_sequenceCompress_test_OBJECTS = sequenceCompress_test.$(OBJEXT)
-sequenceCompress_test_OBJECTS = $(am_sequenceCompress_test_OBJECTS)
+nodist_sequenceCompress_test_OBJECTS =  \
+	sequenceCompress_test.$(OBJEXT)
+sequenceCompress_test_OBJECTS =  \
+	$(nodist_sequenceCompress_test_OBJECTS)
 sequenceCompress_test_DEPENDENCIES = $(SEQ_LIB) $(am__DEPENDENCIES_1)
-am_sequenceDeCompress_test_OBJECTS =  \
+nodist_sequenceDeCompress_test_OBJECTS =  \
 	sequenceDeCompress_test.$(OBJEXT)
 sequenceDeCompress_test_OBJECTS =  \
-	$(am_sequenceDeCompress_test_OBJECTS)
+	$(nodist_sequenceDeCompress_test_OBJECTS)
 sequenceDeCompress_test_DEPENDENCIES = $(SEQ_LIB) \
 	$(am__DEPENDENCIES_1)
-am_sequenceReadWrite_test_OBJECTS = sequenceReadWrite_test.$(OBJEXT)
-sequenceReadWrite_test_OBJECTS = $(am_sequenceReadWrite_test_OBJECTS)
+nodist_sequenceReadWrite_test_OBJECTS =  \
+	sequenceReadWrite_test.$(OBJEXT)
+sequenceReadWrite_test_OBJECTS =  \
+	$(nodist_sequenceReadWrite_test_OBJECTS)
 sequenceReadWrite_test_DEPENDENCIES = $(SEQ_LIB) $(am__DEPENDENCIES_1)
 am_sequenceReverseComplement_test_OBJECTS =  \
 	sequenceReverseComplement_test.$(OBJEXT)
@@ -189,6 +202,12 @@ sequenceReverseComplement_test_OBJECTS =  \
 	$(am_sequenceReverseComplement_test_OBJECTS)
 sequenceReverseComplement_test_DEPENDENCIES = $(SEQ_LIB) \
 	$(am__DEPENDENCIES_1)
+am__smalt_Xali_test_SOURCES_DIST = ../src/smalt.c ../src/menu.c \
+	../src/menu.h ../src/threads.c ../src/threads.h ../src/infmt.c \
+	../src/infmt.h ../src/results.c ../src/results.h \
+	../src/resultpairs.c ../src/resultpairs.h ../src/insert.c \
+	../src/insert.h ../src/report.c ../src/report.h ../src/rmap.c \
+	../src/rmap.h
 am__objects_6 = smalt_Xali_test-results.$(OBJEXT) \
 	smalt_Xali_test-resultpairs.$(OBJEXT) \
 	smalt_Xali_test-insert.$(OBJEXT) \
@@ -198,10 +217,11 @@ am__objects_7 = smalt_Xali_test-smalt.$(OBJEXT) \
 	smalt_Xali_test-menu.$(OBJEXT) \
 	smalt_Xali_test-threads.$(OBJEXT) \
 	smalt_Xali_test-infmt.$(OBJEXT) $(am__objects_6)
-am_smalt_Xali_test_OBJECTS = $(am__objects_7)
+@WITH_BAMBAMC_TRUE@am_smalt_Xali_test_OBJECTS = $(am__objects_7)
 smalt_Xali_test_OBJECTS = $(am_smalt_Xali_test_OBJECTS)
-smalt_Xali_test_DEPENDENCIES = $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+@WITH_BAMBAMC_TRUE@smalt_Xali_test_DEPENDENCIES =  \
+@WITH_BAMBAMC_TRUE@	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1) \
+@WITH_BAMBAMC_TRUE@	$(am__DEPENDENCIES_1)
 smalt_Xali_test_LINK = $(CCLD) $(smalt_Xali_test_CFLAGS) $(CFLAGS) \
 	$(smalt_Xali_test_LDFLAGS) $(LDFLAGS) -o $@
 am__objects_8 = smalt_basq-results.$(OBJEXT) \
@@ -259,28 +279,25 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(nodist_alignment_test_SOURCES) \
-	$(nodist_array_test_SOURCES) $(bambam_test_SOURCES) \
+	$(nodist_array_test_SOURCES) $(nodist_bambam_test_SOURCES) \
 	$(nodist_basqual_test_SOURCES) \
 	$(nodist_diffstr_slice_test_SOURCES) $(diffstr_test_SOURCES) \
 	$(nodist_hashhit_test_SOURCES) \
 	$(nodist_hashhit_track_test_SOURCES) \
 	$(nodist_hashidx_test_SOURCES) $(nodist_infmt_test_SOURCES) \
-	$(nodist_rmap_test_SOURCES) $(samtools_api_test_SOURCES) \
+	$(nodist_rmap_test_SOURCES) \
+	$(nodist_samtools_api_test_SOURCES) \
 	$(nodist_segment_simple_test_SOURCES) \
 	$(nodist_segment_test_SOURCES) $(nodist_seqSetIO_test_SOURCES) \
-	$(sequenceCompress_test_SOURCES) \
-	$(sequenceDeCompress_test_SOURCES) \
-	$(sequenceReadWrite_test_SOURCES) \
+	$(nodist_sequenceCompress_test_SOURCES) \
+	$(nodist_sequenceDeCompress_test_SOURCES) \
+	$(nodist_sequenceReadWrite_test_SOURCES) \
 	$(sequenceReverseComplement_test_SOURCES) \
 	$(smalt_Xali_test_SOURCES) $(nodist_smalt_basq_SOURCES) \
 	$(nodist_smalt_test_SOURCES) $(nodist_swsimd_test_SOURCES)
-DIST_SOURCES = $(am__bambam_test_SOURCES_DIST) $(diffstr_test_SOURCES) \
-	$(am__samtools_api_test_SOURCES_DIST) \
-	$(sequenceCompress_test_SOURCES) \
-	$(sequenceDeCompress_test_SOURCES) \
-	$(sequenceReadWrite_test_SOURCES) \
+DIST_SOURCES = $(diffstr_test_SOURCES) \
 	$(sequenceReverseComplement_test_SOURCES) \
-	$(smalt_Xali_test_SOURCES)
+	$(am__smalt_Xali_test_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -320,6 +337,7 @@ ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
 red=; grn=; lgn=; blu=; std=
+@WITH_TESTDRIVER_TRUE@am__EXEEXT_6 = $(TEST_DRIVERS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
@@ -497,9 +515,7 @@ SMALT_SRC = ../src/smalt.c ../src/menu.c ../src/menu.h \
 	${MAP_SRC}
 
 SMALT_TEST_SRC = ${SMALT_SRC} ${SGM_SRC} ${ALI_SRC} tracker.c tracker.h
-TEST_DRIVERS = sequence_test.py consistentFR_test.py \
-		diffstr_test.py \
-		splitReads_test.py xali_test.py \
+TEST_DRIVERS = splitReads_test.py \
 		results_split_test.py \
 		ioform_test.py ouform_cigar_test.py \
 		sample_test.py \
@@ -507,7 +523,7 @@ TEST_DRIVERS = sequence_test.py consistentFR_test.py \
 		mthread_test.py
 
 @WITH_TESTDRIVER_TRUE@TESTS_ENVIRONMENT = $(PYTHON)
-dist_data_DATA = ${TEST_DRIVERS} bam_cigar_test.py formats.py testdata.py
+dist_data_DATA = ${TEST_DRIVERS} bam_cigar_test.py xali_test.py formats.py testdata.py
 @WITH_ZLIB_FALSE@ZLIB_LDFLAG = 
 @WITH_ZLIB_TRUE@ZLIB_LDFLAG = -lz
 nodist_array_test_SOURCES = array_test.c
@@ -522,13 +538,13 @@ diffstr_test_SOURCES = diffstr_test.c ../src/diffstr.c ../src/diffstr.h ../src/e
 #	../src/sort.c ../src/sort.h
 #mergesort_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS)
 #endif
-sequenceReadWrite_test_SOURCES = sequenceReadWrite_test.c
+nodist_sequenceReadWrite_test_SOURCES = sequenceReadWrite_test.c
 sequenceReadWrite_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
 sequenceReverseComplement_test_SOURCES = sequenceReverseComplement_test.c
 sequenceReverseComplement_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
-sequenceCompress_test_SOURCES = sequenceCompress_test.c
+nodist_sequenceCompress_test_SOURCES = sequenceCompress_test.c
 sequenceCompress_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
-sequenceDeCompress_test_SOURCES = sequenceDeCompress_test.c
+nodist_sequenceDeCompress_test_SOURCES = sequenceDeCompress_test.c
 sequenceDeCompress_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
 nodist_seqSetIO_test_SOURCES = seqSetIO_test.c
 seqSetIO_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
@@ -575,11 +591,11 @@ rmap_test_LDADD = $(SGM_LIB) $(BAMBAMC_DEPS) -lm $(ZLIB_LDFLAG)
 rmap_test_LDFLAGS = $(BAMBAMC_LDFLG)
 
 # test splitting of alignments across neighbouring reference sequences
-smalt_Xali_test_SOURCES = ${SMALT_SRC}
-smalt_Xali_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS) $(BAMBAMC_INCL)
-smalt_Xali_test_CPPFLAGS = -DSMALT_DEBUG_XALI
-smalt_Xali_test_LDADD = $(SGM_LIB) $(BAMBAMC_DEPS) -lm -lpthread $(ZLIB_LDFLAG)
-smalt_Xali_test_LDFLAGS = $(APPLELDFLAGS) $(BAMBAMC_LDFLG)
+@WITH_BAMBAMC_TRUE@smalt_Xali_test_SOURCES = ${SMALT_SRC}
+@WITH_BAMBAMC_TRUE@smalt_Xali_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS) $(BAMBAMC_INCL)
+@WITH_BAMBAMC_TRUE@smalt_Xali_test_CPPFLAGS = -DSMALT_DEBUG_XALI
+@WITH_BAMBAMC_TRUE@smalt_Xali_test_LDADD = $(SGM_LIB) $(BAMBAMC_DEPS) -lm -lpthread $(ZLIB_LDFLAG)
+@WITH_BAMBAMC_TRUE@smalt_Xali_test_LDFLAGS = $(APPLELDFLAGS) $(BAMBAMC_LDFLG)
 
 # testing smalt with simulated reads (not distributed)
 nodist_smalt_test_SOURCES = ${SMALT_TEST_SRC}
@@ -614,14 +630,14 @@ infmt_test_LDFLAGS = $(BAMBAMC_LDFLG)
 infmt_test_LDADD = $(SEQ_LIB) $(BAMBAMC_DEPS)
 
 # optional samtools api
-@WITH_SAMTOOLS_TRUE@samtools_api_test_SOURCES = samtools_api_test.c ../src/elib.c ../src/elib.h
+@WITH_SAMTOOLS_TRUE@nodist_samtools_api_test_SOURCES = samtools_api_test.c ../src/elib.c ../src/elib.h
 @WITH_SAMTOOLS_TRUE@samtools_api_test_CFLAGS = $(AM_CFLAGS) $(SAMTOOLS_CFLAGS)
 @WITH_SAMTOOLS_TRUE@samtools_api_test_LDFLAGS = $(SAMTOOLS_LDFLAGS)
 @WITH_SAMTOOLS_TRUE@samtools_api_test_LDADD = $(SAMTOOLS_DEPS)
 
 # optional libary for reading/writing BAM/SAM by German Tischler
 # has to be linked with g++
-@WITH_BAMBAMC_TRUE@bambam_test_SOURCES = bambam_test.c ../src/elib.c ../src/elib.h
+@WITH_BAMBAMC_TRUE@nodist_bambam_test_SOURCES = bambam_test.c ../src/elib.c ../src/elib.h
 # Dummy C++ source to cause C++ linking.
 #nodist_EXTRA_bambam_test_SOURCES = dummy.cxx
 @WITH_BAMBAMC_TRUE@bambam_test_CFLAGS = $(AM_CFLAGS) $(BAMBAMC_INCL)
@@ -2275,7 +2291,6 @@ uninstall-am: uninstall-dist_dataDATA
 	mostlyclean-generic pdf pdf-am ps ps-am tags tags-recursive \
 	uninstall uninstall-am uninstall-dist_dataDATA
 
-                #regression_test.py #alignment_test.py
 #
 #bambam_test_CFLAGS = -I../src $(filter-out -std=%, $(BAMBAMC_CFLAGS))
 #bambam_test_LDFLAGS = $(BAMBAMC_LIBS)

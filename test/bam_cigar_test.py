@@ -106,23 +106,15 @@ def writeFASTAreadPairs(seqdat, filnamA, filnamB):
     oufilB.close()
     oufilA.close()
 
-def smalt_index(index_name, fasta_name, kmer, nskip):
-    from sys import exit
-    from subprocess import call
-
+def smalt_index(df, index_name, fasta_name, kmer, nskip):
     tup = (PROGNAM, 'index',
            '-k', '%i' % (int(kmer)),
            '-s', '%i' % (int(nskip)),
            index_name,
            fasta_name)
-    rv = call(tup)
-    if rv:
-        exit("ERROR when indexing, exited with code %i" % rv)
+    df.call(tup, "when indexing")
 
-def smalt_map(oufilnam, indexnam, readfil, format="sam", matefil=""):
-    from sys import exit
-    from subprocess import call
- 
+def smalt_map(df, oufilnam, indexnam, readfil, format="sam", matefil=""): 
     tup = [PROGNAM, 'map']
     
     tup.extend(
@@ -135,9 +127,7 @@ def smalt_map(oufilnam, indexnam, readfil, format="sam", matefil=""):
         tup.append(matefil)
         
     #print tup
-    rv = call(tup)
-    if rv:
-        exit("ERROR when mapping: exited with code %i" % (rv))  
+    df.call(tup, "when mapping")
 
 def samtools_bam2sam(infilnam, oufilnam):
     from sys import exit
@@ -198,8 +188,7 @@ def testSAMfilesAreIdentical(filnamA, filnamB):
     
     return okflg
 
-def checkSAMfile(readdat,samfilnam, xcig=False):
-    from sys import exit
+def checkSAMfile(df, readdat,samfilnam, xcig=False):
     from SAM import Sam, openFile
 
     sam = Sam()
@@ -214,16 +203,16 @@ def checkSAMfile(readdat,samfilnam, xcig=False):
         else:
             cigar = rdat[1][0]
         if sam.cigar != cigar:
-            exit("Unexpected CIGAR string. Got '%s' - expected '%s'" % (sam.cigar, cigar))
+            df.exitErr("Unexpected CIGAR string. Got '%s' - expected '%s'" % (sam.cigar, cigar))
         nmtag = sam.tags["NM"]
         if nmtag:
             tagstr = "NM:%s:%s" % nmtag
             if tagstr != rdat[2]:
-                exit("Unexpected tag '%s' (expected '%s')" % (tagstr, rdat[2]))
+                df.exitErr("Unexpected tag '%s' (expected '%s')" % (tagstr, rdat[2]))
         linctr = linctr + 1
 
     if linctr < len(readdat):
-        exit("CIGAR strings incomplete");
+        df.exitErr("CIGAR strings incomplete");
         
     infil.close()
     
@@ -237,7 +226,7 @@ if __name__ == '__main__':
 
     
     indexnam = df.addIndex(TMPFIL_PREFIX)
-    smalt_index(indexnam, reffilnam, KMER, NSKIP)
+    smalt_index(df, indexnam, reffilnam, KMER, NSKIP)
 
     readfilnam = df.addTMP(TMPFIL_PREFIX + "read.fa")
     mate1filnam = df.addTMP(TMPFIL_PREFIX_PAIRED + "mate1.fa")
@@ -265,34 +254,34 @@ if __name__ == '__main__':
     isOK = testSAMfilesAreIdentical(sambamnam, samoufilnam)
     if not isOK:
         exit("ERROR: SAM and BAM files differ!")
-    checkSAMfile(READSEQ, samoufilnam, xcig=False)
+    checkSAMfile(df, READSEQ, samoufilnam, xcig=False)
 
     # cigar strings without X for mismatch, paired reads
-    smalt_map(sam_paired_oufilnam, indexnam, mate1filnam, "sam", mate2filnam)
-    smalt_map(bam_paired_oufilnam, indexnam, mate1filnam, "bam", mate2filnam)
+    smalt_map(df, sam_paired_oufilnam, indexnam, mate1filnam, "sam", mate2filnam)
+    smalt_map(df, bam_paired_oufilnam, indexnam, mate1filnam, "bam", mate2filnam)
     samtools_bam2sam(bam_paired_oufilnam, sambam_paired_nam)
     isOK = testSAMfilesAreIdentical(sambam_paired_nam, sam_paired_oufilnam)
     if not isOK:
         exit("ERROR: SAM and BAM files differ for paired reads!")
-    checkSAMfile(READSEQ_PAIR,sam_paired_oufilnam, xcig=False)
+    checkSAMfile(df, READSEQ_PAIR,sam_paired_oufilnam, xcig=False)
 
     # cigar strings with X for mismatch
-    smalt_map(samoufilnam_x, indexnam, readfilnam, "sam:x")
-    smalt_map(bamoufilnam_x, indexnam, readfilnam, "bam:x")
+    smalt_map(df, samoufilnam_x, indexnam, readfilnam, "sam:x")
+    smalt_map(df, bamoufilnam_x, indexnam, readfilnam, "bam:x")
     samtools_bam2sam(bamoufilnam_x, sambamnam_x)
     isOK = testSAMfilesAreIdentical(sambamnam_x, samoufilnam_x)
     if not isOK:
         exit("ERROR: SAM and BAM files differ (CIGAR strings with X)!")
-    checkSAMfile(READSEQ, samoufilnam_x, xcig=True)
+    checkSAMfile(df, READSEQ, samoufilnam_x, xcig=True)
 
     # cigar strings with X for mismatch, paired reads
-    smalt_map(sam_paired_oufilnam, indexnam, mate1filnam, "sam:x", mate2filnam)
-    smalt_map(bam_paired_oufilnam, indexnam, mate1filnam, "bam:x", mate2filnam)
+    smalt_map(df, sam_paired_oufilnam, indexnam, mate1filnam, "sam:x", mate2filnam)
+    smalt_map(df, bam_paired_oufilnam, indexnam, mate1filnam, "bam:x", mate2filnam)
     samtools_bam2sam(bam_paired_oufilnam, sambam_paired_nam)
     isOK = testSAMfilesAreIdentical(sambam_paired_nam, sam_paired_oufilnam)
     if not isOK:
         exit("ERROR: SAM and BAM files differ for paired reads!")
-    checkSAMfile(READSEQ_PAIR,sam_paired_oufilnam, xcig=True)
+    checkSAMfile(df, READSEQ_PAIR,sam_paired_oufilnam, xcig=True)
 
     #print "Test ok."  
     df.cleanup()

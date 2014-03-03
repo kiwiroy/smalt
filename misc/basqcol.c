@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
     printf("# Overall minimum quality threshold applied: %hi\n", minbasq);
     minq_tot = minbasq;
   }
-  if (!(bqfp = basQualFreqCreate(minq_tot, maxq_tot - minq_tot + 1, maxlen_tot)))
+  if (!(bqfp = basQualFreqCreate(minq_tot, (uint8_t) (maxq_tot - minq_tot + 1), maxlen_tot)))
     ERRMSGNO(errmsgp, ERRCODE_NOMEM);
  
   printf("\nGetting base quality counts ...\n");

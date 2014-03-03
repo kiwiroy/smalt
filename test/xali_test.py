@@ -125,9 +125,8 @@ def refnoFromNam(refnam):
     m = REFNAMNO.search(refnam)
     return int(m.group(1))
 
-def checkSAM(filnam_sam, results):
+def checkSAM(df, filnam_sam, results):
     from SAM import Sam, openFile
-    from sys import exit
 
     sam = Sam()
     infil = openFile(filnam_sam, 'r')
@@ -136,22 +135,22 @@ def checkSAM(filnam_sam, results):
         sam.next(infil)
 
         if not sam.ok:
-            exit("ERROR: Could not parse file '%s'" % (filnam_sam))
+            df.exitErr("ERROR: Could not parse file '%s'" % (filnam_sam))
 
         refno = refnoFromNam(sam.rname)
         if refno != res[0]:
-            exit("ERROR: wrong reference sequence %i '%s' (target: %i)" % \
-                 (refno, sam.rname, res[0]))
+            df.exitErr("ERROR: wrong reference sequence %i '%s' (target: %i)" % \
+                       (refno, sam.rname, res[0]))
         if sam.pos != res[1]:
-            exit("ERROR: wrong reference position %i (target:%i)" % (sam.pos, res[1]))
+            df.exitErr("ERROR: wrong reference position %i (target:%i)" % (sam.pos, res[1]))
 
         if sam.cigar != res[2]:
-            exit("ERROR: wrong CIGAR string '%s' (target:'%s')" % (sam.cigar, res[2]))
+            df.exitErr("ERROR: wrong CIGAR string '%s' (target:'%s')" % (sam.cigar, res[2]))
 
         (typ, fld) = sam.tags["NM"]
         edist = int(fld)
         if edist != res[3]:
-            exit("ERROR: wrong edit distance %i (target: %i)" % (edist, res[3]))
+            df.exitErr("ERROR: wrong edit distance %i (target: %i)" % (edist, res[3]))
                           
     infil.close()
     return
@@ -170,11 +169,11 @@ if __name__ == '__main__':
     
     smalt_index(df, indexnam, reffilnam, KMER, NSKIP)
     smalt_map(df, samfilnam, indexnam, readfilnam)
-    checkSAM(samfilnam, RESULTS)
+    checkSAM(df, samfilnam, RESULTS)
     
     reverseComplement(df, readfilnam, rc_readfilnam)
     smalt_map(df, rc_samfilnam, indexnam, rc_readfilnam)
-    checkSAM(samfilnam, RESULTS)
+    checkSAM(df, samfilnam, RESULTS)
     
     df.cleanup()
     exit(0)

@@ -66,21 +66,30 @@ SMALT_SRC = ../src/smalt.c ../src/menu.c ../src/menu.h \
 
 SMALT_TEST_SRC = ${SMALT_SRC} ${SGM_SRC} ${ALI_SRC} tracker.c tracker.h
 
-TEST_DRIVERS = sequence_test.py consistentFR_test.py \
-		diffstr_test.py \
-		splitReads_test.py xali_test.py \
+TEST_DRIVERS =  splitReads_test.py \
 		results_split_test.py \
 		ioform_test.py ouform_cigar_test.py \
 		sample_test.py \
 		cigar_test.py \
 		mthread_test.py
-                #regression_test.py #alignment_test.py
+
 
 if WITH_TESTDRIVER
 TESTS_ENVIRONMENT = $(PYTHON)
 
+if WITH_TESTALL
+TESTS = sequence_test.py consistentFR_test.py \
+	diffstr_test.py \
+	#regression_test.py #alignment_test.py
+else
+TESTS =
+endif
 
-TESTS = ${TEST_DRIVERS}
+TESTS += ${TEST_DRIVERS}
+
+if WITH_BAMBAMC
+TESTS += xali_test.py
+endif
 
 if WITH_SAMTOOLS_EXEC
 TESTS += bam_cigar_test.py
@@ -90,31 +99,27 @@ else
 TESTS =
 endif
 
+
 ## distribute test drivers
-dist_data_DATA = ${TEST_DRIVERS} bam_cigar_test.py formats.py testdata.py
+dist_data_DATA = ${TEST_DRIVERS} bam_cigar_test.py xali_test.py formats.py testdata.py
 
-check_PROGRAMS = sequenceReadWrite_test sequenceCompress_test \
+check_PROGRAMS = sequenceReverseComplement_test
+if WITH_BAMBAMC
+check_PROGRAMS += smalt_Xali_test
+endif
+
+EXTRA_PROGRAMS = sequenceReadWrite_test sequenceCompress_test \
 		sequenceDeCompress_test \
-		sequenceReverseComplement_test \
 		diffstr_test \
-		smalt_Xali_test
-
-EXTRA_PROGRAMS = seqSetIO_test \
+		seqSetIO_test \
                 hashhit_test hashhit_track_test hashidx_test \
 		segment_test segment_simple_test \
 	        array_test diffstr_slice_test \
 		alignment_test \
-	        rmap_test smalt_test\
+	        rmap_test \
+		smalt_test \
 		smalt_basq basqual_test \
 	 	infmt_test
-
-if WITH_SAMTOOLS
-check_PROGRAMS += samtools_api_test
-endif
-
-if WITH_BAMBAMC
-check_PROGRAMS += bambam_test
-endif
 
 if WITH_ZLIB
 ZLIB_LDFLAG= -lz
@@ -122,11 +127,21 @@ else
 ZLIB_LDFLAG=
 endif
 
+
 if WITH_TESTALL
+
+check_PROGRAMS += ${EXTRA_PROGRAMS}
+
 if WITH_SIMD	
 check_PROGRAMS += swsimd_test # mergesort_test
 endif
-check_PROGRAMS += ${EXTRA_PROGRAMS}
+if WITH_SAMTOOLS
+check_PROGRAMS += samtools_api_test
+endif
+if WITH_BAMBAMC
+check_PROGRAMS += bambam_test
+endif
+
 endif
 
 ## test routines for array.c
@@ -147,16 +162,16 @@ diffstr_test_SOURCES = diffstr_test.c ../src/diffstr.c ../src/diffstr.h ../src/e
 #endif
 
 ## test routines for sequence.c
-sequenceReadWrite_test_SOURCES = sequenceReadWrite_test.c
+nodist_sequenceReadWrite_test_SOURCES = sequenceReadWrite_test.c
 sequenceReadWrite_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
 
 sequenceReverseComplement_test_SOURCES = sequenceReverseComplement_test.c
 sequenceReverseComplement_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
 
-sequenceCompress_test_SOURCES = sequenceCompress_test.c
+nodist_sequenceCompress_test_SOURCES = sequenceCompress_test.c
 sequenceCompress_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
 
-sequenceDeCompress_test_SOURCES = sequenceDeCompress_test.c
+nodist_sequenceDeCompress_test_SOURCES = sequenceDeCompress_test.c
 sequenceDeCompress_test_LDADD = $(SEQ_LIB) $(ZLIB_LDFLAG)
 
 nodist_seqSetIO_test_SOURCES = seqSetIO_test.c
@@ -208,11 +223,13 @@ rmap_test_LDADD = $(SGM_LIB) $(BAMBAMC_DEPS) -lm $(ZLIB_LDFLAG)
 rmap_test_LDFLAGS = $(BAMBAMC_LDFLG)
 
 # test splitting of alignments across neighbouring reference sequences
+if WITH_BAMBAMC
 smalt_Xali_test_SOURCES = ${SMALT_SRC}
 smalt_Xali_test_CFLAGS = $(AM_CFLAGS) $(SIMD_INTRINS_FLAGS) $(BAMBAMC_INCL)
 smalt_Xali_test_CPPFLAGS = -DSMALT_DEBUG_XALI
 smalt_Xali_test_LDADD = $(SGM_LIB) $(BAMBAMC_DEPS) -lm -lpthread $(ZLIB_LDFLAG)
 smalt_Xali_test_LDFLAGS =  $(APPLELDFLAGS) $(BAMBAMC_LDFLG)
+endif
 
 # testing smalt with simulated reads (not distributed)
 nodist_smalt_test_SOURCES = ${SMALT_TEST_SRC}
@@ -248,7 +265,7 @@ infmt_test_LDADD = $(SEQ_LIB) $(BAMBAMC_DEPS)
 
 # optional samtools api
 if WITH_SAMTOOLS
-samtools_api_test_SOURCES = samtools_api_test.c ../src/elib.c ../src/elib.h
+nodist_samtools_api_test_SOURCES = samtools_api_test.c ../src/elib.c ../src/elib.h
 samtools_api_test_CFLAGS = $(AM_CFLAGS) $(SAMTOOLS_CFLAGS)
 samtools_api_test_LDFLAGS = $(SAMTOOLS_LDFLAGS)
 samtools_api_test_LDADD =  $(SAMTOOLS_DEPS)
@@ -257,7 +274,7 @@ endif
 # optional libary for reading/writing BAM/SAM by German Tischler
 # has to be linked with g++
 if WITH_BAMBAMC
-bambam_test_SOURCES = bambam_test.c ../src/elib.c ../src/elib.h
+nodist_bambam_test_SOURCES = bambam_test.c ../src/elib.c ../src/elib.h
 # Dummy C++ source to cause C++ linking.
 #nodist_EXTRA_bambam_test_SOURCES = dummy.cxx
 bambam_test_CFLAGS = $(AM_CFLAGS) $(BAMBAMC_INCL)

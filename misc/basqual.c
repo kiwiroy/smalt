@@ -364,7 +364,7 @@ int basQualFreqSum(BasQualFreq_t *bqfp)
 int basQualFreqSimulate(char *qualp, uint32_t len, const BasQualFreq_t *bqfp)
 {
   int i, j, nq = (int) bqfp->nq;
-  unsigned char qbas = bqfp->qmin + SEQCOD_QVAL_OFFS;
+  unsigned char qbas = (unsigned char) (bqfp->qmin + SEQCOD_QVAL_OFFS);
   uint32_t r, bs, bt;
   uint64_t sum, pivot;
 
@@ -373,13 +373,13 @@ int basQualFreqSimulate(char *qualp, uint32_t len, const BasQualFreq_t *bqfp)
   
   /* sample start base quality from empirical distribution */
   sum=0;
-  pivot = bqfp->q0s*DRAW_UNIFORM_1();
+  pivot = (uint64_t) (bqfp->q0s*DRAW_UNIFORM_1());
   for (i=0; i<bqfp->nq; i++) {
     sum += bqfp->q0p[i];
     if (sum > pivot)
       break;
   }
-  qualp[0] = (char) i + qbas;
+  qualp[0] = (char) (i + qbas);
   
   /* sample the subsequent base qualities from empirical transition
    * distributions */
@@ -397,7 +397,7 @@ int basQualFreqSimulate(char *qualp, uint32_t len, const BasQualFreq_t *bqfp)
 #endif
     
     if (bqfp->qsp[bs] > 0) {
-      pivot = bqfp->qsp[bs]*DRAW_UNIFORM_1();
+      pivot = (uint64_t) (bqfp->qsp[bs]*DRAW_UNIFORM_1());
       sum = 0;
       for (j=0; j<nq; j++) {
 	sum += bqfp->qtp[bt+j];
@@ -405,10 +405,10 @@ int basQualFreqSimulate(char *qualp, uint32_t len, const BasQualFreq_t *bqfp)
 	  break;
       }
       if (j >= nq) j = nq - 1;
-      qualp[r] = (char) j + qbas;
+      qualp[r] = (char) (j + qbas);
       i = j;
     } else { /* if there are no counts for this base quality choose the same base quality */
-      qualp[r] = (char) i + qbas;
+      qualp[r] = (char) (i + qbas);
     }
   }
   qualp[r] = '\0';
@@ -458,8 +458,8 @@ int basQualFindExtrema(SeqIO *sifp, SeqFastq *sqbufp, uint64_t *nreads,
     rctr++;
   }
   if (q_max >= q_min) {
-    if (maxq) *maxq = q_max - SEQCOD_QVAL_OFFS;
-    if (minq) *minq = q_min - SEQCOD_QVAL_OFFS;
+    if (maxq) *maxq = (uint8_t) (q_max - SEQCOD_QVAL_OFFS);
+    if (minq) *minq = (uint8_t) (q_min - SEQCOD_QVAL_OFFS);
   }
   if (len_max >= len_min) {
     if (maxlen) *maxlen = len_max;
