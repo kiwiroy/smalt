@@ -63,7 +63,7 @@ AC_ARG_ENABLE([mic],
 	      [compile for Many Integrated Core Architecture])],
 	      AS_IF([test $CC = "icc"], [for_intel_mic=$enableval], [for_intel_mic=no]),
 	      [for_intel_mic=no])
-AS_ECHO($for_intel_mic)
+#AS_ECHO($for_intel_mic)
 # Checks for libraries.
 
 # optional: samtools built as library libbam
@@ -150,7 +150,7 @@ AS_IF([test x$for_intel_mic = xno],
 	      		      [withzlib=false],) ],
            [withzlib=false;]
 )
-AS_ECHO([x$withzlib])
+#AS_ECHO([x$withzlib])
 # POSIX threads API with only named but not unnamed semaphores (MacOSX)
 #AC_CHECK_LIB
 #	(
@@ -180,13 +180,13 @@ AS_IF([test x$for_intel_mic = xyes],
          [])],
       [withintrin=false;]
 )
-AS_ECHO($withintrin)
+#AS_ECHO($withintrin)
 # recogising the emmintrin.h header (some gcc versions require '-msse2' set)
 AS_IF([test x$withintrin = xtrue],
       [withsse2=false],
       AC_CHECK_HEADERS([emmintrin.h], [withsse2=true], [withsse2=false], [])
 )
-AS_ECHO($withsse2)
+#AS_ECHO($withsse2)
 #establish 32-bit vs 64-bit -> $host_cpu
 AC_CANONICAL_HOST
 #AS_ECHO($host)
