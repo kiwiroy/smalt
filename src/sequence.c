@@ -59,7 +59,7 @@ enum SEQ_CONSTANTS {
   MAXLEN_HEADER    = 2048,       /* maximum header length */
   MAXN_PER_UNIT    = 10,         /* number of bases per 32-bit unit (3-bit code) */
   MAXN_TERMCHAR    = 8,          /* maximum number of termination characters in a sequence */
-  MINBLOCKSIZE     = 1024*1024,  /* minimum block size for memory allocation */
+  SEQ_BLKSZ_DEFAULT= 256,        /* minimum block size for memory allocation of sequences */
   LINEWIDTH_DEFAULT= 60,
   LINBUFSIZ = 1024,              /**< default size of line buffer for reading */
   SEQ_MAXLEN = UINT32_MAX
@@ -75,7 +75,7 @@ enum SEQCOD_CONST {
 };
 
 enum SEQSET_CONST {
-  SEQSET_BLOCKSIZ_DEFAULT = 128,     /**< default blocksize for memory allocation in SeqSet */
+  SEQSET_BLOCKSIZ_DEFAULT = 4096,    /**< default blocksize for memory allocation in SeqSet */
   SEQSET_NAMBLOCKSIZ_DEFAULT = 1024, /**< default blocksize for memory allocation in SeqSet */
   SEQSET_FORMAT_VERSION = 4,         /**< file format version */
   SEQSET_HEADLEN = 8,                /**< number of UINT32 fields of the file header */
@@ -721,9 +721,10 @@ static SEQSEQ *createSeq(uint32_t blocksize)
   SEQSEQ *sp;
 
   EMALLOCP0(sp);
-  if (sp == NULL) return NULL;
+  if (sp == NULL) 
+    return NULL;
 
-  if (blocksize < 1) blocksize = MINBLOCKSIZE;
+  if (blocksize < 1) blocksize = SEQ_BLKSZ_DEFAULT;
   ECALLOCP(blocksize, sp->basep);
   
   if (sp->basep == NULL) {
@@ -1778,7 +1779,7 @@ SeqFastq *seqFastqCreate(int blocksize, char type)
   EMALLOCP0(sqp);
   if (sqp == NULL) return NULL;
   sqp->type = (type == SEQTYP_FASTA || type == SEQTYP_FASTQ)? type: SEQTYP_UNKNOWN;
-  if (blocksize < 1) blocksize = MINBLOCKSIZE;
+  if (blocksize < 1) blocksize = SEQ_BLKSZ_DEFAULT;
   if (!(sqp->headp = createSeq(BLOCKSIZE_HEADER)) ||
       !(sqp->datap = createSeq(blocksize)) ||
       (type == SEQTYP_FASTQ &&
@@ -2285,9 +2286,9 @@ SeqSet *seqSetCreate(int blocksiz, UCHAR_t flags)
   if (!ssp) return 0;
 
   ssp->statusflag = flags;
-  ssp->sqp = createSeq(MINBLOCKSIZE);
+  ssp->sqp = createSeq(blocksiz);
   if ((flags & SEQSET_BASQUAL))
-    ssp->qqp = createSeq(MINBLOCKSIZE);
+    ssp->qqp = createSeq(blocksiz);
     
   ECALLOCP(blocksiz, ssp->sop);
   ECALLOCP(blocksiz, ssp->namoffs);
