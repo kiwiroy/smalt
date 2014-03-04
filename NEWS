@@ -2,6 +2,14 @@
 = SMALT release history =
 =========================
 
+Version 0.7.5.4 (4 March 2014)
+==============================
+
+- Fixed overcommitted memory in multi-threaded mode.
+
+- Re-organised distributed tests.
+
+
 Version 0.7.5.3 (3 March 2014)
 ==============================
 
