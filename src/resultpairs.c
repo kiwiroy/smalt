@@ -386,8 +386,8 @@ static int getMATEPAIRcbf_InnerLoop(int *errcode, void *argp, const Result *rp)
 
   mp->flag = resultCalcInsertSize(&mp->ins, RSLTSAMSPEC_V1P4, mp->ap, mp->bp);
   if ((mp->flag & RSLTPAIRMAPFLG_SAMECONTIG)) { /* on the same contig */
-    mp->mapflg |= testProperPair(mp->ins, mp->flag, pairp->dmin, pairp->dmax, 
-				 p->pairlibcode);
+    mp->mapflg = (MAPFLG_t) (mp->mapflg | testProperPair(mp->ins, mp->flag, pairp->dmin, pairp->dmax, 
+							 p->pairlibcode));
     if ((mp->mapflg & MAPFLG_WITHIN)) {
       pairp->n_within++;
       if ((mp->mapflg & MAPFLG_PROPER))
@@ -494,6 +494,7 @@ static void fprintOFFSIVAL(FILE *fp, const OFFSIVALARR oivr)
 /******************************************************************************
  *********************** Private Methods of Type MATEPAIR *********************
  ******************************************************************************/
+#ifdef RESULTPAIRS_SUPERFLUOUS
 static int cmpMATEPAIRbyScoreDescending(const void *ap, const void *bp)
 {
   int32_t a = ((MATEPAIR *) ap)->mscor;
@@ -504,20 +505,21 @@ static int cmpMATEPAIRbyScoreDescending(const void *ap, const void *bp)
   return 0;
 }
 
-static int cmpMATEPAIRbyProbDescending(const void *ap, const void *bp)
+static int cmpMATEPAIRbyCategoryDescending(const void *ap, const void *bp)
 {
-  double const a = ((MATEPAIR *) ap)->pbf;
-  double const b = ((MATEPAIR *) bp)->pbf;
+  UCHAR_t a = ((MATEPAIR *) ap)->cls;
+  UCHAR_t b = ((MATEPAIR *) bp)->cls;
   if (a > b)
     return -1;
   if (a < b) return 1;
   return 0;
 }
+#endif
 
-static int cmpMATEPAIRbyCategoryDescending(const void *ap, const void *bp)
+static int cmpMATEPAIRbyProbDescending(const void *ap, const void *bp)
 {
-  UCHAR_t a = ((MATEPAIR *) ap)->cls;
-  UCHAR_t b = ((MATEPAIR *) bp)->cls;
+  double const a = ((MATEPAIR *) ap)->pbf;
+  double const b = ((MATEPAIR *) bp)->pbf;
   if (a > b)
     return -1;
   if (a < b) return 1;
@@ -561,7 +563,7 @@ static int findProperMATEPAIR(ResultPairs * const pairp,
 
   return errcode;
 }
-
+#ifdef RESULTPAIRS_SUPERFLUOUS
 static int findMatePairWithinRange(short *px, int *n_proper, int dmin, int dmax, int idxno,
 				   RSLTPAIRLIB_t pairlibcode,
 				   const MATEPAIRARR mpr)
@@ -598,11 +600,12 @@ static int findMatePairWithinRange(short *px, int *n_proper, int dmin, int dmax,
     }
   }
   
-  if (px) *px = (npr != 1 && idxno < 0)? -1: idx;
+  if (px) *px = (short) ((npr != 1 && idxno < 0)? -1: idx);
   if (n_proper) *n_proper = npr;
 
   return n;
 }
+#endif
 
 #ifdef results_pairscor_stats
 static int getNumberOfProperPairs(int *n_proper, const MATEPAIRARR mpr)
@@ -674,7 +677,7 @@ static int fprintMatePairStats(FILE *fp, const MATEPAIRARR mpr,
 /******************************************************************************
  *********************** Pivate Methods of Type ResultPairs *******************
  ******************************************************************************/
-
+#ifdef RESULTPAIRS_SUPERFLUOUS
 static int getPairNumbersAndSortByCategory(int *n_proper, int *n_within, const ResultPairs *p)
 /**< Return the number of all pairs, n_proper and n_within can be NULL 
  * Assign PAIR_CATEGORIES and sort according to those (proper pairs first)
@@ -709,6 +712,7 @@ static int getPairNumbersAndSortByCategory(int *n_proper, int *n_within, const R
 
   return n_pairs;
 }
+#endif
 
 static void resetPairs(ResultPairs *p)
 {
@@ -823,14 +827,14 @@ static int assignProbabilityToPairs(MATEPAIRARR mpr,
 
 static int scorePairsSimple(const Result **ap,
 			    const Result **bp,
-			    int *mapqA,
-			    int *mapqB,
+			    short *mapqA,
+			    short *mapqB,
 			    MAPFLG_t *mapflg,
 			    int *nmax,
 			    MATEPAIRARR mpr,
 			    RSLTPAIRFLG_t pairflg,
 			    const InsHist *ihistp,
-			    RSLTFLG_t rsltflg,
+			    RESULTOUTFLG_t rsltouflg,
 			    const ResultSet *rsrp,
 			    const ResultSet *rsmp)
 /**< Select a pair and assign scores to it.
@@ -839,7 +843,7 @@ static int scorePairsSimple(const Result **ap,
  * \param mapflg returns MAPFLG_MULT1ST |  MAPFLG_MULT2ND if degenerate mapping or 0.
  * \param mpr Set of pairs to be considered.
  * \param pairflg Combination of  RSLTPAIR_FLAG bit flags.
- * \param rsltflg combination of  RESULTSET_OUTPUT_FLAGS. If (rsltflg & RESULTFLG_RANDSEL) != 0
+ * \param rsltouflg combination of  RESULTSET_OUTPUT_FLAGS. If (rsltouflg & RESULTFLG_RANDSEL) != 0
  *        make a random selection if there are multiple possible mappings.
  * \param rsrp Mapping results for 1st mate.
  * \param rsmp Mapping results of 2nd mate.
@@ -889,8 +893,8 @@ static int scorePairsSimple(const Result **ap,
   
   if (n_pairs == 0) {
     /* replace resultSetGetTopIndex for getTopResult */
-    *ap = resultSetGetTopResult(mapflg, rsltflg & RESULTFLG_RANDSEL, rsrp);
-    *bp = resultSetGetTopResult(mapflg, rsltflg & RESULTFLG_RANDSEL, rsmp);
+    *ap = resultSetGetTopResult(mapflg,(unsigned char)((rsltouflg & RESULTFLG_RANDSEL) != 0), rsrp);
+    *bp = resultSetGetTopResult(mapflg, (unsigned char)((rsltouflg & RESULTFLG_RANDSEL) != 0), rsmp);
     return ERRCODE_SUCCESS;
   } 
 
@@ -919,9 +923,9 @@ static int scorePairsSimple(const Result **ap,
   if (maxprob <= 0.6 && n_pairs > 1) {
     /* make a random selection */
     *mapflg = MAPFLG_MULT1ST | MAPFLG_MULT2ND;
-    if ((rsltflg & RESULTFLG_RANDSEL))
+    if ((rsltouflg & RESULTFLG_RANDSEL))
       mp = drawPairAtRandomByProbability(mpr); 
-    else if (!(rsltflg & RESULTFLG_SINGLE)) 
+    else if (!(rsltouflg & RESULTFLG_SINGLE)) 
       mp = mpr;
     else 
       mp = NULL;
@@ -931,7 +935,8 @@ static int scorePairsSimple(const Result **ap,
 
   *ap = mp->ap;
   *bp = mp->bp;
-  *mapflg |= mp->mapflg;
+  *mapflg = (MAPFLG_t) (*mapflg | mp->mapflg);
+  /* *mapflg |= mp->mapflg; results in warnings by the intel compiler 10.1 */
   /* calculate marginals for each mate */      
   for (i=0; i<n_pairs; i++) {
     if (mpr[i].ap == mp->ap) {
@@ -945,7 +950,7 @@ static int scorePairsSimple(const Result **ap,
 
   return ERRCODE_SUCCESS;
 }
-
+#ifdef RESULTPAIRS_SUPERFLUOUS
 static int flagOutPairsWithDoubleFragments(const ResultPairs *pairp,
 					   const ResultSet *rsrp, 
 					   const ResultSet *rsmp)
@@ -998,11 +1003,12 @@ static int flagOutPairsWithDoubleFragments(const ResultPairs *pairp,
 
   return ERRCODE_SUCCESS;
 }
+#endif
 
 static int addPairResultsToReport(Report *rep, 
 				  const MAPFLG_t mapflg, REPMATEFLG_t repmateflg,
-				  const Result *rp, int mapqA, const ResultSet *rsrp, 
-				  const Result *mp, int mapqB, const ResultSet *rsmp) 
+				  const Result *rp, short mapqA, const ResultSet *rsrp, 
+				  const Result *mp, short mapqB, const ResultSet *rsmp) 
 {
   int errcode;
   int isize = 0;
@@ -1032,7 +1038,7 @@ static int addPairResultsToReport(Report *rep,
   }   
 
   /* print 1st mate */
-  rmAflg = repmateflg & ~REPMATEFLG_2NDMATE;
+  rmAflg = (REPMATEFLG_t) (repmateflg & ~REPMATEFLG_2NDMATE);
   if (mapflg & MAPFLG_MULT1ST)
     rmAflg |= REPMATEFLG_MULTI;
   if ((errcode = resultSetAddResultToReport(rep,
@@ -1045,7 +1051,7 @@ static int addPairResultsToReport(Report *rep,
     return errcode;
 
   /* print 2nd mate */
-  rmBflg = repmateflg | REPMATEFLG_2NDMATE;
+  rmBflg = (REPMATEFLG_t) (repmateflg | REPMATEFLG_2NDMATE);
   if (mapflg & MAPFLG_MULT2ND)
     rmBflg |= REPMATEFLG_MULTI;
   if ((errcode = resultSetAddResultToReport(rep,
@@ -1217,32 +1223,32 @@ int resultSetAddPairToReport(Report *rep,
 			     const InsHist *ihistp,
 			     const ResultPairs *pairp,
 			     RSLTPAIRFLG_t pairflg,
-			     RSLTFLG_t rsltflg,
+			     RESULTOUTFLG_t rsltouflg,
 			     const ResultSet *rsrp,
 			     const ResultSet *rsmp
 			     )
 {
   int errcode = ERRCODE_SUCCESS;
   int n_max = 0;
-  int mapqA, mapqB;
+  short mapqA, mapqB;
   MAPFLG_t mapflg = 0;
   REPMATEFLG_t repmateflg = REPMATEFLG_PAIRED;
   const Result *ap = NULL, *bp = NULL;
 
 #ifdef results_debug
-  printf("resultSetPrintPair: dmin=%i, dmax=%i, paiflg=%i, rsltflg=%i\n",
-	 pairp->dmin, pairp->dmax, (int) pairflg, (int) rsltflg);
+  printf("resultSetPrintPair: dmin=%i, dmax=%i, paiflg=%i, rsltouflg=%i\n",
+	 pairp->dmin, pairp->dmax, (int) pairflg, (int) rsltouflg);
 #endif
   //flagOutPairsWithDoubleFragments(pairp, rsrp, rsmp);
 
   if ((errcode = scorePairsSimple(&ap, &bp, &mapqA, &mapqB,
 				  &mapflg, &n_max, pairp->mpr,
 				  pairflg, ihistp,
-				  rsltflg,
+				  rsltouflg,
 				  rsrp, rsmp)))
     return errcode;
      
-  if (n_max > 1 && !(rsltflg&RESULTFLG_RANDSEL) && (rsltflg&RESULTFLG_SINGLE)) {
+  if (n_max > 1 && !(rsltouflg&RESULTFLG_RANDSEL) && (rsltouflg&RESULTFLG_SINGLE)) {
     /* report only unique mate */
     unsigned char isMultiA, isMultiB;
     ap = resultSetGetTopResult(&isMultiA, 0, rsrp);
@@ -1261,20 +1267,22 @@ int resultSetAddPairToReport(Report *rep,
   }
 
   if ((errcode = addPairResultsToReport(rep, mapflg, 
-					repmateflg | REPMATEFLG_PRIMARY, 
+					(REPMATEFLG_t) (repmateflg | 
+							REPMATEFLG_PRIMARY), 
 					ap, mapqA, rsrp, 
 					bp, mapqB, rsmp)))
     return errcode;
   if ((mapflg & (MAPFLG_MULT1ST | MAPFLG_MULT2ND)) && 
-      !(rsltflg&RESULTFLG_RANDSEL) && 
-      !(rsltflg&RESULTFLG_SINGLE)) {
+      !(rsltouflg&RESULTFLG_RANDSEL) && 
+      !(rsltouflg&RESULTFLG_SINGLE)) {
     int i;
     for (i=0; i<n_max; i++) {
       MATEPAIR *mp = pairp->mpr + i;
       if (mp->ap != ap || mp->bp != bp) {
-	MAPFLG_t mflg = mp->mapflg | (mapflg & (MAPFLG_MULT1ST | MAPFLG_MULT2ND));
+	MAPFLG_t mflg = (MAPFLG_t) (mp->mapflg | (mapflg & (MAPFLG_MULT1ST | MAPFLG_MULT2ND)));
 	if ((errcode = addPairResultsToReport(rep, mflg, 
-					      repmateflg | REPMATEFLG_PRIMARY, 
+					      (REPMATEFLG_t) (repmateflg | 
+							      REPMATEFLG_PRIMARY), 
 					      mp->ap, mapqA, rsrp, 
 					      mp->bp, mapqB, rsmp)))
 	  return errcode;
@@ -1283,16 +1291,19 @@ int resultSetAddPairToReport(Report *rep,
   }
 
   /* secondary alignments */
-  if ((rsltflg&RESULTFLG_BEST) && (rsltflg&RESULTFLG_SPLIT)) {
+  if ((rsltouflg&RESULTFLG_BEST) && (rsltouflg&RESULTFLG_SPLIT)) {
     if ((errcode = resultSetAdd2ndaryResultsToReport(rep, 
-						     repmateflg | REPMATEFLG_PARTIAL,
-						     rsltflg,
+						     (REPMATEFLG_t) (repmateflg | 
+								     REPMATEFLG_PARTIAL),
+						     rsltouflg,
 						     rsrp)))
       return errcode;
    
   if ((errcode = resultSetAdd2ndaryResultsToReport(rep, 
-						   repmateflg | REPMATEFLG_PARTIAL | REPMATEFLG_2NDMATE, 
-						   rsltflg,
+						   (REPMATEFLG_t) (repmateflg | 
+								   REPMATEFLG_PARTIAL | 
+								   REPMATEFLG_2NDMATE), 
+						   rsltouflg,
 						   rsmp)))
       return errcode;
   }

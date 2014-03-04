@@ -172,6 +172,7 @@ inline static int writeCigarToStr(void *top, CIGTYP_t cigtyp, char typc, int ctr
     sprintf((char *)top, "%c", typc);
 }
 
+#ifdef DIFFSTR_SUPERFLUOUS
 static int writeCigarToDiffView(void *top, CIGTYP_t cigtyp, char typc, int ctr)
 {
   int nchar = 0;
@@ -184,7 +185,7 @@ static int writeCigarToDiffView(void *top, CIGTYP_t cigtyp, char typc, int ctr)
 
   return nchar;
 }
-
+#endif
 /******************************************************************************
  ********************* Private Methods of Type DIFFBUFF ***********************
  ******************************************************************************/

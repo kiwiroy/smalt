@@ -113,7 +113,8 @@ extern "C"
    ****************************************************************************/
 
   typedef uint8_t RESULTOUTFLG_t; /**< Holds a combination of RESULT_OUTPUT_FLAGS */
-  typedef uint16_t RSLTFLG_t;     /**< Holds a combination of RESULT_STATUS_FLAGS */
+  typedef uint16_t RSLTFLG_t;     /**< Holds a combination of RESULT_STATUS_FLAGS, 
+				   * definition of INTERVALFLG_t must be identical */
   typedef uint8_t RSLTPAIRMAPFLG_t; /**< Holds a combination of RESULT_PAIRMAP_FLAGS */
   /****************************************************************************
    ***************************** Opaque Types *********************************
@@ -148,7 +149,7 @@ extern "C"
    ********************************* Methods **********************************
    ****************************************************************************/
 
-  int resultConvertProbabilityToMappingScore(double p);
+  short resultConvertProbabilityToMappingScore(double p);
   /**< Return a mapping quality score */
 
   /****************************************************************************
@@ -483,7 +484,7 @@ extern "C"
   
   int resultSetAddResultToReport(Report *rep,
 				 int pairid,
-				 int mapscor,
+				 short mapscor,
 				 REPMATEFLG_t mateflg,
 				 REPPAIRFLG_t pairflg,
 				 int isize,

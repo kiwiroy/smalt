@@ -108,7 +108,7 @@ typedef struct _SmaltMapConst { /**< Constant Arguments for mapping function (fo
   char subprogtyp;     /**< One of MENU_SUBPROG */
   uint8_t inform;      /**< One of MENU_INPUT_FORMATS */
   RMAPFLG_t rmapflg;   /**< Flags tuning mapping strategies (combination of RMAP_FLAGS) */
-  uint8_t rsltflg;     /**< Output flags (combination of RESULTSET_OUTPUT_FLAGS) */
+  RESULTOUTFLG_t rsltouflg;/**< Output flags (combination of RESULTSET_OUTPUT_FLAGS) */
   const char *oufilnam;/**< File name for output */
   REPOUFMT_t outform;     /**< Output format (one of REPORT_OUTPUT_FORMATS) */
   REPMODIFLG_t oumodflg;   /**< Combination of REPORT_MODIFIER_FLAGS */
@@ -206,7 +206,7 @@ static const char smalt_helper_oufilnam_fmt[] = "smalt_%2.2i.bin";
 /*****************************************************************************
  ****************************** misc routines ********************************
  *****************************************************************************/
-REPOUFMT_t convertOutputFormat(REPMODIFLG_t *modiflg, uint8_t form, const MenuOpt *mp)
+static REPOUFMT_t convertOutputFormat(REPMODIFLG_t *modiflg, uint8_t form, const MenuOpt *mp)
 {
   char rv;
   switch (form) {
@@ -244,7 +244,7 @@ REPOUFMT_t convertOutputFormat(REPMODIFLG_t *modiflg, uint8_t form, const MenuOp
   return rv;
 }
 
-INFMT_t convertInputFormat(unsigned char form)
+static INFMT_t convertInputFormat(unsigned char form)
 {
   INFMT_t rv;
   switch (form) {
@@ -270,7 +270,7 @@ static int selectHashTyp(uint8_t *typ, uint8_t *nbits_key, uint8_t *nbits_perf,
 			 const SeqSet *ssp)
 {
   SEQNUM_t nseq;
-  short nbk = wordlen<<1;
+  unsigned short nbk = (unsigned short)(wordlen<<1);
   size_t ntup;
   const SETSIZ_t *offsp;
   uint64_t nkey;
@@ -278,6 +278,9 @@ static int selectHashTyp(uint8_t *typ, uint8_t *nbits_key, uint8_t *nbits_perf,
   *nbits_key = 0;
   *nbits_perf = 0;
   *typ = HASHIDXTYP_PERFECT;
+
+  if (nbk > 63)
+    return ERRCODE_MAXKTUP;
 
   if (nskip < 1) 
     nskip = 1;
@@ -295,19 +298,19 @@ static int selectHashTyp(uint8_t *typ, uint8_t *nbits_key, uint8_t *nbits_perf,
     *typ = HASHIDXTYP_HASH32MIX;
    
     /* calculate last_b as the smallest 2^last_b > 2*ntup */
-    last_b = (ntup & 0x01)? 1:0;
+    last_b = (uint8_t) ((ntup & 0x01)? 1:0);
     for (t=ntup, i=0; i<32; i++) {
       t = t>>1;
       if (t&1)
 	last_b = i;
     }
     if ((last_b & 1))
-      *nbits_key = last_b + 1;
+      *nbits_key = (uint8_t) (last_b + 1);
     else 
       *nbits_key = last_b;
 
     if (nbk > SMALT_UINT32_NBITS) {
-      *nbits_perf = nbk - SMALT_UINT32_NBITS;
+      *nbits_perf = (uint8_t) (nbk - SMALT_UINT32_NBITS);
       if (*nbits_perf > SMALT_MAXNBITS_PERF)
 	return ERRCODE_MAXKTUP;
     } else {
@@ -315,11 +318,11 @@ static int selectHashTyp(uint8_t *typ, uint8_t *nbits_key, uint8_t *nbits_perf,
     }
 
     if (*nbits_key + *nbits_perf > SMALT_MAXNBITS_KEY) {
-      *nbits_key = SMALT_MAXNBITS_KEY - *nbits_perf;
+      *nbits_key = (uint8_t) (SMALT_MAXNBITS_KEY - *nbits_perf);
     }
 
     if (*nbits_key < *nbits_perf + SMALT_NBITS_KEY_MARG)
-      *nbits_key = *nbits_perf + SMALT_NBITS_KEY_MARG;
+      *nbits_key = (uint8_t) (*nbits_perf + SMALT_NBITS_KEY_MARG);
 
     if (*nbits_key > SMALT_MAXNBITS_KEY)
       *nbits_key = SMALT_MAXNBITS_KEY;
@@ -460,7 +463,7 @@ static int initMapConst(SmaltMapConst *smcp,
   nthreads = menuGetNumberOfThreads(menup);
   if (nthreads > SMALT_MAX_THREAD_NUM)
     nthreads = SMALT_MAX_THREAD_NUM;
-  smcp->threadblksz = (nthreads > 0)? nthreads*SMALT_NARGS_PER_THREAD: 1;
+  smcp->threadblksz = (short) ((nthreads > 0)? nthreads*SMALT_NARGS_PER_THREAD: 1);
 
   if((errcode = menuGetMapParams(menup, &indexnam, 
 				 &smcp->nhitmax_tuple, &smcp->tupcovmin,
@@ -490,12 +493,12 @@ static int initMapConst(SmaltMapConst *smcp,
     smcp->oumodflg |= REPORTMODIF_ALIOUT;
 
   if (!(swatscordiff)) {
-    smcp->rsltflg |= RESULTFLG_BEST;
+    smcp->rsltouflg |= RESULTFLG_BEST;
     smcp->rmapflg |= RMAPFLG_BEST;
     if (!(smcp->menuflg & MENUFLAG_RELSCOR)) {
-      smcp->rsltflg |= RESULTFLG_SINGLE;
+      smcp->rsltouflg |= RESULTFLG_SINGLE;
       if (smcp->menuflg & MENUFLAG_RANDREPEAT) {
-	smcp->rsltflg |= RESULTFLG_RANDSEL;
+	smcp->rsltouflg |= RESULTFLG_RANDSEL;
 	RANSEED(seed);
       }
     }
@@ -504,7 +507,7 @@ static int initMapConst(SmaltMapConst *smcp,
   if (smcp->menuflg&MENUFLAG_SPLITREAD) {
     smcp->rmapflg |= RMAPFLG_SPLIT | RMAPFLG_NOSHRTINFO | RMAPFLG_SENSITIVE;
     //smcp->rmapflg &= ~RMAPFLG_BEST;
-    smcp->rsltflg |= RESULTFLG_SPLIT;
+    smcp->rsltouflg |= RESULTFLG_SPLIT;
   } 
 
   if (smcp->menuflg&MENUFLAG_COMPLEXW)
@@ -882,8 +885,9 @@ static int initArgBlock(void *ap, const void *ip, short argno)
   short i;
   SmaltArgBlock *blockp = (SmaltArgBlock *) ap;
   const SmaltMapConst *mcp = (const SmaltMapConst *) ip;
-  uint8_t prep_paired = (mcp->rmapflg & RMAPFLG_PAIRED) || 
-    mcp->inform == MENU_INFORM_SAM || mcp->inform == MENU_INFORM_BAM;
+  uint8_t prep_paired = (uint8_t) ((mcp->rmapflg & RMAPFLG_PAIRED) || 
+				   mcp->inform == MENU_INFORM_SAM ||
+				   mcp->inform == MENU_INFORM_BAM);
   
   blockp->argno = argno;
   blockp->n_iobf = 0;
@@ -1154,7 +1158,7 @@ static int processMapArgs(ErrMsg *errmsgp,
 	     (int) covermin_tuple, (int) covermin_tuple_mate,
 	     macop->min_swatscor, macop->minbasq,
 	     SMALT_TARGET_DEPTH, SMALT_MAX_DEPTH,
-	     macop->rmapflg | RMAPFLG_PAIRED,
+	     (RMAPFLG_t) (macop->rmapflg | RMAPFLG_PAIRED),
 	     macop->scormtxp, macop->rfp, 
 	     macop->htp, macop->ssp, macop->codecp);
    rmapGetData(&rsltp, 
@@ -1164,7 +1168,7 @@ static int processMapArgs(ErrMsg *errmsgp,
 
     errcode = resultSetAddPairToReport(brgp->rep, 
 				       macop->ihp, pairp, 
-				       brgp->pairflg, macop->rsltflg, 
+				       brgp->pairflg, macop->rsltouflg, 
 				       rsltp,
 				       rslt_matep);
     if ((errcode)) 
@@ -1190,7 +1194,7 @@ static int processMapArgs(ErrMsg *errmsgp,
 	       macop->swatscordiff,
 	       macop->minbasq, 
 	       SMALT_TARGET_DEPTH, SMALT_MAX_DEPTH,
-	       macop->rmapflg & ~RMAPFLG_ALLPAIR, 
+	       (RMAPFLG_t)(macop->rmapflg & ~RMAPFLG_ALLPAIR), 
 	       macop->scormtxp, macop->rfp,
 	       macop->htp, macop->ssp, macop->codecp);
 #ifdef hashhit_dump_sortarray
@@ -1204,7 +1208,7 @@ static int processMapArgs(ErrMsg *errmsgp,
 		NULL, NULL,
 		NULL, NULL, map->rmp);
 
-    errcode = resultSetAddToReport(brgp->rep, macop->rsltflg, rsltp);
+    errcode = resultSetAddToReport(brgp->rep, macop->rsltouflg, rsltp);
     if ((errcode)) 
       ERRMSGNO(errmsgp, errcode);
   }
@@ -1311,7 +1315,7 @@ static int mapReads(ErrMsg *errmsgp,
  */
 {
   int errcode = ERRCODE_SUCCESS;
-  char is_verbose;
+  unsigned char is_verbose;
   short nthreads = menuGetNumberOfThreads(menup);
   SmaltMapConst common_args;
   THREAD_CHECKF *checkf = NULL;
@@ -1350,7 +1354,7 @@ static int mapReads(ErrMsg *errmsgp,
   if (errcode)
     ERRMSGNO(errmsgp, errcode);
 
-  errcode = threadsSetTask(THRTASK_INPUT, (nthreads > 0)? 1:0, 
+  errcode = threadsSetTask(THRTASK_INPUT, (short) ((nthreads > 0)? 1:0), 
 			   initInput, &common_args, 
 			   loadArgBlock, cleanupInput, 
 			   NULL, NULL,
@@ -1382,7 +1386,7 @@ static int mapReads(ErrMsg *errmsgp,
 
   if ((errcode = threadsSetUp(arg_fac)))
     ERRMSGNO(errmsgp, errcode);
-  is_verbose = (common_args.menuflg & MENUFLAG_VERBOSE);
+  is_verbose = (unsigned char) ((common_args.menuflg & MENUFLAG_VERBOSE) != 0);
 
   if ( MENU_SAMPLE == menuGetSubProgTyp(menup) ) {
     errcode = prepSample(errmsgp, &common_args);

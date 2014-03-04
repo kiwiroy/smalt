@@ -260,19 +260,19 @@ static int drawRandomVariations(VARIAT *vp, const uint32_t varnum,
     if (indelszr[ctr] > MAXLEN_INDEL || indelszr[ctr] > UCHAR_MAX)
       vp[v].len = 1;
     else
-      vp[v].len = indelszr[ctr] + 1;
+      vp[v].len = (UCHAR) (indelszr[ctr] + 1);
     ctr++;
   }
 
   /* generate deletions */
   for (n=0; n<n_del; n++) {
     r = RANDRAW_UNIFORM_1();
-    v = r*varnum;
+    v = (uint32_t) (r*varnum);
     vp[v].typ = VARTYP_DELETION;
     if (indelszr[ctr] > MAXLEN_INDEL || indelszr[ctr] > UCHAR_MAX)
       vp[v].len = 1;
     else
-      vp[v].len = indelszr[ctr] + 1;
+      vp[v].len = (UCHAR) (indelszr[ctr] + 1);
 
     ctr++;
   }
@@ -288,6 +288,7 @@ static SETSIZ_t getNumberOfGenomicBases(const SeqSet * const ssp)
   return sop[no];
 }
 
+#ifdef SIMREAD_SUPERFLUOUS
 static int parseIndelSizes(UCHAR **isizr, const char *filnam)
 {
   char linbuf[LINBUFSIZ];
@@ -302,7 +303,7 @@ static int parseIndelSizes(UCHAR **isizr, const char *filnam)
     il = atoi(linbuf);
     if (il < 1 || il > MAXLEN_INDEL)
       il = 1;
-    ARRCURR(*isizr) = il;
+    ARRCURR(*isizr) = (UCHAR) il;
     ARRNEXTP(hp, *isizr);
     if (hp == NULL)
       return ERRCODE_NOMEM;
@@ -310,6 +311,7 @@ static int parseIndelSizes(UCHAR **isizr, const char *filnam)
 
   return EFCLOSE(fp);
 }
+#endif
 
 static int simulateSingleRead(SeqFastq *readp, SeqFastq *sbufp, 
 			      char *targetp, char *target_qualp,
@@ -444,9 +446,9 @@ static int simulateSingleRead(SeqFastq *readp, SeqFastq *sbufp,
 	      "%is",
 #endif
 	      n);
-      cod = encoderp[(UCHAR) c]&SEQCOD_STDNT_MASK;
+      cod = (UCHAR)(encoderp[(UCHAR) c]&SEQCOD_STDNT_MASK);
       r = RANDRAW_UNIFORM_1();
-      cod += (SEQCOD_STDNT_MASK)*r + 1;
+      cod = (UCHAR)(cod + (SEQCOD_STDNT_MASK)*r + 1);
       cod %= (SEQCOD_STDNT_MASK+1);
       targetp[t-1] = alphabetp[cod];
 #ifdef SIMREAD_DEBUG
@@ -465,7 +467,7 @@ static int simulateSingleRead(SeqFastq *readp, SeqFastq *sbufp,
       n += varp[v].len;
       for (l=0; l<varp[v].len && t<readlen; l++, t++) {
 	r = RANDRAW_UNIFORM_1();
-	cod = (SEQCOD_STDNT_MASK+1)*r;
+	cod = (UCHAR) ((SEQCOD_STDNT_MASK+1)*r);
 	targetp[t] = alphabetp[cod];
 	if (l>0) {
 	  a = strlen(alistr);
@@ -526,10 +528,10 @@ static int simulateSingleRead(SeqFastq *readp, SeqFastq *sbufp,
   targetp[t] = '\0';
 
 #ifdef simread_alistrtyp_explicit 
-  sprintf(read_name, "%s_%9.9i_%s_%9.9i_%c_%s", readnamprefix, readnum, 
+  sprintf(read_name, "%s_%9.9i_%s_%9.9u_%c_%s", readnamprefix, readnum, 
 	  refnamp, so+1, (is_reverse)? 'R':'F', alistr);
 #else 
-  sprintf(read_name, "%s_%9.9i_%s_%9.9i_%lli_%c_%s", readnamprefix, readnum, 
+  sprintf(read_name, "%s_%9.9i_%s_%9.9u_%lli_%c_%s", readnamprefix, readnum, 
 	  refnamp, so+1, (long long signed) sidx, (is_reverse)? 'R':'F', alistr);
 #endif
   if (mateno > 0)
@@ -556,7 +558,7 @@ static int simulatePairedRead(SeqFastq *readp, SeqFastq *matep,
 {
   int errcode;
   int d_insert = insertsiz - readlen;
-  UCHAR is_paired = insertsiz != 0 && (matep);
+  UCHAR is_paired = (UCHAR) (insertsiz != 0 && (matep));
   uint32_t vs, ve, mpos;
   uint64_t bctr, next_bctr;
 
@@ -591,7 +593,7 @@ static int simulatePairedRead(SeqFastq *readp, SeqFastq *matep,
     errcode = simulateSingleRead(matep, sbufp,
 				 target_seqp, target_qualp,
 				 readnamprefix,
-				 readnum, !is_reverse, 2,
+				 readnum, (UCHAR) !is_reverse, 2,
 				 varp+vs, ve-vs, readlen, 
 				 bctr, mpos, ssp, codecp);
   }
@@ -619,7 +621,7 @@ static int generateReads(SeqFastq *readp, SeqFastq *matep,
  */
 {
   int errcode, i, i_end, rn, pairctr, n_error=0, n_readlen_err=0, n_skipped=0;
-  UCHAR is_reverse, is_paired = (matep) && insertsiz > 0;
+  UCHAR is_reverse, is_paired = (UCHAR) ((matep) && insertsiz > 0);
   int isiz;
   uint32_t vs;
   SETSIZ_t pos, reflen = getNumberOfGenomicBases(ssp);
@@ -630,7 +632,7 @@ static int generateReads(SeqFastq *readp, SeqFastq *matep,
     return ERRCODE_ASSERT;
 
   rnfac = (insertsiz < 0)? 3.0: 1.5;
-  i_end = (readnum*rnfac > INT_MAX)? INT_MAX:readnum*rnfac;
+  i_end = (readnum*rnfac > INT_MAX)? INT_MAX:(int) (readnum*rnfac);
 
   vs = 0;
   basctr = 0;
@@ -642,7 +644,7 @@ static int generateReads(SeqFastq *readp, SeqFastq *matep,
 
     /* reverse or forward? */
     r = RANDRAW_UNIFORM_1();
-    is_reverse = 2*r;
+    is_reverse = (UCHAR)(2*r);
 
     /* insert size */
     if (is_paired && (ins1p)) {
@@ -776,7 +778,7 @@ int main(int argc, char *argv[])
       qv = MAX_QVAL;
     else if (qv < 0)
       qv = 0.0;
-    target_qual = (char) SEQCOD_QVAL_OFFS + qv;
+    target_qual = (char) (SEQCOD_QVAL_OFFS + qv);
   } else {
     target_qual = DEFAULT_QUAL;
   }
@@ -836,8 +838,8 @@ int main(int argc, char *argv[])
     basnum *= 2;
   printf("Simulate %llu bases ...\n", (LLUINT) basnum);
 
-  varnum = basnum*percerr/100;
-  printf("Simulate %d errors ...\n", varnum);
+  varnum = (uint32_t) (basnum*percerr/100);
+  printf("Simulate %u errors ...\n", varnum);
 
   ECALLOCP(varnum, varp);
   if (!varp)

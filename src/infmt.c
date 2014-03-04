@@ -63,9 +63,9 @@ static char const BAMBAM_TMPDIR_DEFAULT[] = ".";
  ***************** Private Methods of type InFmtReader **********************
  ****************************************************************************/
 
-int openINFMTReaderAsFASTQ(InFmtReader *p, 
-			   const char *filnamA, const char *filnamB, 
-			   BOOL_t doTest, int *errcode_test)
+static int openINFMTReaderAsFASTQ(InFmtReader *p, 
+				  const char *filnamA, const char *filnamB, 
+				  BOOL_t doTest, int *errcode_test)
 {
   int errcode = ERRCODE_SUCCESS;
 
@@ -91,7 +91,7 @@ int openINFMTReaderAsFASTQ(InFmtReader *p,
 }
 
 #ifdef HAVE_BAMBAMC
-int openINFMTReaderAsSAMBAM(InFmtReader *p, const char *filnam,
+static int openINFMTReaderAsSAMBAM(InFmtReader *p, const char *filnam,
 			    const char *tmpdir, BOOL_t is_sam)
 {
   int errcode = ERRCODE_SUCCESS;

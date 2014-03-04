@@ -219,7 +219,7 @@ static int assignPhredScaledMappingScoreToRandomDraw(int samplesiz)
   } else if (samplesiz == 1) {
     mapq = MAPSCOR_MAX_RANDOM + 1; /* signals non-random */
   } else {
-    mapq = -QUALSCOR_SCAL*log10(((double)(samplesiz - 1))/samplesiz) + .499;
+    mapq = (int) (-QUALSCOR_SCAL*log10(((double)(samplesiz - 1))/samplesiz) + .499);
     if (mapq > MAPSCOR_MAX_RANDOM)
       mapq = MAPSCOR_MAX_RANDOM;
     else if (mapq < 0) {
@@ -289,17 +289,19 @@ static int sumQualOverMisMatch(int *qualsum_ali, BOOL with_nonali,
  ******************************** Public Methods ******************************
  ******************************************************************************/
 
-int resultConvertProbabilityToMappingScore(double p)
+short resultConvertProbabilityToMappingScore(double p)
 {
-  int m;
+  short ms;
+  double m;
   double isc = 1.0 - p;
 
   if (isc < MINLOGARG) isc = MINLOGARG;
   m = -QUALSCOR_SCAL * log10(isc);
-  if (m > MAPSCOR_MAX) m = MAPSCOR_MAX;
-  else if (m < 0) m = 0;
+  if (m > MAPSCOR_MAX) ms = MAPSCOR_MAX;
+  else if (m < 0) ms = 0;
+  else ms = (short) m;
 
-  return m;
+  return ms;
 }
 
 
@@ -419,6 +421,7 @@ static int fprintBASQ(FILE *fp, const BASQ *basqA, const BASQ *basqB)
  ************************* Private Methods of Type Result *********************
  ******************************************************************************/
 
+#ifdef RESULTS_SUPERFLUOUS
 static int cmpOffsRESULTp(const void *p1, const void *p2)
 {
   const Result*ap = *((Result**) p1);
@@ -442,6 +445,7 @@ static int cmpOffsRESULT(const void *p1, const void *p2)
 
   return 0;
 }
+#endif
 
 static int cmpRes(const void *p1, const void *p2)
      /**< For sorting results so that large segments are followed by segments
@@ -664,7 +668,7 @@ static int checkRESULT(SeqFastq *sqbufp, const Result*rp, const DiffStr *dfsp,
 
 static int sortBySegmentAndSWscor(ResultSet *rsp)
 {
-  short i, j, nres = ARRLEN(rsp->sortr);
+  short i, j, nres = (short) ARRLEN(rsp->sortr);
   
   if (nres < 1)
     return ERRCODE_SUCCESS;
@@ -706,7 +710,7 @@ static int labelComplementarySegments(ResultSet *rsp,
 {
   int errcode = ERRCODE_SUCCESS;
   RESULTPTRARR rspp = rsp->sortr;
-  short i, i_start, n = ARRLEN(rspp);
+  short i, i_start, n = (short) ARRLEN(rspp);
   double const min_overlap_frac = ((double) min_overlap_percent)/N100PERCENT;
   
   if (n < 1)
@@ -724,13 +728,15 @@ static int labelComplementarySegments(ResultSet *rsp,
     Result*r1p = rspp[i_start];
     SEQLEN_t l1 = r1p->q_end - r1p->q_start;
     r1p->qsegx = rsp->qsegno;
-    i = i_start + 1;
+    if (i_start >= SHRT_MAX)
+      return ERRCODE_OVERFLOW;
+    i = (short) (i_start + 1);
     i_start = 0;
     for (; i<n; i++) {
       Result*r2p = rspp[i];
       if (r2p->qsegx < 0) {
 	SEQLEN_t l2 = r2p->q_end - r2p->q_start;
-	SEQLEN_t min_overlap = ((l1 < l2)? l1: l2)*min_overlap_frac;
+	SEQLEN_t min_overlap = (SEQLEN_t) (((l1 < l2)? l1: l2)*min_overlap_frac);
 	if (TEST_RESULT_OVERLAP(r1p, r2p, min_overlap)) {
 	  r2p->qsegx = rsp->qsegno;
 	} else if (i_start == 0) {
@@ -754,7 +760,7 @@ static int sortAndPrune(ResultSet *rsp)
      /**< sort results and remove duplicates. 
       * If ssp != Null, assign ref. sequence index and update reference offsets */
 {
-  short i, nres = ARRLEN(rsp->resr);
+  short i, nres = (short) ARRLEN(rsp->resr);
   Result**dpp, **prevpp, **endpp;
 #ifdef result_debug
   int skipctr=0;
@@ -775,7 +781,7 @@ static int sortAndPrune(ResultSet *rsp)
   }
   rsp->status |= RSLTSETFLG_SERIALNO;
 
-  nres = ARRLEN(rsp->sortr);
+  nres = (short) ARRLEN(rsp->sortr);
   if (nres < 2) {
     rsp->status |= RSLTSETFLG_SWSORT;
     return ERRCODE_SUCCESS;
@@ -819,7 +825,7 @@ static int sortAndPrune(ResultSet *rsp)
       if (rspp[i]->swatscor > rspp[i-1]->swatscor)
 	return ERRCODE_ASSERT;
       if (rspp[i]->swatscor < rspp[i-1]->swatscor) {
-	rspp[i]->swrank = rspp[i-1]->swrank + 1;
+	rspp[i]->swrank = (short) (rspp[i-1]->swrank + 1);
       } else {
 	rspp[i]->swrank = rspp[i-1]->swrank;
       }
@@ -839,7 +845,7 @@ static BOOL getNumberOfTopSwatRESULTs(short *n_best, RESULTPTRARR rspp)
  */
 {
   BOOL rv;
-  short nb, n = ARRLEN(rspp);
+  short nb, n = (short) ARRLEN(rspp);
 
   nb = n;
   if (n < 2 || rspp[1]->swatscor != rspp[0]->swatscor) {
@@ -849,7 +855,8 @@ static BOOL getNumberOfTopSwatRESULTs(short *n_best, RESULTPTRARR rspp)
   }
  
   if (n > 2) {  
-    int i, scorthresh = rspp[1]->swatscor;
+    int scorthresh = rspp[1]->swatscor;
+    short i;
     for (i=2; i<n; i++)
       if (rspp[i]->swatscor != scorthresh)
 	break;
@@ -1010,7 +1017,7 @@ RSLTPAIRMAPFLG_t resultCalcInsertSize(int *isiz,
   else if ((scor) < (rsp)->swatscor_max) {\
      (rsp)->swatscor_2ndmax = (scor);}\
 }
-
+#ifdef RESULTS_SUPERFLUOUS
 static int calcMappingScore(RESULTARR const *rspp)
      /**< Array of pointers into array of results, sorted by Smith-Waterman score
       */
@@ -1131,6 +1138,7 @@ static int calcMappingQuality(const ResultSet *rsetp, const SeqFastq *sqp)
   
   return ERRCODE_SUCCESS;
 }
+#endif
 
 static int calcPhredScaledMappingQuality(short qsegx, 
 					 const ResultSet *rsetp, 
@@ -1161,7 +1169,7 @@ static int calcPhredScaledMappingQuality(short qsegx,
     return ERRCODE_ASSERT;
   
   rspp = rsetp->segsrtr + rsetp->segnor[qsegx];
-  n = rsetp->segnor[qsegx + 1] - rsetp->segnor[qsegx];
+  n = (short) (rsetp->segnor[qsegx + 1] - rsetp->segnor[qsegx]);
   if (n < 1)
     return ERRCODE_SUCCESS;
 
@@ -1210,8 +1218,8 @@ static int calcPhredScaledMappingQuality(short qsegx,
   if (n>1) {
       swatscor_2nd = rspp[1]->swatscor;
       for (i=2; i<n && rspp[i]->swatscor == swatscor_2nd; i++); 
-      n_swatscor_2nd = i-1; /* number of results with 2nd largest score = i-1 */
-      qn = (int) QUALSCOR_SCAL*log((double) (n_swatscor_2nd)) / QUALSCOR_LOGBASE;
+      n_swatscor_2nd = (short) (i-1); /* number of results with 2nd largest score = i-1 */
+      qn = (int) (QUALSCOR_SCAL*log((double) (n_swatscor_2nd)) / QUALSCOR_LOGBASE);
     } else {
       swatscor_2nd = 0;
       n_swatscor_2nd = 0;
@@ -1291,7 +1299,8 @@ static int calcPhredScaledMappingQuality(short qsegx,
 #ifdef results_mapscor_exp
     SEQLEN_t qlen;
     seqFastqGetConstSequence(sqp, &qlen, NULL);
-    mapscor = MAPSCOR_MAX*(1-exp(((double)(swatscor_2nd - swatscor_1st))*MAPSCOR_EXPFAC/qlen)) - qn;
+    mapscor = (int) (MAPSCOR_MAX*(1-exp(((double)(swatscor_2nd - swatscor_1st))*
+					MAPSCOR_EXPFAC/qlen)) - qn);
     //mapscor = maxmapscor*(1-exp(((double)(swatscor_2nd - swatscor_1st))*MAPSCOR_EXPFAC/qlen)) - qn;
     //mapscor = MAPSCOR_SCALFAC*(1-exp((swatscor_2nd - swatscor_1st)*MAPSCOR_EXPFAC/swatscor_1st));
     //mapscor -= mapscor_deficit/MAPSCOR_DEFICIT_SCALFAC; 
@@ -1355,7 +1364,7 @@ propagateMapQualAsProb
     return ERRCODE_ASSERT;
   
   rspp = rsetp->segsrtr + rsetp->segnor[qsegx];
-  nn = rsetp->segnor[qsegx + 1] - rsetp->segnor[qsegx];
+  nn = (short) (rsetp->segnor[qsegx + 1] - rsetp->segnor[qsegx]);
   if (nn < 1)
     return ERRCODE_SUCCESS;
   
@@ -1364,7 +1373,7 @@ propagateMapQualAsProb
   if (i < nn) {
     assert(rspp[i]->swatscor < rspp[0]->swatscor);
     for (++i;i<nn && rspp[i]->swatscor == rspp[n1]->swatscor; i++);
-    n2 = i - n1;
+    n2 = (short) (i - n1);
   }
 
   /* if (n1 > 1 && rspp[0]->mapscor > MAPSCOR_MAX_RANDOM) { */
@@ -1388,7 +1397,9 @@ propagateMapQualAsProb
   /* assign */
   for (i=0; i<n1; i++)
     rspp[i]->prob = p1;
-  ns = n1 + n2;
+  if (n1 + n2 > SHRT_MAX)
+    return ERRCODE_OVERFLOW;
+  ns = (short) (n1 + n2);
   for (;i<ns; i++)
     rspp[i]->prob = p2;
   for (;i<nn;i++)
@@ -1430,7 +1441,7 @@ static int findSplitReads(RESULTARR const *rspp)
       * in the (sorted) pointer array into results
       */
 {
-  short i, j, n = ARRLEN(rspp);
+  short i, j, n = (short) ARRLEN(rspp);
   int swatscor_1st = rspp[0]->swatscor;
   short n_split = 0;
   Result*ap, *bp;
@@ -1440,7 +1451,7 @@ static int findSplitReads(RESULTARR const *rspp)
     ap = rspp[i];
     if (ap->swatscor < swatscor_1st)
       break;
-    for (j=i+1; j<n; j++) {
+    for (j=(short)(i+1); j<n; j++) {
       bp = rspp[j];
       if (bp->rsltx >= 0)
 	continue;
@@ -1508,7 +1519,7 @@ static int splitMultiSpan(RESULTARR *resr, const uint32_t residx,
     return ERRCODE_ASSERT;
   
   rp = (*resr) + residx;
-  isReverseComplement = (rp->status & RSLTFLAG_REVERSE) != 0;
+  isReverseComplement = (BOOL) ((rp->status & RSLTFLAG_REVERSE) != 0);
   if (isReverseComplement) {
       scprofp = scpRCp; 
 #ifdef results_debug
@@ -1693,7 +1704,7 @@ static int assignSequenceIndex(ResultSet *rsp,
 			       const SeqCodec *codecp)
 {
   int errcode = ERRCODE_SUCCESS;
-  short i, ctr, nres = ARRLEN(rsp->resr);
+  short i, ctr, nres = (short) ARRLEN(rsp->resr);
   const SETSIZ_t *ofp;
   SEQNUM_t s, e, nseq = seqSetGetOffsets(ssp, &ofp);
 
@@ -1713,7 +1724,7 @@ static int assignSequenceIndex(ResultSet *rsp,
     }
   }
   
-  ctr = ARRLEN(rsp->sortidxr);
+  ctr = (short) ARRLEN(rsp->sortidxr);
   if (ctr > 1) {
     /* qsort(rsp->sortr, ctr, sizeof(Result*), cmpOffsRESULTp); */
     if ((errcode = sortUINT64andUINT32ArraysByQuickSort(ctr, rsp->sortkeyr, rsp->sortidxr)))
@@ -1835,7 +1846,7 @@ void resultSetAlignmentStats(ResultSet *rsp, int n_ali_done, int n_ali_tot, shor
 
 unsigned char resultSetAlignmentWasCurtailed(const ResultSet *rsp)
 {
-  return rsp->n_ali_tot > rsp->n_ali_max && rsp->n_ali_done >= rsp->n_ali_max;
+  return (unsigned char) (rsp->n_ali_tot > rsp->n_ali_max && rsp->n_ali_done >= rsp->n_ali_max);
 }
 
 int resultSetAddFromAli(ResultSet *rsp, const AliRsltSet *arsp, 
@@ -1852,7 +1863,7 @@ int resultSetAddFromAli(ResultSet *rsp, const AliRsltSet *arsp,
 			char is_reverse)
 {
   int errcode = ERRCODE_SUCCESS;
-  char is_new;
+  unsigned char is_new;
   short i, nres = aliRsltSetGetSize(arsp);
   int qs, qe, rs, re;
   Result*rp;
@@ -1898,7 +1909,7 @@ int resultSetAddFromAli(ResultSet *rsp, const AliRsltSet *arsp,
 
     if (seqidx == RESULTSET_UNKNOWN_SEQIDX)
       rp->status |= RSLTFLAG_NOSEQID;
-    is_new = ARRLEN(rsp->resr)<2 || !isIdenticalResult(rp, (rp-1));
+    is_new = (unsigned char) (ARRLEN(rsp->resr)<2 || !isIdenticalResult(rp, (rp-1)));
     if ((is_new)) {
       /* not a duplicate */
       /* copy alignment string */
@@ -2082,7 +2093,7 @@ int resultSetGetNumberOfSegments(short *nres, short *nseg, const ResultSet *rsp)
   } else {
     if (nres != NULL) *nres = (short) ARRLEN(rsp->sortr);
     if (nseg != NULL) {
-      *nseg = (short) ARRLEN(rsp->segnor) - 1;
+      *nseg = (short) (ARRLEN(rsp->segnor) - 1);
       if (*nseg < 0) *nseg = 0;
     }
   }
@@ -2196,7 +2207,7 @@ int resultSetDo(void *argp, ResultSetCallBackf *cbf,
 
 int resultSetAddResultToReport(Report *rep,
 			       int pairid,
-			       int mapscor,
+			       short mapscor,
 			       REPMATEFLG_t mateflg,
 			       REPPAIRFLG_t pairflg,
 			       int isize,
@@ -2224,7 +2235,7 @@ int resultSetAddResultToReport(Report *rep,
     errcode = reportAddMap(rep,
 			   pairid,
 			   rp->swatscor, 
-			   (pairid<0)? rp->mapscor: mapscor, 
+			   (short) ((pairid<0)? rp->mapscor: mapscor), 
 			   rp->q_start, rp->q_end,
 			   rp->s_start, rp->s_end, rp->sidx,
 			   dstrp, rp->strlen,
@@ -2272,7 +2283,7 @@ int resultSetAddToReport(Report *rep,
 			 const ResultSet *rsp)
 {
   int errcode = ERRCODE_SUCCESS;
-  short i, nsort = ARRLEN(rsp->sortr);
+  short i, nsort = (short) ARRLEN(rsp->sortr);
   Result*rp = (nsort < 1)? NULL: rsp->sortr[0];
   REPMATEFLG_t mateflg = 0;
   
@@ -2283,7 +2294,7 @@ int resultSetAddToReport(Report *rep,
 	(rsltflg&RESULTFLG_BEST) && !(rsltflg&RESULTFLG_SPLIT)) {
       mateflg |= REPMATEFLG_MULTI;
       if ((rsltflg&RESULTFLG_RANDSEL)) {
-	short r = RANDRAW_UNIFORM_1()*ns;
+	short r = (short) (RANDRAW_UNIFORM_1()*ns);
 	rp = rsp->sortr[r];
 	if ((rp))
 	  rp->mapscor = assignPhredScaledMappingScoreToRandomDraw(ns);
@@ -2293,7 +2304,9 @@ int resultSetAddToReport(Report *rep,
     }
   }
   if ((errcode = resultSetAddResultToReport(rep, -1, 
-					    0, mateflg | REPMATEFLG_PRIMARY, 
+					    0, 
+					    (REPMATEFLG_t) (mateflg | 
+							    REPMATEFLG_PRIMARY), 
 					    0, 0, rp, rsp)))
     return errcode;
   if (rp != NULL) 
@@ -2321,7 +2334,9 @@ int resultSetAddToReport(Report *rep,
   
   /* 2ndary results */
   if ((rsltflg&RESULTFLG_BEST) && (rsltflg&RESULTFLG_SPLIT)) {
-    errcode = resultSetAdd2ndaryResultsToReport(rep, mateflg | REPMATEFLG_PARTIAL, 
+    errcode = resultSetAdd2ndaryResultsToReport(rep, 
+						(REPMATEFLG_t) (mateflg | 
+								REPMATEFLG_PARTIAL), 
 						rsltflg,
 						rsp);
   }
@@ -2331,7 +2346,7 @@ int resultSetAddToReport(Report *rep,
    
 void resultSetPrintDebugInfo(FILE *fp, const ResultSet *rsp)
 {
-  short i, nres = ARRLEN(rsp->resr);
+  short i, nres = (short) ARRLEN(rsp->resr);
   const UCHAR *ucp;
   const char *cp;
   const Result*rp;
@@ -2339,7 +2354,7 @@ void resultSetPrintDebugInfo(FILE *fp, const ResultSet *rsp)
   for (i=0; i<nres; i++) {
     rp = rsp->resr + i;
     fprintf(fp, "PAIR_START %d\n", i+1);
-    fprintf(fp, "PAIR_SEGMENT_A %d %d\n", rp->q_start-1, rp->q_end-1);
+    fprintf(fp, "PAIR_SEGMENT_A %u %u\n", rp->q_start-1, rp->q_end-1);
     fprintf(fp, "PAIR_SEGMENT_B %llu %llu\n", 
 	    (long long unsigned int) rp->s_start-1, 
 	    (long long unsigned int) rp->s_end-1);
@@ -2360,7 +2375,7 @@ int resultSetGetScorStats(const ResultSet *rsp,
 			    int *scor_2ndmax, short *num_2ndmax)
 {
   short i, j;
-  short nsort = ARRLEN(rsp->sortr);
+  short nsort = (short) ARRLEN(rsp->sortr);
   if ((num_max || num_2ndmax)) {
     for (i=0; i<nsort; i++)
       if (rsp->sortr[i]->swatscor < rsp->swatscor_max)
@@ -2371,7 +2386,7 @@ int resultSetGetScorStats(const ResultSet *rsp,
       for (j=i; j<nsort; j++)
 	if (rsp->sortr[i]->swatscor < rsp->swatscor_2ndmax)
 	  break;
-      *num_2ndmax = j-i;
+      *num_2ndmax = (short) (j-i);
     }
   }
   if (scor_max) *scor_max = rsp->swatscor_max;
@@ -2387,14 +2402,14 @@ BOOL resultSetGetRankDepth(const ResultSet *rsp, short *depth, short *rank)
   resultSetGetScorStats(rsp, NULL, &n_max, NULL, &n_2ndmax);
   
   if (n_max < 2) {
-    if (depth) *depth = n_max + n_2ndmax;
+    if (depth) *depth = (short) (n_max + n_2ndmax);
     if (rank) *rank = 1;
   } else {
     if (depth) *depth = n_max;
     if (rank) *rank = 0;
   }
   
-  return n_max == 1;
+  return (BOOL) (n_max == 1);
 }
 
 int resultSetGetMappingScore(const ResultSet *rsp, int *swscor)
@@ -2540,7 +2555,7 @@ static SEQLEN_t getFilterIdForRead(const ResultFilter *rfp, const SeqFastq *sqp)
   if (rfp) {
     if (rfp->min_identity <= 1.0 && (sqp)) {
       seqFastqGetConstSequence(sqp, &rlen, NULL);
-      id = rfp->min_identity * rlen;
+      id = (SEQLEN_t) (rfp->min_identity * rlen);
     } else {
       id = (SEQLEN_t) rfp->min_identity;
     }
@@ -2577,7 +2592,7 @@ int resultSetFilterResults(const ResultSet *rsp,
 			   const ResultFilter *rsfp, 
 			   const SeqFastq *sqp)
 {
-  short i, n = ARRLEN(rsp->sortr);
+  short i, n = (short) ARRLEN(rsp->sortr);
   int maxswscor, minabsswscor, minrelswscor;
   Result*rp;
   SEQLEN_t idthresh = getFilterIdForRead(rsfp, sqp);

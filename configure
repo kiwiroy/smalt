@@ -3997,7 +3997,7 @@ else
   for_intel_mic=no
 fi
 
-$as_echo $for_intel_mic
+#AS_ECHO($for_intel_mic)
 # Checks for libraries.
 
 # optional: samtools built as library libbam
@@ -4308,7 +4308,7 @@ else
   withzlib=false;
 
 fi
-$as_echo x$withzlib
+#AS_ECHO([x$withzlib])
 # POSIX threads API with only named but not unnamed semaphores (MacOSX)
 #AC_CHECK_LIB
 #	(
@@ -4778,7 +4778,7 @@ else
   withintrin=false;
 
 fi
-$as_echo $withintrin
+#AS_ECHO($withintrin)
 # recogising the emmintrin.h header (some gcc versions require '-msse2' set)
 if test x$withintrin = xtrue; then :
   withsse2=false
@@ -4799,7 +4799,7 @@ done
 
 
 fi
-$as_echo $withsse2
+#AS_ECHO($withsse2)
 #establish 32-bit vs 64-bit -> $host_cpu
 # Make sure we can run config.sub.
 $SHELL "$ac_aux_dir/config.sub" sun4 >/dev/null 2>&1 ||

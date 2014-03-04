@@ -65,7 +65,7 @@ static const char MENU_RELEASE_DATE[] =  "03-03-2014";
 static const char MENU_RELEASE_AUTHORS[] = "Hannes Ponstingl";
 static const char MENU_RELEASE_BUGREPORT[] = PACKAGE_BUGREPORT;
 static const char MENU_COPYRIGHT_NOTICE[] = "Copyright (C) 2010 - 2014 Genome Research Ltd.";
-static const char MENU_DEFAULT_HASHNAME[] = "smalt";
+/* static const char MENU_DEFAULT_HASHNAME[] = "smalt"; */
 
 enum OPTION_TYPES {  /* this is associated with OPTION_TYPSTR */
   OPTYP_FLAG   = 0,
@@ -907,6 +907,11 @@ static void parseListOfKeyValueAssignments(int8_t vals[], uint8_t *bitfld,
       exit(EXIT_FAILURE);
     }
     ival = atoi(value);
+    if (ival > UINT8_MAX) {
+      printf("Error: wrong format string %s.\n", 
+	     parkey);
+      exit(EXIT_FAILURE);
+    }
     for (i=0; i<nelem; i++) {
       if (!strcmp(parkey, lst[i].varnam)) {
 	if (ival < lst[i].min || ival > lst[i].max) {
@@ -914,8 +919,8 @@ static void parseListOfKeyValueAssignments(int8_t vals[], uint8_t *bitfld,
 		 parkey, ival, (short) lst[i].min, (short) lst[i].max);
 	  exit(EXIT_FAILURE);
 	}
-	vals[i] = ival;
-	*bitfld |= ((uint8_t) 1)<<i;
+	vals[i] = (uint8_t) ival;
+	*bitfld = (uint8_t)((*bitfld) | (((uint8_t) 1)<<i));
 	*(--value) = OUFMT_ASSIGNMENT_CHAR;
 	break;
       }
@@ -1049,7 +1054,7 @@ static short parseOption(void *optarg, const char *optnam,
       strpp = (char **) optarg;
       free(*strpp);
       ESTRCPY(*strpp, argp[1]);
-      rv = (*strpp)? 2: OPTERR_NOMEM;
+      rv = (short)((*strpp)? 2: OPTERR_NOMEM);
     }
     break;
   case OPTYP_INT:
@@ -2024,9 +2029,9 @@ int menuGetFileNames(const MenuOpt *mp,
 void menuPrintWallClockTime(FILE *fp, time_t time_start, time_t time_stop, const char *headerp)
 {
   double secs = difftime(time_stop, time_start);
-  short days = secs/TIME24HRSINSECS;
-  short hours = (secs - days*TIME24HRSINSECS)/3600;
-  short mins = (secs - days*TIME24HRSINSECS - hours*3600)/60;
+  short days = (short) (secs/TIME24HRSINSECS);
+  short hours = (short) ((secs - days*TIME24HRSINSECS)/3600);
+  short mins = (short) ((secs - days*TIME24HRSINSECS - hours*3600)/60);
   double seconds = (secs - days*TIME24HRSINSECS - hours*3600 - mins*60);
 
   if (NULL == headerp)

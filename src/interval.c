@@ -95,7 +95,8 @@ void interValBlank(InterVal *p)
   V_LEN(p) = 0;
 }
 
-int interValAppend(InterVal *p, SEQLEN_t lo, SEQLEN_t hi, SEQNUM_t sx, INTERVALFLG_t flag)
+int interValAppend(InterVal *p, SEQLEN_t lo, SEQLEN_t hi, 
+		   SEQNUM_t sx, INTERVALFLG_t flag)
 {
   IVAL *ivp;
   if (hi < lo)
@@ -146,7 +147,8 @@ int interValNum(const InterVal *p)
   return (int) V_LEN(p);
 }
 
-int interValGet(SEQLEN_t *lo, SEQLEN_t *hi, SEQNUM_t *sx, INTERVALFLG_t *flg, int idx, const InterVal *p)
+int interValGet(SEQLEN_t *lo, SEQLEN_t *hi, SEQNUM_t *sx, INTERVALFLG_t *flg, 
+		int idx, const InterVal *p)
 {
   const IVAL *ivp = V_PTR(p, idx);
   if (!ivp)

@@ -127,7 +127,7 @@ typedef struct _REPALI { /**< Alignmment results */
   BOOL_t was_output;  /**< 0 if Alignment was not yet printed */
   REPMATEFLG_t status;/**< Combination of REPORT_MATE_FLAGS */
   int swatscor;      /**< Smith-Waterman alignment score */ 
-  int mapscor;       /**< 'Mapping' score */
+  short mapscor;       /**< 'Mapping' score */
   SEQLEN_t q_start;  /**< Start in query sequence (counting from 1) */
   SEQLEN_t q_end;    /**< End in query sequence, counting from 1 (q_start <= q_end) */
   SEQNUM_t q_idx;    /**< Index (mate number) of query sequence in template */
@@ -187,7 +187,6 @@ static const char OUFMT_FILNAM_STDOUT[] =  "-";
 static const char SAMFORM_HEADLINE[] = "@HD\tVN:1.3\tSO:unknown\n";
 static const char SAMFORM_REFSEQLINE[] = "@SQ\tSN:%s\tLN:%u\n";
 static const char SAMFORM_PROGLINE[] = "@PG\tID:%s\tPN:%s\tVN:%s\tCL:";
-static const char SAMHEAD_PLAINTXT_EMPTY[] = "";
 
 /* format strings for SAM line */
 static const char OUFMT_SAM_BEFORE[] = "%s\t%hu\t%s\t%i\t%hi\t";
@@ -195,15 +194,11 @@ static const char OUFMT_SAM_BEFORE[] = "%s\t%hu\t%s\t%i\t%hi\t";
 static const char OUFMT_SAM_AFTER[] = "\t%s\t%i\t%i\t%s\t%s\tNM:i:%i\tAS:i:%i\n";
 /**< MRNM MPOS ISIZE SEQ QUAL */
 
-static const char OUFMT_SAM_TAG[] = "\t%2s:%c:%i";
 /**< TAG VTYPE VALUE */
 static const char OUFMT_SAM_NULLSTR[] = "*";
 static const char OUFMT_BAM_NULLSTR[] = "";
-static const char OUFMT_SAM_SAMEREF[] = "=";
 
 static const char OUFMT_CIGAR[] = "cigar:%c:%2.2d %s%s %u %u %c %s %u %u + %d ";
-static const char REPALITAG_CIGAR[] =    "cigar::";
-static const char REPALITAG_EMPTY[] =    "";
 static const char OUFMT_ALIGN[] =\
 "    QUERY: %10i %s %-10i\n                      %s\n"\
 "REFERENCE: %10i %s %-10i\n\n\n";
@@ -229,7 +224,9 @@ static char getMapLabelFromFlag(REPMATEFLG_t mateflg, REPPAIRFLG_t pairflg)
     } else if (pairflg & REPPAIR_MAPPED) {
       if (pairflg & REPPAIR_CONTIG) {
 	if (pairflg & REPPAIR_PROPER) {
-	  flagchr = (pairflg & REPPAIR_WITHIN)? CIGFLG_PROPER_INSIDE: CIGFLG_PROPER_OUTSIDE;
+	  flagchr = (char) ((pairflg & REPPAIR_WITHIN)? 
+			    CIGFLG_PROPER_INSIDE: 
+			    CIGFLG_PROPER_OUTSIDE);
 	} else {
 	  flagchr = CIGFLG_IMPROPER_SAMEREF;
 	}
@@ -449,7 +446,7 @@ static int copyReadNamStrToREPSTR(REPSTR *rsp,
     if (((size_t) i) + 1 >= rsp->n_alloc && 
 	(errcode = reallocREPSTR(rsp, i+1)))
       break;
-    rsp->strp[i] = c;
+    rsp->strp[i] = (char) c;
   }
 
   /* don't copy the '/1', '/2' extension */
@@ -624,7 +621,7 @@ static int fprintREPALIssaha(FILE *fp, const REPALI *rp, short mapscor,
     s_len = 0;
     swatscor = 0;
     mapscor = 0;
-    flagchr = ((rp) && (rp->status & REPMATEFLG_MULTI))? CIGFLG_MULTI: CIGFLG_NOMAP;
+    flagchr = (char) (((rp) && (rp->status & REPMATEFLG_MULTI))? CIGFLG_MULTI: CIGFLG_NOMAP);
     idfrac = .0;
   }
 
@@ -659,7 +656,7 @@ static int fprintREPALIgff2(FILE *fp, const REPALI *rp,
   SEQLEN_t qs, qe, qlen;
   SETSIZ_t rs, re;
   char sensechr;
-  BOOL_t isReverse = (rp) && (rp->status&REPMATEFLG_REVERSE);
+  BOOL_t isReverse = (BOOL_t) ((rp) && (rp->status&REPMATEFLG_REVERSE));
 
   if ((errcode = copyReadNameToREPSTR(q_namp, 0, q_sqp)))
     return errcode;
@@ -746,7 +743,7 @@ static int fprintREPALIcigar(FILE *fp, const REPALI *rp, short mapscor,
     s_nam = OUFMT_SAM_NULLSTR;
     swatscor = 0;
     mapscor = 0;
-    flagchr = ((rp->status & REPMATEFLG_MULTI))? CIGFLG_MULTI: CIGFLG_NOMAP;
+    flagchr = (char) (((rp->status & REPMATEFLG_MULTI))? CIGFLG_MULTI: CIGFLG_NOMAP);
   }
       
   fprintf(fp, OUFMT_CIGAR, flagchr,
@@ -820,7 +817,7 @@ static int fprintREPALIsam(FILE *fp, SeqFastq *sqbufp,
   }
   
   if ((rrp->status & REPMATEFLG_MAPPED)) {
-    BOOL_t isReverse = (rrp->status & REPMATEFLG_REVERSE)? 1 : 0;
+    BOOL_t isReverse = (BOOL_t) ((rrp->status & REPMATEFLG_REVERSE)? 1 : 0);
     SEQLEN_t qseg_start, qseg_len;
 
     if (oumodiflg & REPORTMODIF_SOFTCLIP) {
@@ -893,10 +890,10 @@ static int fprintREPALIsam(FILE *fp, SeqFastq *sqbufp,
 
   if (rrp->status & REPMATEFLG_MAPPED) {
     errcode = diffStrPrintf(fp, diffstr, 
-			    (oumodiflg & REPORTMODIF_XMISMATCH)? 
-			    DIFFSTRFORM_CIGEXT_XMISMATCH: DIFFSTRFORM_CIGEXT, 
-			    clip_start, clip_end, 
-			    oumodiflg & REPORTMODIF_SOFTCLIP);
+			    (char) ((oumodiflg & REPORTMODIF_XMISMATCH)? 
+				    DIFFSTRFORM_CIGEXT_XMISMATCH: DIFFSTRFORM_CIGEXT), 
+				    clip_start, clip_end, 
+			    (char) ((oumodiflg & REPORTMODIF_SOFTCLIP) != 0));
     if (!errcode)
       editdist = diffStrGetLevenshteinDistance(diffstr);
   } else {
@@ -984,7 +981,7 @@ static int writeREPALIbam(BamBam_BamWriter *bamwriterp,
   }
   
   if ((rrp->status & REPMATEFLG_MAPPED)) {
-    BOOL_t isReverse = (rrp->status & REPMATEFLG_REVERSE)? 1 : 0;
+    BOOL_t isReverse = (BOOL_t) ((rrp->status & REPMATEFLG_REVERSE)? 1 : 0);
     errcode = seqFastqAppendSegment(sqbufp, q_sqp, 
 				    0, 0,
 				    (isReverse), (isReverse)? codecp: NULL);
@@ -1044,9 +1041,9 @@ static int writeREPALIbam(BamBam_BamWriter *bamwriterp,
 
   if (rrp->status & REPMATEFLG_MAPPED) {
     errcode = diffStrAsView(dvp, diffstr, 
-			    (oumodiflg & REPORTMODIF_XMISMATCH)? 
-			    DIFFSTRFORM_CIGEXT_XMISMATCH:DIFFSTRFORM_CIGEXT, 
-			    clip_start, clip_end, oumodiflg & REPORTMODIF_SOFTCLIP);
+			    (char) ((oumodiflg & REPORTMODIF_XMISMATCH)? 
+				    DIFFSTRFORM_CIGEXT_XMISMATCH:DIFFSTRFORM_CIGEXT), 
+			    clip_start, clip_end, (char) ((oumodiflg & REPORTMODIF_SOFTCLIP) != 0));
     cigarstr = ((errcode))? OUFMT_BAM_NULLSTR: diffStrGetViewStr(dvp);
     /* don't use asterisk here - bambam library can't handle that - use empty string */
     
@@ -1130,7 +1127,7 @@ static int writeREPALI(
 { 
   int errcode = ERRCODE_SUCCESS;
   short mapscor =0;
-  BOOL_t is_mapped = (rp != NULL && (rp->status & REPMATEFLG_MAPPED));
+  BOOL_t is_mapped = (BOOL_t) (rp != NULL && (rp->status & REPMATEFLG_MAPPED));
   const char *s_nam, *m_snam;
   DIFFSTR_T *dstrp;
   SEQLEN_t ref_len = 0;
@@ -1598,7 +1595,7 @@ int reportNextPairID(Report *rep)
 
 int reportAddMap(Report *rep, 
 		 int pairid,
-		 int swatscor, int mapscor,
+		 int swatscor, short mapscor,
 		 SEQLEN_t q_start, SEQLEN_t q_end,
 		 SEQLEN_t s_start, SEQLEN_t s_end, SEQNUM_t s_idx,
 		 const DIFFSTR_T *dstrp, int dfslen,

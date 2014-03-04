@@ -153,7 +153,7 @@ extern "C"
 
   int reportAddMap(Report *p, 
 		   int pairid,
-		   int swatscor, int mapscor,
+		   int swatscor, short mapscor,
 		   SEQLEN_t q_start, SEQLEN_t q_end,
 		   SEQLEN_t s_start, SEQLEN_t r_end, SEQNUM_t s_idx,
 		   const DIFFSTR_T *dstrp, int dfslen,

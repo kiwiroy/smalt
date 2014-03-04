@@ -41,7 +41,8 @@ extern "C"
    ******************************** Types *************************************
    ****************************************************************************/
 
-  typedef uint8_t INTERVALFLG_t; /**< Holds bit flags */
+  typedef uint16_t INTERVALFLG_t; 
+  /**< change this with RLSLTFLG_t */
 
   /****************************************************************************
    ***************************** Opaque types *********************************
@@ -76,7 +77,8 @@ extern "C"
   int interValNum(const InterVal *p);
   /**< Accessor returning the number of intervals (sequence segments)
    */
-  int interValGet(SEQLEN_t *lo, SEQLEN_t *hi, SEQNUM_t *sx, INTERVALFLG_t *flg, int idx, const InterVal *p);
+  int interValGet(SEQLEN_t *lo, SEQLEN_t *hi, SEQNUM_t *sx, INTERVALFLG_t *flg, int idx, 
+		  const InterVal *p);
   /**< Acessor. Returns ERRCODE_ARGRANGE if index out of bounds.
    * \param lo returns start (lower end) of the interval.
    * \param hi returns end (higher end) of the interval.

@@ -181,9 +181,10 @@ static BOOL scorIsAboveFractMax(int scor_read, int scor_mate, float fract,
   SEQLEN_t rlen, mlen;
   seqFastqGetConstSequence(readp, &rlen, NULL);
   seqFastqGetConstSequence(matep, &mlen, NULL);
-  return scor_read >= scor_mate*rlen*fract/mlen;
+  return (BOOL) (scor_read >= scor_mate*rlen*fract/mlen);
 }
 
+#ifdef RMAP_SUPERFLUOUS_CODE
 static int tryUngappedAlignment(int *maxscor,
 				const char *qstr, const char *rstr, const RMAPCAND *cp)
      /**< Try ungapped alignment with 1 for match -2 for mismatch
@@ -234,6 +235,7 @@ static int tryUngappedAlignment(int *maxscor,
 
   return ERRCODE_SUCCESS;
 }
+#endif
 
 static uint32_t calcMinKtup(uint32_t *mincover, const HashTable *htp)
 {
@@ -244,6 +246,7 @@ static uint32_t calcMinKtup(uint32_t *mincover, const HashTable *htp)
   return minktup;
 }
 
+#ifdef RMAP_SUPERFLUOUS_CODE
 static uint32_t calcMinCover(int *min_ktup, UCHAR mincov_percent, 
 			   const SeqFastq *sqp, const HashTable *htp)
      /** Return the minimum covarage as the number of bases and
@@ -265,6 +268,7 @@ static uint32_t calcMinCover(int *min_ktup, UCHAR mincov_percent,
 
   return mincover;
 }
+#endif
 
 static int collectHits(SegAliCands *sacp, BOOL with_seqidx, 
 		       SegLst *slp, HashHitList *hlp, SegQMask *qmp,
@@ -555,7 +559,7 @@ static int makeRMAPCANDfromSegment(RMAPCAND *cp, SeqFastq *sqbufp, COVERAGE *cov
   if (cp->qe > INT_MAX || cp->re < cp->rs || cp->re - cp->rs > INT_MAX)
     return ERRCODE_OVERFLOW;
 
-  cp->flags = (bitflags & SEGCANDFLG_REVERSE)? RMAPCANDFLG_REVERSE: 0;
+  cp->flags = (RMAPFLG_t) ((bitflags & SEGCANDFLG_REVERSE)? RMAPCANDFLG_REVERSE: 0);
 
   cp->swscor = 0;
 #ifdef results_debug
@@ -605,7 +609,7 @@ static int scoreRMAPCAND(RMAPCANDARR *csr,
   RMAPCANDARR hp;
   short mismatchscor, gapinitscor;
   short matchscor = scoreProfileGetAvgPenalties(&mismatchscor, &gapinitscor, NULL, profp);
-  short mmscordiff = matchscor - mismatchscor;
+  short mmscordiff = (short) (matchscor - mismatchscor);
   COVERAGE cover, curr_min_cover, max_cover, min_cover, dcov, cdf;
   COVERAGE cover_deficit[NUM_STRANDS];
   SEQLEN_t i, qlen;
@@ -708,10 +712,10 @@ static int scoreRMAPCAND(RMAPCANDARR *csr,
 #endif
 
 #ifdef SCORE_SIMD
-    isSIMDAliCand = 
-      qlen >= MINLEN_QUERY_STRIPED && 
-      ((SEQLEN_t) (cp->band_r - cp->band_l)*BWSCAL_QLEN) > qlen &&
-      cp->qs == 0 && cp->qe >= qlen-1;
+    isSIMDAliCand = (BOOL) 
+      (qlen >= MINLEN_QUERY_STRIPED && 
+       ((SEQLEN_t) (cp->band_r - cp->band_l)*BWSCAL_QLEN) > qlen &&
+       cp->qs == 0 && cp->qe >= qlen-1);
     if ( (isSIMDAliCand) ) {
       errcode = swSIMDAlignStriped(&cp->swscor, 
 				   alibufp, 
@@ -914,7 +918,7 @@ static int alignRMAPCANDFull(ResultSet *rsp,
 				    codecp,
 				    ssp,
 #endif
-				    (cp->flags & RMAPCANDFLG_REVERSE));
+				    (char) (cp->flags & RMAPCANDFLG_REVERSE));
     }
     if (errcode)
       break;
@@ -1064,16 +1068,19 @@ static int initRMAPINFOshort(RMAPINFO *rmp,
   return errcode;
 }
 
+#ifdef RMAP_SUPERFLUOUS_CODE
 static void calcCoverDeficit(uint32_t deficit[NUM_STRANDS], const RMAPINFO *rmrp)
 {
     deficit[0] = hashCalcHitInfoCoverDeficit(rmrp->hhiFp);
     deficit[1] = hashCalcHitInfoCoverDeficit(rmrp->hhiRp);
 }
+#endif
 
 static uint32_t calcTotalNumberOfHits(const RMAPINFO *rmrp, int ktuple_maxhit)
 {
-  return hashCalcHitInfoNumberOfHits(rmrp->hhiFp, ktuple_maxhit) +	\
-    hashCalcHitInfoNumberOfHits(rmrp->hhiRp, ktuple_maxhit);
+  uint32_t hitnum = hashCalcHitInfoNumberOfHits(rmrp->hhiFp, ktuple_maxhit);
+  return (uint32_t) (hitnum +
+		     hashCalcHitInfoNumberOfHits(rmrp->hhiRp, ktuple_maxhit));
 }
 
 static uint32_t calcTotalHitNumStats(const RMAPINFO *rmrp, uint32_t *nhit_tot)
@@ -1250,7 +1257,7 @@ static int mapSingleRead(ErrMsg *errmsgp,
   int scorlen_min = ktup + nskip;    /* minimum length of aligned query segment */
   short mismatchscor, gapinitscor, gapextscor;
   short matchscor = scoreProfileGetAvgPenalties(&mismatchscor, &gapinitscor, &gapextscor, rprofp->scorprofp);
-  short mismatchdiff = matchscor - mismatchscor;
+  short mismatchdiff = (short) (matchscor - mismatchscor);
   int bandwidth_min;
   uint32_t min_ktup = calcMinKtup(&min_cover, htp);
   SWATSCOR max1scor = 0, max2scor = 0, maxscor_perfect;
@@ -1298,7 +1305,7 @@ static int mapSingleRead(ErrMsg *errmsgp,
 			      dumpfp,
 			      dumpctr,
 #endif
-			      rmapflg&RMAPFLG_SEQBYSEQ, 
+			      (BOOL) (rmapflg&RMAPFLG_SEQBYSEQ), 
 			      //(rmapflg&RMAPFLG_NOSHRTINFO)? ktuple_maxhit: 0,
 			      ktuple_maxhit,
 			      min_ktup, min_cover, htp, ssp, ivr)))
@@ -1316,7 +1323,7 @@ static int mapSingleRead(ErrMsg *errmsgp,
 				  rmrp->hhiFp,
 				  rmrp->hhiRp, 
 				  target_depth, max_depth, 
-				  rmapflg & RMAPFLG_SENSITIVE)))
+				  (uint8_t)(rmapflg & RMAPFLG_SENSITIVE))))
     ERRMSGNO(errmsgp, errcode);
 
 #ifdef rmap_debug
@@ -1517,8 +1524,10 @@ RMap *rmapCreate(const HashTable *htp, const SeqCodec *codecp,
   rmp->prp = createRMAPPROF(codecp);
   rmp->mrp = createRMAPINFO(htp);
   rmp->rsrp = resultSetCreate(0,0);
-  okflg = rmp->bfp != NULL && rmp->prp != NULL &&
-    rmp->mrp != NULL && rmp->rsrp != NULL;
+  okflg = (BOOL) (rmp->bfp != NULL && 
+		  rmp->prp != NULL &&
+		  rmp->mrp != NULL && 
+		  rmp->rsrp != NULL);
   if ((okflg) && (rmapflg & RMAPFLG_PAIRED)) {
 #ifdef rmap_finehash_2ndmate
     uint8_t nskip = FINEHASH_SKIPSTEP;
@@ -1541,11 +1550,13 @@ RMap *rmapCreate(const HashTable *htp, const SeqCodec *codecp,
 	rmp->mflyp = createRMAPINFO(rmp->htflyp);
     
 #endif
-    okflg = (rmp->mmp != NULL) && (rmp->rsmp != NULL) && (rmp->ivr != NULL) &&
+      okflg = (BOOL) ((rmp->mmp != NULL) && 
+		      (rmp->rsmp != NULL) && 
+		      (rmp->ivr != NULL) &&
 #ifdef rmap_finehash_2ndmate
-      (rmp->htflyp != NULL) &&
+		      (rmp->htflyp != NULL) &&
 #endif
-      (rmp->pairp != NULL); 
+		      (rmp->pairp != NULL)); 
 #ifdef rmap_finehash_2ndmate 
     }
 #endif
@@ -1563,10 +1574,10 @@ RMap *rmapCreate(const HashTable *htp, const SeqCodec *codecp,
 
   if ((okflg) && (rmapflg&RMAPFLG_SPLIT)) {
     rmp->mr2p = createRMAPINFO(htp);
-    okflg = NULL != rmp->mr2p;
+    okflg = (BOOL) (NULL != rmp->mr2p);
     if ((okflg) && (rmapflg & RMAPFLG_PAIRED)) {
       rmp->mm2p = createRMAPINFO(htp);
-      okflg = NULL != rmp->mm2p;
+      okflg = (BOOL) (NULL != rmp->mm2p);
     } else {
       rmp->mm2p = NULL;
     }
@@ -2050,9 +2061,10 @@ int rmapPair(ErrMsg *errmsgp,
 #endif 
     }
   } else {
-    *pairflgp |= (rare_mate == 0)? 
-      RSLTPAIRFLG_RESTRICT_2nd: 
-      RSLTPAIRFLG_RESTRICT_1st;
+    *pairflgp = (RSLTPAIRFLG_t)((*pairflgp) | 
+				((rare_mate == 0)? 
+				 RSLTPAIRFLG_RESTRICT_2nd: 
+				 RSLTPAIRFLG_RESTRICT_1st));
   }
 
   if (errcode)

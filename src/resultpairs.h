@@ -153,7 +153,7 @@ extern "C"
 			       const InsHist *ihistp,
 			       const ResultPairs *pairp,
 			       RSLTPAIRFLG_t pairflg,
-			       RSLTFLG_t rsltflg,
+			       RESULTOUTFLG_t rsltouflg,
 			       const ResultSet *rsrp,
 			       const ResultSet *rsmp);
 
@@ -165,7 +165,7 @@ extern "C"
    * \param pairp Set of paired mappings generated, e.g. by resultSetFindBestPairs() or
    *        resultSetFindProperPairs().
    * \param pairflg Flag for paired reads (combination of RSLTPAIR_FLAGS).
-   * \param rsltflg a combination of RESULTSET_OUTPUT_FLAGS
+   * \param rsltouflg a combination of RESULTSET_OUTPUT_FLAGS
    * \param rsrp Set of results for first read (i.e. 1st mate of paired read as
    *        determined by the order of the input files.
    * \param rsmp Set of results for 2nd read (mate).

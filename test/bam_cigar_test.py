@@ -248,8 +248,8 @@ if __name__ == '__main__':
     sambam_paired_nam = df.addTMP(TMPFIL_PREFIX_PAIRED + "out.bam.sam")
 
     # cigar strings without X for mismatch, single reads
-    smalt_map(samoufilnam, indexnam, readfilnam, "sam")
-    smalt_map(bamoufilnam, indexnam, readfilnam, "bam")
+    smalt_map(df, samoufilnam, indexnam, readfilnam, "sam")
+    smalt_map(df, bamoufilnam, indexnam, readfilnam, "bam")
     samtools_bam2sam(bamoufilnam, sambamnam)
     isOK = testSAMfilesAreIdentical(sambamnam, samoufilnam)
     if not isOK:

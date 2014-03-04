@@ -68,12 +68,12 @@ int main(int argc, char *argv[])
   }
   readnum = atoi(argv[3]);
   readno_end = readno_start + readnum - 1;
-  isFastaOutput = toupper(argv[4][0]) == 'Y';
+  isFastaOutput = (unsigned char) (toupper(argv[4][0]) == 'Y');
   oufilnamroot = argv[5];
   if (strlen(oufilnamroot) + NCHAR_FILEXT > FILENAME_MAX)
     ERRMSGNO(errmsg, ERRCODE_ARGRANGE);
 
-  if (!(seqp = seqFastqCreate(0, (isFastaOutput)? SEQTYP_FASTA: SEQTYP_UNKNOWN)))
+  if (!(seqp = seqFastqCreate(0, (char) ((isFastaOutput)? SEQTYP_FASTA: SEQTYP_UNKNOWN))))
     ERRMSGNO(errmsg, ERRCODE_NOMEM);
 
   sfp_in = seqIOopen(&errcode, infilnam, SEQIO_READ, 0);

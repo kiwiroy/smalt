@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
       ERRMSGNO(errmsg, errcode);
     seqFastqGetSequence(seqp, &seqlen, NULL);
     seqnam = seqFastqGetSeqName(seqp);
-    printf("%s %i\n", seqnam, seqlen);
+    printf("%s %u\n", seqnam, seqlen);
     ctr++;
   }
   if ((seqIOstatus(sfp_in)) && seqIOstatus(sfp_in) != ERRCODE_EOF) 

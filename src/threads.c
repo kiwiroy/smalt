@@ -25,6 +25,7 @@
  *****************************************************************************
  *****************************************************************************/
 #include <stdlib.h>
+#include <limits.h>
 #include <semaphore.h>
 #include <pthread.h>
 #ifdef THREADS_DEBUG
@@ -414,6 +415,7 @@ static int signOffARGBUFF(ARGBUFF *fifop)
   return n;
 }
 
+#ifdef THREADS_SUPERFLUOUS
 static void termARGBUFF(ARGBUFF *fifop)
 /**< Set termination signal for buffer */
 {
@@ -429,6 +431,7 @@ static void termARGBUFF(ARGBUFF *fifop)
     sem_post(&fifop->sema);
 #endif
 }
+#endif
 
 /****************************************************************************
  ******************** Methods of Private Type THREADARG *********************
@@ -730,7 +733,8 @@ int threadsSetUp(int n_buffarg_factor)
 {
   int errcode = ERRCODE_SUCCESS;
   uint8_t testflg = THRFLG_INIT | THRFLG_PROC | THRFLG_INPUT | THRFLG_OUTPUT | THRFLG_ARGBUF;
-  short i, nta, nth, ntr, n_threads, n_targ;
+  uint8_t nta;
+  short i, nth, ntr, n_threads, n_targ;
   size_t memsz;
   char *hp;
 
@@ -750,14 +754,16 @@ int threadsSetUp(int n_buffarg_factor)
 	Threads.n_targ += 1;
 	memsz += taskp->argsz;	
       } else {
-	Threads.n_threads += taskp->n_threads;
-	Threads.n_targ += taskp->n_threads;
+	if (Threads.n_threads + taskp->n_threads > SHRT_MAX)
+	  return ERRCODE_OVERFLOW;
+	Threads.n_threads = (short) (Threads.n_threads + taskp->n_threads);
+	Threads.n_targ = (short) (Threads.n_targ + taskp->n_threads);
 	memsz += taskp->argsz * taskp->n_threads;
       }
     }
   }
 
-  Threads.n_buffargs = (Threads.n_threads > 0)? Threads.n_threads * n_buffarg_factor: 1;
+  Threads.n_buffargs = (short) ((Threads.n_threads > 0)? Threads.n_threads * n_buffarg_factor: 1);
   memsz += Threads.n_buffargs * Threads.tasks[THRTASK_ARGBUF].argsz;
 
 #ifdef THREADS_DEBUG
@@ -792,8 +798,10 @@ int threadsSetUp(int n_buffarg_factor)
       if (taskp->n_threads < 1) {
 	n_targ++;
       } else {
-	n_threads += taskp->n_threads;
-	n_targ += taskp->n_threads;
+	if (n_threads + taskp->n_threads > SHRT_MAX)
+	  return ERRCODE_OVERFLOW;
+	n_threads = (short) (n_threads + taskp->n_threads);
+	n_targ = (short) (n_targ + taskp->n_threads);
       }
       for (; ntr<n_targ && !(errcode); ntr++) {
 	THREADARG *targp = Threads.targp + ntr;

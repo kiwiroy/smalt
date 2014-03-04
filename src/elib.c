@@ -115,7 +115,7 @@ const char *errMsgString(int errcode)
   case ERRCODE_NULLPTR:
     return "unexpected NULL pointer";
   case ERRCODE_MAXKTUP:
-    return "cannot create a hash table ecoding > 16 bases";
+    return "hashed word length too long";
   case ERRCODE_MAXKPOS:
     return "maximum number of k-mer positions exceeded";
   case ERRCODE_HASHSEQTYP:
@@ -529,7 +529,7 @@ char *estrcpy(const char *str, const char *progfil, int line)
 
 char *estrcat(const char *str1, const char *str2, const char *progfil, int line)
 {
-  char *cp = malloc(strlen(str1)+strlen(str2)+1);
+  char *cp = malloc(strlen(str1) + strlen(str2) + 1);
   if (cp) {
     strcpy(cp, str1);
     strcat(cp, str2);

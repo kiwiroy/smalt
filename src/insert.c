@@ -135,7 +135,7 @@ static V_DEF_SORTFUNC(int32_t) /* defines sort_int32_t_quicksort(SAMPLE *) */
 
 static int32_t calcKernelBandWidth(int32_t n, int32_t iqr)
 {
-  return (n > 0)? 0.9 * pow((double) n, -0.2) * ((double) iqr)/1.34: 0;
+  return (n > 0)? (int32_t) (0.9 * pow((double) n, -0.2) * ((double) iqr)/1.34): 0;
 }
 /******************************************************************************
  ********************** Methods of Private Type KERNEL ************************
@@ -227,7 +227,8 @@ size_t insGetSample(int32_t **pSample, int *readival, const InsSample *pInsSampl
  ********************** Private Methods of Type InsHist ***********************
  ******************************************************************************/
 
-int findInsHistMax(const InsHist *pHist, int32_t *count_max, int32_t *range_min, int32_t *range_max)
+static int findInsHistMax(const InsHist *pHist, int32_t *count_max, 
+			  int32_t *range_min, int32_t *range_max)
 {
   int32_t i;
 
@@ -249,7 +250,8 @@ int findInsHistMax(const InsHist *pHist, int32_t *count_max, int32_t *range_min,
   return ERRCODE_SUCCESS;
 }
 
-int smoothGauss(int32_t *targetp, double *Kp, int32_t bw, const int32_t *sourcep, int32_t n)
+static int smoothGauss(int32_t *targetp, double *Kp, int32_t bw, 
+		       const int32_t *sourcep, int32_t n)
 {
   int32_t i, j, k, jmax;
   double x;
@@ -291,7 +293,7 @@ int smoothGauss(int32_t *targetp, double *Kp, int32_t bw, const int32_t *sourcep
     tt = 0.0;
     for (; j<jmax; j++, k++) 
       tt += sourcep[j]*Kp[k];
-    targetp[i] = tt/bw;
+    targetp[i] = (int32_t) (tt/bw);
   }
 
   return ERRCODE_SUCCESS;
@@ -335,7 +337,7 @@ InsHist *insMakeHistoFromSample(const InsSample *pInsSample)
   iRange = (qhi - qlo)*IQR_RANGE_FAC*2;
   if (!errcode) {
     int32_t ns = V_LEN(pInsSample->pSample);
-    int32_t nbins = 3*sqrt((double) ns);
+    int32_t nbins = (int32_t) (3*sqrt((double) ns));
     if (nbins < HISTO_MIN_BINNUM)
       nbins = HISTO_MIN_BINNUM;
     else if (nbins > HISTO_MAX_BINNUM) 
@@ -441,7 +443,7 @@ void insSeedHistoNormal(InsHist *pHist, int32_t mean, int32_t std, int32_t num)
     pHist->iScalFac = (int32_t) d;
   } else {
     pHist->iScalFac = 1;
-    margin = pHist->iSpan/d - pHist->iSpan;
+    margin = (int) (pHist->iSpan/d - pHist->iSpan);
     lo -= margin/2;
     hi = lo + pHist->iSpan + margin - 1;
   }   
@@ -451,7 +453,7 @@ void insSeedHistoNormal(InsHist *pHist, int32_t mean, int32_t std, int32_t num)
   for (i=0; i<pHist->iSpan; i++) {
     x = pHist->iInSizLo + d*i - mean;
     y = exp(-x*x/var2)/norm;
-    pHist->pCounts[i] = y*num + 0.4999;
+    pHist->pCounts[i] = (int32_t) (y*num + 0.4999);
   }
   pHist->iNum = num;
   pHist->status = INSFLG_SEEDED;
@@ -517,9 +519,9 @@ double insGetHistoProb(int32_t insiz, const InsHist *pHist)
 
   if (insiz >= pHist->iInSizLo && insiz <= pHist->iInSizHi &&  pHist->iNum > 0) {
     int32_t idx = (int32_t) (insiz - pHist->iInSizLo)/pHist->iScalFac;
-    prob = (double) (pHist->status == INSFLG_SMOOTHED)? 
-      pHist->pSmoothCounts[idx]: 
-      pHist->pCounts[idx];
+    prob = (pHist->status == INSFLG_SMOOTHED)? 
+      (double) pHist->pSmoothCounts[idx]: 
+      (double) pHist->pCounts[idx];
     prob /= pHist->iNum;
   }
 
@@ -542,7 +544,7 @@ int32_t insGetHistoCount(int32_t *totnum, int32_t insiz, BOOL_t is_smooth, const
 int32_t insGetHistoCountCumulative(int32_t *totnum, int32_t insiz, BOOL_t is_smooth, const InsHist *pHist)
 {
   int32_t i, idx, ccount = 0;
-  is_smooth = (is_smooth) && (pHist->status == INSFLG_SMOOTHED);
+  is_smooth = (BOOL_t) ((is_smooth) && (pHist->status == INSFLG_SMOOTHED));
   if (insiz >= pHist->iInSizLo && insiz <= pHist->iInSizHi) {
     CALC_HISTO_IDX(idx, pHist, insiz);
     for (i=0; i<=idx; i++)
@@ -571,7 +573,7 @@ int32_t insGetHistoQuartiles(int32_t *qlo, int32_t *qhi, const InsHist *pHist)
 
 int insPrintHisto(FILE *fp, int linwidth, BOOL_t is_smooth, const InsHist *pHist)
 {
-  int errcode;
+  int errcode = ERRCODE_SUCCESS;
   int32_t i, max_count, range_min, range_max;
   double wf;
  
@@ -580,13 +582,14 @@ int insPrintHisto(FILE *fp, int linwidth, BOOL_t is_smooth, const InsHist *pHist
     fprintf(fp, "# Histogram of insert sizes is empty.\n");
     return ERRCODE_FAILURE;
   }
-  is_smooth = (is_smooth) && (pHist->status == INSFLG_SMOOTHED);
+  is_smooth = (BOOL_t) ((is_smooth) && (pHist->status == INSFLG_SMOOTHED));
 
   wf = ((double) linwidth)/max_count;
   if (wf > 1.0)
     wf = 1.0;
   for (i=range_min; i<=range_max; i++) {
-    int32_t j, col_idx = ((is_smooth)? pHist->pSmoothCounts[i]: pHist->pCounts[i])*wf;
+    int32_t j, col_idx = 
+      (int32_t) (((is_smooth)? pHist->pSmoothCounts[i]: pHist->pCounts[i])*wf);
     fprintf(fp, "#%5i ", (int) (pHist->iInSizLo + i*pHist->iScalFac));
     for (j=0; j<col_idx; j++)
       if (fputc(HISTO_PRINTCHAR, fp) != HISTO_PRINTCHAR)
@@ -594,7 +597,7 @@ int insPrintHisto(FILE *fp, int linwidth, BOOL_t is_smooth, const InsHist *pHist
     fputc(PRINTCHAR_NEWLIN, fp);
   }
 
-  return ERRCODE_SUCCESS;
+  return errcode;
 }
 
 int insWriteHisto(FILE *fp, BOOL_t is_smooth, const InsHist *pHist)
@@ -606,7 +609,7 @@ int insWriteHisto(FILE *fp, BOOL_t is_smooth, const InsHist *pHist)
   if (pHist == NULL)
     return ERRCODE_FAILURE;
 
-  is_smooth = (is_smooth) && (pHist->status == INSFLG_SMOOTHED);
+  is_smooth = (BOOL_t) ((is_smooth) && (pHist->status == INSFLG_SMOOTHED));
   cp = (is_smooth)? pHist->pSmoothCounts: pHist->pCounts;
   for (i=0; i<pHist->iSpan; i++) 
     totnum += cp[i];
