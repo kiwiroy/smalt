@@ -19,7 +19,7 @@ READSEQ = [
      "NM:i:0"
      ),
     ("acaattataattctaaatatgttatttaataattatattataataattgctattattat",
-     ("2S25M1D28M4S", "2S25M1D28M4S"),
+     ("2S25M1D29M3S", "2S25M1D29M3S"),
             "NM:i:1"
      ),
     ("atatacatattacattatatgttatatttacatatggaacatagcaatgcatattttatagt",

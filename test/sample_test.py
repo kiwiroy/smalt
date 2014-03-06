@@ -8,7 +8,7 @@ KMER = 11
 NSKIP = 5
 
 TMPFIL_PREFIX = "TMP"
-
+MAXNUM_NONPROPER_PAIRS = 20
 
 def smalt_index(df, index_name, fasta_name, kmer, nskip):
     from sys import exit
@@ -81,8 +81,9 @@ def assess_mapping(oufilnam):
     
     if pair_ctr != 10000:
         exit("Found %i pairs, but expected 10,000." % pair_ctr)
-    if nonproper_ctr > 14:
-        exit("Found %i non-proper pairs. Expected max. 14" % nonproper_ctr)
+    if nonproper_ctr > MAXNUM_NONPROPER_PAIRS:
+        exit("Found %i non-proper pairs. Expected max. %i" %
+             (nonproper_ctr, MAXNUM_NONPROPER_PAIRS))
 
 def compare_mapping(oufilnam1, oufilnam2):
     from formats import Cigar, openFile
