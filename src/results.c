@@ -1886,8 +1886,9 @@ int resultSetAddFromAli(ResultSet *rsp, const AliRsltSet *arsp,
       ARRNEXTP(rp, rsp->resr);
       if (!rp) return ERRCODE_NOMEM;
       is_new = 0;
+      rp->status = 0;
     }
-
+    
     errcode = aliRsltSetFetchData(arsp, i, &rp->swatscor,
 				  &qs, &qe, &rs, &re,
 				  &dfsp);
