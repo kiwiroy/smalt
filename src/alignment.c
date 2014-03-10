@@ -395,7 +395,7 @@ static int initALIBAND(ALIBAND *abp,
   return (abp->band_width >= 0)? ERRCODE_SUCCESS: ERRCODE_FAILURE;
 }
 
-#ifdef alignment_debug
+#if defined alignment_debug || defined alignment_debug_limits
 static void printAliBand(FILE *fp, const ALIBAND *bp)
 {
   fprintf(fp, "== ALIBAND ==\n");
@@ -412,6 +412,16 @@ static void printAliBand(FILE *fp, const ALIBAND *bp)
   fprintf(fp, "q_len       = %i\n", bp->q_len);
   fprintf(fp, "q_totlen    = %i\n", bp->q_totlen);
   fprintf(fp, "== End of ALIBAND ==\n");
+}
+#endif
+#ifdef alignment_debug_limits
+static void printEncSeq(FILE *fp, const char *seqp)
+{
+  const char const NTCOD[]="ACGT";
+  const char *cp;
+  for (cp = seqp; (*cp); cp++)
+    fputc((int) NTCOD[(int) (*cp)&0x03], fp);
+  fputc((int) '\0', fp);
 }
 #endif
 
@@ -1329,13 +1339,15 @@ static int alignSmiWatBandRecursive(
   
 #ifdef alignment_debug_limits
   printf("swat.c::SwatRecursive:\n");
-  printf(">Query\n%s\n", q_seqp);
-  printf(">Subject\n%s\n", s_seqp);
-  printf("s_len = %i\n", s_len);
+  printf(">Query\n");
+  printEncSeq(stdout, q_seqp);
+  printf("\n>Subject\n");
+  printEncSeq(stdout, s_seqp);
+  printf("\ns_len = %i\n", s_len);
   printf("l_edge = %i, r_edge = %i\n", l_edge, r_edge);
   printf("s_left = %i, s_right = %i\n", s_left, s_right);
   printf("q_left = %i, q_right = %i\n", q_left, q_right);
-  aliBandPrint(stdout, &band);
+  printAliBand(stdout, &band);
 #endif
   if ((errcode = setMemALITRACK(&rssp->track, &band)))
     return errcode;

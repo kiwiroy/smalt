@@ -34,6 +34,7 @@ extern "C"
 #define ALIGNMENT_H
 
   //#define alignment_debug
+  //#define alignment_debug_limits
   //#define alignment_timing 
   //#define alignment_matrix_debug
 

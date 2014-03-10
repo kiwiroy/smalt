@@ -2,35 +2,39 @@
 = SMALT release history =
 =========================
 
-Version 0.7.5.4 (4 March 2014)
-==============================
+Release 0.7.6 (10 March 2014)
+=============================
 
-- Fixed overcommitted memory in multi-threaded mode.
+New features:
+
+- For compilation on Intel's Many Integrated Cores
+  Architecture compile with ./configure --enable-mic
 
 - Re-organised distributed tests.
 
-
-Version 0.7.5.3 (3 March 2014)
-==============================
-
-- modifications for compilation on Intel's Many Integrated Cores
-  Architecture.  compile with ./configure --enable-mic
-
-Version 0.7.5.2 (26 November 2013)
-==================================
-
 - Minor changes allowing to switch between 0-based and 1-based offsets
   for debugging (tracking) and to make vectorised alignment code
-  safer. Amended installation instructions for bambamc libary.
+  safer.
 
-Version 0.7.5.1 (7 August 2013)
-===============================
+- Ammended installation instructions with the bambamc library.
+
+
+Bug fixes:
+
+- Fixed bug due to uninitialised re-used memory. This could result in
+  a flipped read orientation of a read (estimated incident rate
+  approx. 1 mate in 10^6 Illumina read pairs).
 
 - fixed bug in 'smalt map -p' resulting in the "assertion failed"
   error message. This could occur when a read aligned across two
   successive sequences in the reference file for which the index was
   constructed, and none of the matching segments exceeded the
   threshold of the Smith-Waterman alignment score (set with -m).
+
+- Fixed overcommitted memory in multi-threaded mode. The effect was felt when using
+  a large number of threads (> 16)., e.g. on intel MIC cards.
+
+=(smalt 0.7.6 10/03/2014 hp3)=
 
 
 Release 0.7.5 (16 July 2013)

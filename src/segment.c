@@ -28,10 +28,12 @@
 /* Concept:
  * Overlapping k-tuple hits with identical shift define a SEED.
  * (SEEDs therfore don't overlap).
+ *
  * Multiple SEEDs of constant shift define a (constant-shift) SEGMENT.
- * A SEGMENT of more than 1 SEED therefore may contain mismatches between its
- * SEEDS (or indels if insertions and deletions cancel out). SEGMENTs may overlap.
- * HITREGIONs are defined by maximum shift differences between successive k-tuple hits.
+ * A SEGMENT of more than 1 SEED therefore may contain mismatches
+ * between its SEEDS (or indels if insertions and deletions cancel
+ * out). SEGMENTs may overlap.  HITREGIONs are defined by maximum
+ * shift differences between successive k-tuple hits.
  * 
  * Candidate segments for alignment (SegCand) are defined by segment
  * boundaries in the query and reference sequences and by a shift
@@ -57,9 +59,10 @@
  * caplillary reads).
  *
  * SEGMENTS are a useful concept where SEEDs are useful and where the
- * strategy for defining candidates is a bit more involved. For example,
- * in order to avoid Smith-Waterman, one might try to directly match a SEGMENT
- * first where the coverage by SEED is so high that max 2 mismatches are possible.
+ * strategy for defining candidates is a bit more involved. For
+ * example, in order to avoid Smith-Waterman, one might try to
+ * directly match a SEGMENT first where the coverage by SEED is so
+ * high that max 2 mismatches are possible.
  * 
  * Strategies for defining candidate segments for alignment:
  * 
@@ -115,19 +118,26 @@
 
 enum {
   DEFAULT_BLKSZ = 16*4096,
-  DEFAULT_QBLKSZ = 1024,   /**< Default block size for query mask */
-  SEGMENTING_DIFFSHIFT = 3, /**< Maximum shift difference between successive hits
-			     * in a segment specified in units of ktuple lengths */
-  SEEDLEN_FLAGGED = -1,       /**< value for (struct seed).len that flags out the seed */
-  NUMBER_OF_STRANDS = 2,      /**< For looping over forwared [0] and reverse [1] strands */
-  MAXIMUM_DEPTH = 8000,       /**< Maximum number of candidate segments allowed for alignment */
-  DEFAULT_TARGET_DEPTH = 200, /**< Target depth if none specified */
-  EDGE_BAND_FACTOR = 4,       /**< divide the length of the largest stretch of query sequence
-			       * not coverered by seeds by EDGE_BAND_FACTOR to obtain an added 
-			       * band_width */
-  MAX_BANDEDGE_2POW = 4,     /**< devide read length by 2^MAX_BANDEDGE_2POW to obtain a maximum
-			      * added band width */
-
+  DEFAULT_QBLKSZ = 1024,   
+  /**< Default block size for query mask */
+  SEGMENTING_DIFFSHIFT = 3, 
+  /**< Maximum shift difference between successive hits
+   * in a segment specified in units of ktuple lengths */
+  SEEDLEN_FLAGGED = -1,
+  /**< value for (struct seed).len that flags out the seed */
+  NUMBER_OF_STRANDS = 2,
+  /**< For looping over forwared [0] and reverse [1] strands */
+  MAXIMUM_DEPTH = 8000, 
+  /**< Maximum number of candidate segments allowed for alignment */
+  DEFAULT_TARGET_DEPTH = 200, 
+  /**< Target depth if none specified */
+  EDGE_BAND_FACTOR = 4, 
+  /**< divide the length of the largest stretch of query sequence
+   * not coverered by seeds by EDGE_BAND_FACTOR to obtain an added 
+   * band_width */
+  MAX_BANDEDGE_2POW = 4, 
+  /**< devide read length by 2^MAX_BANDEDGE_2POW to obtain a maximum
+   * added band width */
 };
 
 enum SEGLST_FLAGS { /**< Status flags for type SegLst */
@@ -155,15 +165,17 @@ typedef struct _SEED {
    * query offset (as the number of bases) 
    *   qo = SEED.sqo&HASHHIT_HALFMASK
    * reference offset (as the number of k-ktuples)
-   *   on forward strand: <code> rs_F = (SEED.sqo + qo/NSKIP)&HASHHIT_SOFFSMASK </code>;
+   *   on forward strand: 
+   *  <code> rs_F = (SEED.sqo + qo/NSKIP)&HASHHIT_SOFFSMASK </code>;
    *   on reverse strand: <code> rs_R = SEED.sqo - qo/NSKIP </code>;
    *   rs_R is the number of the last matching k-tuple (k-tuple numbers begin
    *   with the first k-tuple on the forward strand)
    *
    * The matching segment on the reverse strand is calculated by
-   * reversing the corresponding segment on the forward strand and subsituting
-   * the complement bases. The start point of the matching segment on the forward
-   * strand (as the number of bases) is 
+   * reversing the corresponding segment on the forward strand and
+   * subsituting the complement bases. The start point of the matching
+   * segment on the forward strand (as the number of bases) is
+   *
    *   rso_F = rs_F*NSKIP;
    *   rso_R = rs_R*NSKIP - SEED.len + KTUP;
    *
@@ -172,47 +184,56 @@ typedef struct _SEED {
    */
   /*   int64_t shift; */
   /*   SEQOFFS q_offs; */
-  uint64_t sqo;  /**< shift (upper 33 bits) and query offset (lower 31 bits) */
-  SEEDLEN len; /**< Length  of the exactly matching segment as the number of bases covered.
-		* The number of ktuples is (SEED.len-KTUP)/nskip + 1 */
+  uint64_t sqo;  
+  /**< shift (upper 33 bits) and query offset (lower 31 bits) */
+  SEEDLEN len; 
+  /**< Length  of the exactly matching segment as the number of bases covered.
+   * The number of ktuples is (SEED.len-KTUP)/nskip + 1 */
 } SEED;
 typedef struct _SEED *SEEDARR;
 
-typedef struct _HITREGION { /**< Points to seeds in the same region of the 
-			     * reference sequences. This is used mainly to avoid
-			     * multiple fetches of overlapping regions on the 
-			     * reference sequence during alignment */
-  SEEDIDX idx;          /**< start index, points into hit, seed or segment array */
-  SEEDLEN num;          /**< number of hits or seeds */
+typedef struct _HITREGION { 
+  /**< Points to seeds in the same region of the reference
+   * sequences. This is used mainly to avoid multiple fetches of
+   * overlapping regions on the reference sequence during alignment */
+  SEEDIDX idx; 
+  /**< start index, points into hit, seed or segment array */
+  SEEDLEN num;
+  /**< number of hits or seeds */
 } HITREGION;
 typedef struct _HITREGION *HITREGARR;
 
-typedef struct _SEGMENT { /**< Segment of seeds with identical shift */
-  SEEDIDX ix;      /**< index of the first seed in the segment */
-  SEGMLEN nseed;   /**< number of seeds in the segment. Can be < 0, in which
-		    * case the segment is flagged out and the number of seeds 
-		    * is -nseed */
-  SEGCOV_t cover;  /**< number of bases covered by seeds */
+typedef struct _SEGMENT { 
+  /**< Segment of seeds with identical shift */
+  SEEDIDX ix; 
+  /**< index of the first seed in the segment */
+  SEGMLEN nseed; 
+  /**< number of seeds in the segment. Can be < 0, in which case the
+   * segment is flagged out and the number of seeds is -nseed */
+  SEGCOV_t cover; 
+  /**< number of bases covered by seeds */
 } SEGMENT;
 typedef struct _SEGMENT *SEGMARR;
 
-struct _SegQMask { /**< Essentially just a string of flags for coverage calculations */
-  UCHAR *maskp;       /**< String of flags */
+struct _SegQMask { 
+  /**< Essentially just a string of flags for coverage calculations */
+  UCHAR *maskp;    /**< String of flags */
   size_t n_alloc;  /**< Allocated memory for coverage calculations */
-  int blksiz;         /**< Block size for memory allocation */
+  int blksiz;      /**< Block size for memory allocation */
 };
 
 struct _SegLst {
   HITREGARR hregr; /**< Array of regions of k-tuple hits */
   SEEDARR seedr;   /**< Array of exactly matching segments (seeds) */
-  SEGMARR segmr;   /**< Array of segments that are covered by seeds of constant shift */
+  SEGMARR segmr;   
+  /**< Array of segments that are covered by seeds of constant shift */
   USHORT dshift_cutoff; /**< segmenting max difference in shift */
   UCHAR nskip;
   UCHAR ktup;
   BITFLG flags;
   SEQPOS qlen;
-  SEGCOV_t maxcover;  /**< maximum coverage for segments of constant shift in 
-			* segmr */
+  SEGCOV_t maxcover; 
+  /**< maximum coverage for segments of constant shift in segmr */
 };
 
 typedef struct _SEGCAND { /**< candidate for dynamic programming step */
@@ -320,6 +341,22 @@ struct _SegAliCands { /** Segments as candidates for dynamic programming */
  ******************************* Pivate Methods *******************************
  ******************************************************************************/
 
+#ifdef segment_debug
+static void fprintfHitRegion(FILE *fp, const HITREGION * const hrgp, 
+			     const SEGMARR segmr) 
+{
+  SEEDLEN i;
+  fprintf(fp, "++++ hit region ++++\n");
+  fprintf(fp, "number of segments: %u\n", hrgp->num);
+  for (i=0; i<hrgp->num; i++) {
+    const SEGMENT *sgp = segmr + hrgp->idx + i;
+    fprintf(fp, "segment [%u] seeds %u - %u (%i), cover = %u\n", 
+	    i, sgp->ix, sgp->ix + sgp->nseed - 1,
+	    sgp->nseed, sgp->cover);
+  }
+}
+#endif
+ 
 static SEGCOV_t calcIndelFreeMincover(SEQOFFS slen, UCHAR ktup, UCHAR nskip)
      /**< Return the minimum coverage required for a mapping to be indel free 
       */
@@ -820,7 +857,8 @@ int segLstAddHits(SegLst *sglp,
 #endif
 
   errcode = makeSegmentsFromSeeds(&(sglp->segmr), &sglp->maxcover, 
-				  sglp->hregr, (int) reg_start, nreg,  sglp->seedr, sglp->nskip);
+				  sglp->hregr, (int) reg_start, nreg,  
+				  sglp->seedr, sglp->nskip);
   if (!errcode) sglp->flags |= SEGLSTFLG_SEGMENTS;
   return errcode;
 } 
@@ -920,11 +958,9 @@ static int derriveSEGCAND(SEGCAND *candp, SEEDLEN segix_start, SEEDLEN nseg,
 
   if (segmentp->nseed <0) 
     return ERRCODE_ASSERT;
-
   /* return boundaries of the first identical-shift-segment */
   calcSegmentBoundaries(&candp->qs, &candp->qe, &candp->rs, &candp->re, 
 			segmentp, seedr, ktup, nskip, is_reverse);
-
   segmentp->nseed *= -1; /* seed flagged out */
   shift_2mm = shift_min = (int64_t) (seedr[segmentp->ix].sqo>>HASHHIT_HALFBIT);
   /* shift_min is smallest shift 
@@ -932,6 +968,17 @@ static int derriveSEGCAND(SEGCAND *candp, SEEDLEN segix_start, SEEDLEN nseg,
    * that hast the most bases covered by k-mers fromt the hash-index */
   maxcover = segmentp->cover;
   segmp = segmentp+1;
+
+#ifdef segment_debug
+  fprintf(stderr, "#derriveSEGCAND: segix_start = %i, nseg = %i\n",
+	  segix_start, nseg);
+  fprintf(stderr, "#derriveSEGCAND: [0] q = (%u, %u) r = (%u, %u) RC = %i, "\
+	  "shift_min = %lli\n",
+	  candp->qs, candp->qe, candp->rs, candp->re, 
+	  (int) (is_reverse != 0),
+	  (signed long long) shift_min);  
+#endif
+
   /* update boundaries */
   for (n=1; n<nseg; n++, segmp++) {
     if (segmp->nseed <0) 
@@ -954,7 +1001,7 @@ static int derriveSEGCAND(SEGCAND *candp, SEEDLEN segix_start, SEEDLEN nseg,
       candp->re = re;
   }
   segmp--;
-
+  
   /* calculate the reference shift at the beginning (relative to read)
    * of the resulting candidate segment */
   if (is_reverse) {
@@ -971,6 +1018,15 @@ static int derriveSEGCAND(SEGCAND *candp, SEEDLEN segix_start, SEEDLEN nseg,
  
   shift_range = ((int64_t)(seedr[segmp->ix].sqo>>HASHHIT_HALFBIT)) - shift_min;
   diff_shift = shift_min - shift_start;
+
+#ifdef segment_debug
+  fprintf(stderr, "#derriveSEGCAND: [0] q = (%u, %u) r = (%u, %u) RC = %i, "\
+	  "sr = %lli, so = %lli\n",
+	  candp->qs, candp->qe, candp->rs, candp->re, 
+	  (int) (is_reverse != 0),
+	  shift_range, diff_shift);  
+#endif
+  
   /* diff_shift is the smallest shift between the reference segment and the query segment
    * relative to segments aligned at the reference segment start (i.e. shift_start == 0) */
   if (shift_range > SHRT_MAX)
@@ -1113,7 +1169,10 @@ static int addCandsFast(CANDARR *candr, SEGCOV_t *maxcover, SEGCOV_t *max2ndcove
   for (r=0; r<nreg; r++) {
     hitregp = hregr+r;
     segmentp = segmr + hitregp->idx;
-    for(i=0;i<hitregp->num;) {
+#ifdef segment_debug
+    fprintfHitRegion(stderr, hitregp, segmr);
+#endif
+   for(i=0;i<hitregp->num;) {
       sgp = segmentp+i;
       INIT_COVERAGE_CALC(sgp, seedr, maskp, qlen);      
       cover = sgp->cover;
@@ -1863,7 +1922,7 @@ int segAliCandsCalcSegmentOffsets(SEQLEN_t *qs, SEQLEN_t *qe,
   if (edge_band > nskip) {
     if (edge_band > (int) (qlen>>MAX_BANDEDGE_2POW)) 
       edge_band = (int) (qlen>>MAX_BANDEDGE_2POW);
-    edge_band -= nskip;
+    edge_band -= nskip-1;
   } else
     edge_band = 0;
  
