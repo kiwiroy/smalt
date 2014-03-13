@@ -434,7 +434,6 @@ static int fprintProfile(FILE *fp, const ScoreProfile *app, int s_start, int s_l
 }
 #endif
 
-
 #ifdef SCORE_SIMD
 static int makeStripedProfileFromSequence(ScoreProfile *app, const char *seq_basp, 
 					  SEQLEN_t length, const ScoreMatrix *amp)
@@ -612,7 +611,7 @@ void scoreDeleteProfile(ScoreProfile *app)
 	free(app->score[i]);
       free(app->score);
     }
-#ifdef SCORE_STRIPED
+#ifdef SCORE_SIMD
     free(app->striped_datap);
 #endif
     free(app);

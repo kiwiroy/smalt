@@ -49,7 +49,7 @@ host_triplet = @host@
 @WITH_TESTALL_TRUE@@WITH_TESTDRIVER_TRUE@	$(am__append_7) \
 @WITH_TESTALL_TRUE@@WITH_TESTDRIVER_TRUE@	$(am__append_8)
 @WITH_TESTDRIVER_TRUE@am__append_6 = ${TEST_DRIVERS}
-@WITH_BAMBAMC_TRUE@@WITH_TESTDRIVER_TRUE@am__append_7 = xali_test.py
+@WITH_BAMBAMC_TRUE@@WITH_TESTDRIVER_TRUE@am__append_7 = ioform_test.py xali_test.py
 @WITH_SAMTOOLS_EXEC_TRUE@@WITH_TESTDRIVER_TRUE@am__append_8 = bam_cigar_test.py
 check_PROGRAMS = sequenceReverseComplement_test$(EXEEXT) \
 	$(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
@@ -517,7 +517,7 @@ SMALT_SRC = ../src/smalt.c ../src/menu.c ../src/menu.h \
 SMALT_TEST_SRC = ${SMALT_SRC} ${SGM_SRC} ${ALI_SRC} tracker.c tracker.h
 TEST_DRIVERS = splitReads_test.py \
 		results_split_test.py \
-		ioform_test.py ouform_cigar_test.py \
+		ouform_cigar_test.py \
 		sample_test.py \
 		cigar_test.py \
 		mthread_test.py

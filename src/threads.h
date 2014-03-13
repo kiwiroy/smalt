@@ -80,8 +80,9 @@ extern "C"
    ****************************************************************************/
 
 #ifdef THREADS_DEBUG
-  int threadsPrintDebugMsg(const char *format, ...);
+  int threadsPrintDebugMsg(void *, void *, const char *format, ...);
   /**< Prints a message to stderr
+   * first 2 arguments used internally.
    */
 #endif
 

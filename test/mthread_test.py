@@ -10,7 +10,7 @@ NSKIP = 11
 NTHREADS = 2
 
 TMPFIL_PREFIX = "TMPmthread"
-MAPQ_THRESH = 9
+MAPQ_THRESH = 6
 VERBOSE = False
 
 def smalt_index(df, index_name, fasta_name, kmer, nskip):
@@ -58,12 +58,12 @@ def cmpCigarFiles(cigfilA, cigfilB, is_verbose=True):
         if cigA1 != cigB1:
             if is_verbose:
                 print "Not matching:\n%s\n%s" % (cigA1.lin, cigB1.lin)
-            if cigA1.mapq > MAPQ_THRESH or cigB1.mapq > MAPQ_THRESH:
+            if cigA1.mapq > MAPQ_THRESH and cigB1.mapq > MAPQ_THRESH:
                 exit("Discrepancy:\n%s\n%s" % (cigA1.lin, cigB1.lin))
         if cigA2 != cigB2:
             if is_verbose:
                 print "Not matching:\n%s\n%s" % (cigA2.lin, cigB2.lin) 
-            if cigA2.mapq > MAPQ_THRESH or cigB2.mapq > MAPQ_THRESH:
+            if cigA2.mapq > MAPQ_THRESH and cigB2.mapq > MAPQ_THRESH:
                 exit("Discrepancy:\n%s\n%s" % (cigA2.lin, cigB2.lin))
         ctr = ctr + 1
     if not isOK and isEOF:

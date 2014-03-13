@@ -61,7 +61,7 @@ static const char MENU_PROGNAM[] =\
 static const char MENU_PROGNAM_VERSION_FMT[] = \
   "                             (version: %s)\n";
 static const char MENU_RELEASE_VERSION[] = PACKAGE_VERSION;
-static const char MENU_RELEASE_DATE[] =  "10-03-2014";
+static const char MENU_RELEASE_DATE[] =  "13-03-2014";
 static const char MENU_RELEASE_AUTHORS[] = "Hannes Ponstingl";
 static const char MENU_RELEASE_BUGREPORT[] = PACKAGE_BUGREPORT;
 static const char MENU_COPYRIGHT_NOTICE[] = "Copyright (C) 2010 - 2014 Genome Research Ltd.";
@@ -1693,6 +1693,7 @@ MenuOpt *menuCreate(void)
       menuDelete(mp);
       mp = NULL;
     }
+    mp->indir = NULL;
   }
   return mp;
 }

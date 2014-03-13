@@ -2,7 +2,7 @@
 = SMALT release history =
 =========================
 
-Release 0.7.6 (10 March 2014)
+Release 0.7.6 (13 March 2014)
 =============================
 
 New features:
@@ -31,10 +31,15 @@ Bug fixes:
   constructed, and none of the matching segments exceeded the
   threshold of the Smith-Waterman alignment score (set with -m).
 
-- Fixed overcommitted memory in multi-threaded mode. The effect was felt when using
-  a large number of threads (> 16)., e.g. on intel MIC cards.
+- Fixed overcommitted memory in multi-threaded mode. The effect was
+  felt when using a large number of threads (> 16)., e.g. on intel MIC
+  cards.
 
-=(smalt 0.7.6 10/03/2014 hp3)=
+- Fixed broken multi-threaded exection discovered on Mac OSX 10.8.5
+  where the program could fail with 'assertion error' or silently
+  produce incomplete output.
+
+=(smalt 0.7.6 13/03/2014 hp3)=
 
 
 Release 0.7.5 (16 July 2013)

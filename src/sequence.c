@@ -504,8 +504,9 @@ SeqIO *seqIOopen(int *errcode, const char *filnam, char mode, unsigned long buff
   }
 
   if (!*errcode) {
-      ESTRCPY(p->filnam, filnam);
-      if (!p->filnam) *errcode = ERRCODE_NOMEM;
+    p->filnam = NULL;
+    ESTRCPY(p->filnam, filnam);
+    if (!p->filnam) *errcode = ERRCODE_NOMEM;
   }
   
   if (!*errcode) {

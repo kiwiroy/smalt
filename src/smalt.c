@@ -810,11 +810,11 @@ static int loadIOBuffArg(ErrMsg *errmsgp,
 	 (inp->rival > 0 && (inp->pctr % inp->rival) != 0)) {
     errcode = infmtRead(inp->ifrp, argp->readp, argp->matep, &argp->isPaired);
 
-    if ((errcode) && errcode != ERRCODE_EOF)
-      ERRMSGNO(errmsgp, errcode);
-    if ((argp->isPaired)) 
-      inp->pctr++;
-    inp->rctr++;
+    if (ERRCODE_SUCCESS == errcode) {
+      if ((argp->isPaired)) 
+	inp->pctr++;
+      inp->rctr++;
+    }
   }
 
   argp->readno = inp->rctr;
@@ -950,7 +950,9 @@ static int loadArgBlock(ErrMsg *errmsgp,
   blockp->n_iobf = i;
 #ifdef THREADS_DEBUG
   *readno = (i > 1)? blockp->iobfp->readno: 0;
-  threadsPrintDebugMsg("loadArgBlock(): read read no %llu to %llu (%s) (errcode = %i)\n",
+  threadsPrintDebugMsg(NULL, NULL,
+		       "loadArgBlock(): read read no %llu to %llu (%s) "\
+		       "(errcode = %i)",
 		       (long long unsigned int) *readno,
 		       (long long unsigned int) (*readno) + i, 
 		       (i == blockp->n_alloc)? "complete": "incomplete",
@@ -1019,7 +1021,8 @@ static int outputArgBlock(ErrMsg *errmsgp,
 
 #ifdef THREADS_DEBUG
   *readno = (i > 1)? blockp->iobfp->readno: 0;
-  threadsPrintDebugMsg("outputArgBlock(): wrote read no %llu to %llu (%s)\n",
+  threadsPrintDebugMsg(NULL, NULL,
+		       "outputArgBlock(): wrote read no %llu to %llu (%s)\n",
 		       (long long unsigned int) *readno,
 		       (long long unsigned int) (*readno) + i, 
 		       (i == blockp->n_iobf)? "complete": "incomplete");
@@ -1233,7 +1236,8 @@ static int processArgBlock(ErrMsg *errmsgp,
 			     blockp->iobfp+i);
 #ifdef THREADS_DEBUG
   *readno = (i > 1)? blockp->iobfp->readno: 0;
-  threadsPrintDebugMsg("processArgBlock(): wrote read no %llu to %llu (%s)\n",
+  threadsPrintDebugMsg(NULL, NULL,
+		       "processArgBlock(): wrote read no %llu to %llu (%s)\n",
 		       (long long unsigned int) *readno,
 		       (long long unsigned int) (*readno) + i, 
 		       (i == blockp->n_iobf)? "complete": "incomplete");

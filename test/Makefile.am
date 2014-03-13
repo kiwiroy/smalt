@@ -68,7 +68,7 @@ SMALT_TEST_SRC = ${SMALT_SRC} ${SGM_SRC} ${ALI_SRC} tracker.c tracker.h
 
 TEST_DRIVERS =  splitReads_test.py \
 		results_split_test.py \
-		ioform_test.py ouform_cigar_test.py \
+		ouform_cigar_test.py \
 		sample_test.py \
 		cigar_test.py \
 		mthread_test.py
@@ -88,7 +88,7 @@ endif
 TESTS += ${TEST_DRIVERS}
 
 if WITH_BAMBAMC
-TESTS += xali_test.py
+TESTS += ioform_test.py xali_test.py
 endif
 
 if WITH_SAMTOOLS_EXEC
