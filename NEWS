@@ -35,9 +35,9 @@ Bug fixes:
   felt when using a large number of threads (> 16)., e.g. on intel MIC
   cards.
 
-- Fixed broken multi-threaded exection discovered on Mac OSX 10.8.5
-  where the program could fail with 'assertion error' or silently
-  produce incomplete output.
+- Fixed broken multi-threaded exection on Mac OSX (discovered on OSX
+  10.8.5) where the program could fail with 'assertion error' or
+  silently produce incomplete output.
 
 =(smalt 0.7.6 13/03/2014 hp3)=
 
