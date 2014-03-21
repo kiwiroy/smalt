@@ -107,19 +107,26 @@ AC_ARG_WITH([bambamc],
             [with_bambamc=check])
 AS_IF([test "x$with_bambamc" != xno],
       [PKG_CHECK_MODULES([BAMBAMC], [bambamc >= 0.0.42], 
-         [ bambamc=yes;
-	   AC_DEFINE([HAVE_BAMBAMC], [1],
-                     [Define if you have the package bambamc installed as a library])
-         ],
+         [ bambamc=yes; ],
 	 [bambamc=no;
-	  if test "x$with_bambamc" != xcheck; then
-             AC_MSG_FAILURE(
-                [--with-bambamc was specified, but test for bambamc failed])
+	  if test "x$with_bambamc" = xyes; then
+	       if  test -z $BAMBAMC_CFLAGS; then
+             	   AC_MSG_FAILURE(
+				[bambamc library was not found])
+	       else
+	          bambamc=yes;
+		  AC_MSG_WARN(
+			[library not known to pkg-config, will use linker flags])	
+	       fi
           else 
              AC_MSG_WARN(
-	        [will not be able to handle SAM or BAM files!])
+	        [library not found])	
           fi
          ])
+	 if test x$bambamc = xyes; then
+	    AC_DEFINE([HAVE_BAMBAMC], [1],
+                      [Define if you have the package bambamc installed as a library])
+ 	 fi
 	 bbincludes=
 	 bblibdirs=
 	 bblibdeps=

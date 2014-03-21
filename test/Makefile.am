@@ -101,7 +101,8 @@ endif
 
 
 ## distribute test drivers
-dist_data_DATA = ${TEST_DRIVERS} bam_cigar_test.py xali_test.py formats.py testdata.py
+dist_data_DATA = ${TEST_DRIVERS} bam_cigar_test.py ioform_test.py xali_test.py \
+	formats.py testdata.py
 
 check_PROGRAMS = sequenceReverseComplement_test
 if WITH_BAMBAMC

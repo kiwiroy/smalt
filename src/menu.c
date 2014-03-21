@@ -61,7 +61,7 @@ static const char MENU_PROGNAM[] =\
 static const char MENU_PROGNAM_VERSION_FMT[] = \
   "                             (version: %s)\n";
 static const char MENU_RELEASE_VERSION[] = PACKAGE_VERSION;
-static const char MENU_RELEASE_DATE[] =  "13-03-2014";
+static const char MENU_RELEASE_DATE[] =  "21-03-2014";
 static const char MENU_RELEASE_AUTHORS[] = "Hannes Ponstingl";
 static const char MENU_RELEASE_BUGREPORT[] = PACKAGE_BUGREPORT;
 static const char MENU_COPYRIGHT_NOTICE[] = "Copyright (C) 2010 - 2014 Genome Research Ltd.";
@@ -247,7 +247,7 @@ static const OPTDOC MENU_OPTDOC_MAP[] = {
   otyp:OPTYP_STRING,
   vnam:"ouform",
 #ifdef HAVE_BAMBAMC
-  sdesc: "Output format [sam(default)|bam|cigar|gff|saha].\n"\
+  sdesc: "Output format [sam(default)|bam|cigar|gff|ssaha].\n"\
   "           Ext: [sam|bam]:nohead,x,clip.",
   ldesc:\
   "     Specifies the output format. <ouform> can be either 'sam'(default), 'bam',\n"\
@@ -266,13 +266,13 @@ static const OPTDOC MENU_OPTDOC_MAP[] = {
   ochr:'F',
   otyp:OPTYP_STRING,
   vnam:"inform",
-#ifdef WITH_BAMBAM
+#ifdef HAVE_BAMBAMC
   sdesc: "Input format [fastq (default)|sam|bam].",
   ldesc:\
   "     Specifies the input format. <inform> can be either 'fastq' (default),\n" \
   "     'sam' or 'bam' (see: samtools.sourceforge.net).\n"
 #else
-  sdesc: "Input format. fastq (default) is the only vailable format.",
+  sdesc: "Input format. fastq (default) is the only available format.",
   ldesc:\
   "     Specifies the input format. The only available format is fastq (default).\n"\
   "     Support for BAM and SAM formats (see: samtools.sourceforge.net) depends\n"\
@@ -506,7 +506,7 @@ static const OPTDOC MENU_OPTDOC_SAMPLE[] = {\
   ochr:'F',
   otyp:OPTYP_STRING,
   vnam:"inform",
-#ifdef WITH_BAMBAM
+#ifdef HAVE_BAMBAMC
   sdesc: "Input format [fastq (default)|sam|bam].",
   ldesc:\
   "     Specifies the input format. <inform> can be either 'fastq' (default),\n" \

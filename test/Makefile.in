@@ -523,7 +523,9 @@ TEST_DRIVERS = splitReads_test.py \
 		mthread_test.py
 
 @WITH_TESTDRIVER_TRUE@TESTS_ENVIRONMENT = $(PYTHON)
-dist_data_DATA = ${TEST_DRIVERS} bam_cigar_test.py xali_test.py formats.py testdata.py
+dist_data_DATA = ${TEST_DRIVERS} bam_cigar_test.py ioform_test.py xali_test.py \
+	formats.py testdata.py
+
 @WITH_ZLIB_FALSE@ZLIB_LDFLAG = 
 @WITH_ZLIB_TRUE@ZLIB_LDFLAG = -lz
 nodist_array_test_SOURCES = array_test.c
