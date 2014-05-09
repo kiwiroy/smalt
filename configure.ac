@@ -18,7 +18,7 @@
 # ######################################################
 
 AC_PREREQ([2.65])
-AC_INIT([smalt],[0.7.6],[hp3@sanger.ac.uk],[smalt],[http://smalt.sourceforge.net])
+AC_INIT([smalt],[0.7.6.1],[hp3@sanger.ac.uk],[smalt],[http://smalt.sourceforge.net])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([src/elib.c])
 AC_CONFIG_HEADERS([config.h:config.hin])
@@ -106,7 +106,7 @@ AC_ARG_WITH([bambamc],
             [],
             [with_bambamc=check])
 AS_IF([test "x$with_bambamc" != xno],
-      [PKG_CHECK_MODULES([BAMBAMC], [bambamc >= 0.0.42], 
+      [PKG_CHECK_MODULES([BAMBAMC], [bambamc >= 0.0.50], 
          [ bambamc=yes; ],
 	 [bambamc=no;
 	  if test "x$with_bambamc" = xyes; then

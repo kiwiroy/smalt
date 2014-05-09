@@ -1710,7 +1710,7 @@ int hashCollectHitsForSegment(HashHitList *hlp,
   UCHAR nskip;
 
   hashTableGetKtupLen(htp, &nskip);
-  segmoffs_lo /= nskip;
+  segmoffs_lo = (segmoffs_lo + nskip - 1)/nskip;
   if (segmoffs_lo > HASHPOS_MAX)
     return ERRCODE_ARGRANGE;
   segmoffs_hi /= nskip;

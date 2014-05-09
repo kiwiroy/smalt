@@ -1897,10 +1897,15 @@ int segAliCandsCalcSegmentOffsets(SEQLEN_t *qs, SEQLEN_t *qe,
   *rs = ((uint64_t) scandp->rs)*nskip;
   *re = ((uint64_t) scandp->re)*nskip + ktup - 1;
 
-  if (*rs < roffs || *re < *rs)
+  if (*rs + nskip < roffs + 1 || 
+      /* allow start to wobble by 1 kmer pos */
+      *re < *rs)
     return ERRCODE_ASSERT;
 
-  *rs -= roffs;
+  if (*rs > roffs)
+    *rs -= roffs;
+  else
+    *rs = 0LL;
   *re -= roffs;
 
   if (*re >= rlen) 

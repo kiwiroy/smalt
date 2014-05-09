@@ -2,6 +2,18 @@
 = SMALT release history =
 =========================
 
+Version 0.7.6.1 (9 May 2014)
+=============================
+
+- fixed a bug that had the program stopping with the message
+  'rmap.c:1371 ERROR: assertion failed'. This could happen on rare
+  occasion when mapping paired reads where one of the mates had a
+  spurious alignment.
+
+- smalt now requires version 0.0.50 or greater of the bambamc library.
+  This version fixes an issue with with undefined base call qualities
+  in BAM output when reading read data in FASTA format.
+
 Release 0.7.6 (21 March 2014)
 =============================
 
