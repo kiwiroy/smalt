@@ -31,11 +31,11 @@ AC_PROG_CC([icc gcc cc])
 #AC_PROG_CXX
 
 # check wether compiler supports '-c -o' together
-# this macro is obsolete with autoconf 1.14 
-# AM_PROG_CC_C_O
+# this macro is obsolete with automake 1.14 
+AM_PROG_CC_C_O
 
 # we use a archiver, so add support for unusual archivers
-# AM_PROG_AR
+AM_PROG_AR
 
 # find pkg-config tests
 PKG_PROG_PKG_CONFIG
